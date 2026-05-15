@@ -564,7 +564,7 @@
                         </div>
                         <a class="btn secondary" href="{{ route('guests.index') }}">Familias o grupos</a>
                         <a class="btn secondary" href="{{ route('profile.edit') }}">Perfil</a>
-                        <form method="POST" action="{{ route('logout') }}">
+                        <form method="POST" action="{{ route('logout', absolute: false) }}">
                             @csrf
                             <button class="btn ghost" type="submit">Salir</button>
                         </form>

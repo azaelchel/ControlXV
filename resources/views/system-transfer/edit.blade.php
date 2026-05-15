@@ -15,7 +15,7 @@
     </div>
 
     <div class="card">
-        <form method="post" action="{{ route('system-transfer.import') }}" enctype="multipart/form-data" class="form-grid">
+        <form method="post" action="{{ route('system-transfer.import', absolute: false) }}" enctype="multipart/form-data" class="form-grid">
             @csrf
 
             <div class="full">
