@@ -583,6 +583,7 @@
                     <a class="nav-tab {{ request()->routeIs('companions.*') ? 'active' : '' }}" href="{{ route('companions.index') }}">Invitados</a>
                     <a class="nav-tab {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">Mesas confirmadas</a>
                     <a class="nav-tab {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">Catálogos</a>
+                    <a class="nav-tab {{ request()->routeIs('system-transfer.*') ? 'active' : '' }}" href="{{ route('system-transfer.edit') }}">Respaldo</a>
                 </nav>
             @endauth
 

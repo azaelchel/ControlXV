@@ -6,6 +6,7 @@ use App\Http\Controllers\ConfirmedTableController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SystemTransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -30,6 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/catalogs', [CatalogController::class, 'store'])->name('catalogs.store');
     Route::put('/catalogs/{catalog}', [CatalogController::class, 'update'])->name('catalogs.update');
     Route::delete('/catalogs/{catalog}', [CatalogController::class, 'destroy'])->name('catalogs.destroy');
+    Route::get('/system-transfer', [SystemTransferController::class, 'edit'])->name('system-transfer.edit');
+    Route::post('/system-transfer/import', [SystemTransferController::class, 'import'])->name('system-transfer.import');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
