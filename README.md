@@ -66,6 +66,10 @@ Según la guía oficial de Railway para Laravel, Railway detecta Laravel automá
 - PostgreSQL: https://docs.railway.com/databases/postgresql
 - Config as code: https://docs.railway.com/config-as-code/reference
 
+### Nota importante sobre este proyecto
+
+Este proyecto usa `PhpSpreadsheet`, y esa librería exige la extensión `gd`. Si Railway construye la app solo con detección automática, el build puede fallar por falta de `ext-gd`. Por eso este repo ya incluye un `Dockerfile` para controlar el entorno PHP y asegurar que `gd`, `mbstring`, `zip` y `pdo_pgsql` queden instalados.
+
 ### 1. Preparar repo
 
 Inicializa git si hace falta:
