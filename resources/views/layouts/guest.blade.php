@@ -180,6 +180,95 @@
                 backdrop-filter: blur(16px);
             }
 
+            .xv-login-panel form {
+                display: block;
+            }
+
+            .xv-login-panel label {
+                display: block;
+                font-size: 14px;
+                font-weight: 700;
+                color: #5a3b72;
+                margin-bottom: 6px;
+            }
+
+            .xv-login-panel input[type="text"],
+            .xv-login-panel input[type="email"],
+            .xv-login-panel input[type="password"] {
+                display: block;
+                width: 100%;
+                padding: 14px 16px;
+                border-radius: 12px;
+                border: 1px solid #dcc8ec;
+                background: #fff;
+                color: #3f2a55;
+                box-shadow: inset 0 1px 2px rgba(122, 79, 168, .05);
+                transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+            }
+
+            .xv-login-panel input[type="text"]:focus,
+            .xv-login-panel input[type="email"]:focus,
+            .xv-login-panel input[type="password"]:focus {
+                outline: none;
+                border-color: #bb83e2;
+                box-shadow: 0 0 0 4px rgba(207, 171, 236, .28);
+                background: #fff;
+            }
+
+            .xv-login-panel input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                border-radius: 6px;
+                border: 1px solid #cdaee6;
+                accent-color: #9b6bc8;
+                margin-right: 8px;
+            }
+
+            .xv-login-panel .inline-flex.items-center {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .xv-login-panel .inline-flex.items-center span {
+                margin-left: 0;
+                color: #6d5a79;
+                font-size: 14px;
+            }
+
+            .xv-login-panel .text-sm.text-gray-600,
+            .xv-login-panel .block.font-medium.text-sm.text-gray-700,
+            .xv-login-panel .mt-2 {
+                color: #6d5a79 !important;
+            }
+
+            .xv-login-panel button[type="submit"] {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 46px;
+                padding: 0 20px;
+                border-radius: 12px;
+                border: 0;
+                color: #fff;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                cursor: pointer;
+            }
+
+            .xv-login-panel .flex.items-center.justify-end.mt-6 {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                margin-top: 24px;
+            }
+
+            .xv-login-panel .ms-3 {
+                margin-left: 12px;
+            }
+
             @media (max-width: 980px) {
                 .xv-shell { grid-template-columns: 1fr; }
                 .xv-hero { padding: 28px 22px 10px; }
