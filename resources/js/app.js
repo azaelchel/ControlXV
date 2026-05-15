@@ -174,6 +174,18 @@ const buildAssociatedFormData = (form) => {
     return formData;
 };
 
+const primeAutoSaveControls = () => {
+    document.querySelectorAll('[form]').forEach((control) => {
+        if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)) {
+            return;
+        }
+
+        if (control.dataset.lastSavedValue === undefined) {
+            control.dataset.lastSavedValue = control.value;
+        }
+    });
+};
+
 const updateStatusSummaryCards = (statusSummary) => {
     if (!statusSummary) {
         return;
@@ -246,17 +258,7 @@ const setActiveCategoryCard = (category) => {
     });
 };
 
-const initAjaxForms = () => {
-    document.addEventListener('submit', async (event) => {
-        const form = event.target;
-
-        if (!(form instanceof HTMLFormElement) || form.dataset.ajaxSubmit === undefined) {
-            return;
-        }
-
-        event.preventDefault();
-
-        const submitter = event.submitter instanceof HTMLButtonElement ? event.submitter : null;
+const submitAjaxForm = async (form, submitter = null) => {
         const originalDisabledState = submitter?.disabled ?? false;
         const originalContent = submitter?.innerHTML ?? '';
         const controls = [...document.querySelectorAll(`[form="${form.id}"]`)];
@@ -332,40 +334,66 @@ const initAjaxForms = () => {
 
             delete form.dataset.ajaxBusy;
         }
+};
+
+const initAjaxForms = () => {
+    document.addEventListener('submit', async (event) => {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement) || form.dataset.ajaxSubmit === undefined) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const submitter = event.submitter instanceof HTMLButtonElement ? event.submitter : null;
+        await submitAjaxForm(form, submitter);
     });
 };
 
 const initAutoSaveForms = () => {
-    document.querySelectorAll('form[data-autosave-form]').forEach((form) => {
-        const controls = [...document.querySelectorAll(`[form="${form.id}"]`)];
+    primeAutoSaveControls();
 
-        controls.forEach((control) => {
-            if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)) {
-                return;
-            }
+    document.addEventListener('change', async (event) => {
+        const control = event.target;
 
-            control.dataset.lastSavedValue = control.value;
+        if (!(control instanceof HTMLSelectElement) || !control.closest('#guests-table')) {
+            return;
+        }
 
-            if (control instanceof HTMLSelectElement) {
-                control.addEventListener('change', () => {
-                    if (control.dataset.lastSavedValue === control.value) {
-                        return;
-                    }
+        const formId = control.getAttribute('form');
+        const form = formId ? document.getElementById(formId) : null;
 
-                    form.requestSubmit();
-                });
+        if (!(form instanceof HTMLFormElement) || form.dataset.autosaveForm === undefined) {
+            return;
+        }
 
-                return;
-            }
+        if (control.dataset.lastSavedValue === control.value) {
+            return;
+        }
 
-            control.addEventListener('blur', () => {
-                if (control.dataset.lastSavedValue === control.value) {
-                    return;
-                }
+        await submitAjaxForm(form);
+    });
 
-                form.requestSubmit();
-            });
-        });
+    document.addEventListener('focusout', async (event) => {
+        const control = event.target;
+
+        if (!(control instanceof HTMLInputElement) || !control.closest('#guests-table')) {
+            return;
+        }
+
+        const formId = control.getAttribute('form');
+        const form = formId ? document.getElementById(formId) : null;
+
+        if (!(form instanceof HTMLFormElement) || form.dataset.autosaveForm === undefined) {
+            return;
+        }
+
+        if (control.dataset.lastSavedValue === control.value) {
+            return;
+        }
+
+        await submitAjaxForm(form);
     });
 };
 
@@ -409,6 +437,7 @@ const initDataTables = () => {
             order: [[0, 'asc'], [1, 'asc']],
             drawCallback: () => {
                 initInlineToneSelects();
+                primeAutoSaveControls();
             },
             language: {
                 search: 'Buscar:',
@@ -514,6 +543,7 @@ document.addEventListener('DOMContentLoaded', initFlashAlerts);
 document.addEventListener('DOMContentLoaded', initInlineToneSelects);
 document.addEventListener('DOMContentLoaded', initAjaxForms);
 document.addEventListener('DOMContentLoaded', initAutoSaveForms);
+document.addEventListener('DOMContentLoaded', primeAutoSaveControls);
 document.addEventListener('DOMContentLoaded', initCategorySummaryFilters);
 document.addEventListener('DOMContentLoaded', initStatusSummaryFilters);
 document.addEventListener('change', (event) => {
