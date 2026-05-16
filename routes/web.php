@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
 
-Route::middleware('signed')->group(function () {
+Route::middleware('signed:relative')->group(function () {
     Route::get('/revision-invitados/{guest}', [PublicGuestReviewController::class, 'show'])->name('guest-review.show');
     Route::put('/revision-invitados/{guest}', [PublicGuestReviewController::class, 'update'])->name('guest-review.update');
     Route::post('/revision-invitados/{guest}/decline', [PublicGuestReviewController::class, 'decline'])->name('guest-review.decline');

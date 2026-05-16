@@ -27,7 +27,8 @@ class PublicGuestReviewController extends Controller
             'rows' => $rows,
             'types' => ['Adulto', 'Adolescente', 'Niño'],
             'sexes' => ['Hombre', 'Mujer'],
-            'signedUpdateUrl' => \URL::signedRoute('guest-review.update', ['guest' => $guest]),
+            'signedUpdateUrl' => \URL::signedRoute('guest-review.update', ['guest' => $guest], absolute: false),
+            'signedDeclineUrl' => \URL::signedRoute('guest-review.decline', ['guest' => $guest], absolute: false),
         ]);
     }
 
@@ -35,7 +36,7 @@ class PublicGuestReviewController extends Controller
     {
         if ($guest->status === 'Rechazado') {
             return redirect()
-                ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest]))
+                ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false))
                 ->with('status', 'Esta familia ya indicó que no podrá asistir. El formulario quedó bloqueado.');
         }
 
@@ -142,7 +143,7 @@ class PublicGuestReviewController extends Controller
         });
 
         return redirect()
-            ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest]))
+            ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false))
             ->with('status', 'La lista de invitados se actualizó correctamente. Gracias por revisar la información.');
     }
 
@@ -162,7 +163,7 @@ class PublicGuestReviewController extends Controller
         });
 
         return redirect()
-            ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest]))
+            ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false))
             ->with('status', 'Gracias por avisarnos. Se registró que esta familia no podrá asistir.');
     }
 

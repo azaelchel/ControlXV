@@ -50,7 +50,7 @@
         </div>
 
         @if ($guest->status !== 'Rechazado')
-            <form method="post" action="{{ \URL::signedRoute('guest-review.decline', ['guest' => $guest]) }}"
+            <form method="post" action="{{ $signedDeclineUrl }}"
                 style="margin-bottom: 16px;"
                 data-confirm-title="¿Seguro que no podrán asistir?"
                 data-confirm-text="Se cambiará el estatus de la familia a Rechazado y el formulario quedará bloqueado."

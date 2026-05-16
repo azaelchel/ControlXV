@@ -278,7 +278,7 @@
                                     @method('patch')
                                 </form>
                                 <div class="inline">
-                                    <a class="btn success icon-btn" href="{{ \Illuminate\Support\Facades\URL::signedRoute('guest-review.show', ['guest' => $guest]) }}" target="_blank" rel="noopener" title="Abrir enlace público de revisión" aria-label="Abrir enlace público de revisión">
+                                    <a class="btn success icon-btn" href="{{ \Illuminate\Support\Facades\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false) }}" target="_blank" rel="noopener" title="Abrir enlace público de revisión" aria-label="Abrir enlace público de revisión">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M15 3h6v6"/>
                                             <path d="M10 14 21 3"/>
