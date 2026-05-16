@@ -1,12 +1,17 @@
 <div class="form-grid">
     <div class="span-2">
         <label for="invited_group">Familia o grupo</label>
-        <select id="invited_group" name="invited_group" required>
-            <option value="">Selecciona</option>
-            @foreach ($guestOptions as $value)
-                <option value="{{ $value }}" @selected(old('invited_group', $companion->invited_group) === $value)>{{ $value }}</option>
-            @endforeach
-        </select>
+        @if ($companion->exists)
+            <input type="hidden" name="invited_group" value="{{ old('invited_group', $companion->invited_group) }}">
+            <input id="invited_group" type="text" value="{{ old('invited_group', $companion->invited_group) }}" readonly style="background:#f7f2fb;color:#6a4f81;">
+        @else
+            <select id="invited_group" name="invited_group" required>
+                <option value="">Selecciona</option>
+                @foreach ($guestOptions as $value)
+                    <option value="{{ $value }}" @selected(old('invited_group', $companion->invited_group) === $value)>{{ $value }}</option>
+                @endforeach
+            </select>
+        @endif
         @error('invited_group') <div class="error">{{ $message }}</div> @enderror
     </div>
 
@@ -18,12 +23,17 @@
 
     <div>
         <label for="type">Tipo</label>
-        <select id="type" name="type">
-            <option value="">Sin definir</option>
-            @foreach ($types as $value)
-                <option value="{{ $value }}" @selected(old('type', $companion->type) === $value)>{{ $value }}</option>
-            @endforeach
-        </select>
+        @if ($companion->exists)
+            <input type="hidden" name="type" value="{{ old('type', $companion->type) }}">
+            <input id="type" type="text" value="{{ old('type', $companion->type) ?: 'Sin definir' }}" readonly style="background:#f7f2fb;color:#6a4f81;">
+        @else
+            <select id="type" name="type">
+                <option value="">Sin definir</option>
+                @foreach ($types as $value)
+                    <option value="{{ $value }}" @selected(old('type', $companion->type) === $value)>{{ $value }}</option>
+                @endforeach
+            </select>
+        @endif
         @error('type') <div class="error">{{ $message }}</div> @enderror
     </div>
 

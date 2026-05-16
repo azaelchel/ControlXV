@@ -4,10 +4,6 @@
 @section('heading', 'Familias o grupos')
 @section('subheading', 'Módulo principal para dar de alta familias o grupos, revisar su información, actualizar estatus y exportar el listado cuando haga falta.')
 
-@php
-    $editQuery = request()->query();
-@endphp
-
 @section('content')
     <div x-data="{ showGuestModal: false, showEditGuestModal: {{ $editingGuest ? 'true' : 'false' }} }">
     <div class="toolbar">
@@ -29,6 +25,7 @@
 
             <form method="post" action="{{ route('guests.store') }}">
                 @csrf
+                <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
                 @include('guests._fields', ['guest' => new \App\Models\Guest()])
                 <div class="inline" style="margin-top: 18px;">
                     <button class="btn" type="submit">Guardar familia o grupo</button>
@@ -46,16 +43,17 @@
                         <div class="section-kicker">Edición en modal</div>
                         <h3 class="section-title">Editar familia o grupo</h3>
                     </div>
-                    <a class="btn ghost" href="{{ route('guests.index', request()->except('edit')) }}">Cerrar</a>
+                    <a class="btn ghost" href="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">Cerrar</a>
                 </div>
 
                 <form method="post" action="{{ route('guests.update', $editingGuest) }}">
                     @csrf
                     @method('put')
+                    <input type="hidden" name="return_to" value="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">
                     @include('guests._fields', ['guest' => $editingGuest])
                     <div class="inline" style="margin-top: 18px;">
                         <button class="btn" type="submit">Guardar cambios</button>
-                        <a class="btn secondary" href="{{ route('guests.index', request()->except('edit')) }}">Cancelar</a>
+                        <a class="btn secondary" href="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">Cancelar</a>
                     </div>
                 </form>
             </div>
@@ -190,7 +188,7 @@
         </form>
     </div>
 
-    <div class="card">
+    <div class="card" id="guests-table-section">
         <div class="inline" style="justify-content: space-between; margin-bottom: 12px;">
             <div>
                 <h3 style="margin: 0 0 4px;">Listado de familias o grupos</h3>
@@ -280,7 +278,7 @@
                                     @method('patch')
                                 </form>
                                 <div class="inline">
-                                    <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}" title="Editar familia o grupo" aria-label="Editar familia o grupo">
+                                    <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}#guests-table-section" title="Editar familia o grupo" aria-label="Editar familia o grupo">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9"/>
                                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>

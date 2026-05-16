@@ -179,7 +179,7 @@ class CompanionController extends Controller
         });
 
         return redirect()
-            ->route('companions.index')
+            ->to($request->input('return_to', route('companions.index')))
             ->with('status', 'Invitados creados correctamente.');
     }
 
@@ -204,7 +204,7 @@ class CompanionController extends Controller
         $companion->update($request->validated());
 
         return redirect()
-            ->route('companions.index')
+            ->to($request->input('return_to', route('companions.index')))
             ->with('status', 'Invitado actualizado correctamente.');
     }
 

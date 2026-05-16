@@ -89,7 +89,7 @@ class GuestController extends Controller
         $this->syncCompanionsForGuest($guest);
 
         return redirect()
-            ->route('guests.index')
+            ->to($request->input('return_to', route('guests.index')))
             ->with('status', 'Familia o grupo creada correctamente.');
     }
 
@@ -108,7 +108,7 @@ class GuestController extends Controller
         $this->syncCompanionsForGuest($guest, $originalName);
 
         return redirect()
-            ->route('guests.index')
+            ->to($request->input('return_to', route('guests.index')))
             ->with('status', 'Familia o grupo actualizada correctamente.');
     }
 
