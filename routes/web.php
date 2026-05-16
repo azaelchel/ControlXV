@@ -5,11 +5,18 @@ use App\Http\Controllers\CompanionController;
 use App\Http\Controllers\ConfirmedTableController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\PublicGuestReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemTransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
+
+Route::middleware('signed')->group(function () {
+    Route::get('/revision-invitados/{guest}', [PublicGuestReviewController::class, 'show'])->name('guest-review.show');
+    Route::put('/revision-invitados/{guest}', [PublicGuestReviewController::class, 'update'])->name('guest-review.update');
+    Route::post('/revision-invitados/{guest}/decline', [PublicGuestReviewController::class, 'decline'])->name('guest-review.decline');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

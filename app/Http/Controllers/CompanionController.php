@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCompanionRequest;
 use App\Models\Companion;
 use App\Models\Guest;
+use App\Support\GuestCompanionSynchronizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -178,6 +179,10 @@ class CompanionController extends Controller
             ]);
         });
 
+        if ($guest = Guest::query()->where('name', $validated['invited_group'])->first()) {
+            GuestCompanionSynchronizer::syncGuestCounts($guest);
+        }
+
         return redirect()
             ->to($request->input('return_to', route('companions.index')))
             ->with('status', 'Invitados creados correctamente.');
@@ -203,6 +208,10 @@ class CompanionController extends Controller
     {
         $companion->update($request->validated());
 
+        if ($guest = Guest::query()->where('name', $companion->invited_group)->first()) {
+            GuestCompanionSynchronizer::syncGuestCounts($guest);
+        }
+
         return redirect()
             ->to($request->input('return_to', route('companions.index')))
             ->with('status', 'Invitado actualizado correctamente.');
@@ -210,7 +219,12 @@ class CompanionController extends Controller
 
     public function destroy(Companion $companion): RedirectResponse
     {
+        $guestName = $companion->invited_group;
         $companion->update(['active' => false]);
+
+        if ($guest = Guest::query()->where('name', $guestName)->first()) {
+            GuestCompanionSynchronizer::syncGuestCounts($guest);
+        }
 
         return redirect()
             ->route('companions.index')

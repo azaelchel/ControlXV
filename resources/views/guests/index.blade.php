@@ -278,6 +278,13 @@
                                     @method('patch')
                                 </form>
                                 <div class="inline">
+                                    <a class="btn success icon-btn" href="{{ \Illuminate\Support\Facades\URL::signedRoute('guest-review.show', ['guest' => $guest]) }}" target="_blank" rel="noopener" title="Abrir enlace público de revisión" aria-label="Abrir enlace público de revisión">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M15 3h6v6"/>
+                                            <path d="M10 14 21 3"/>
+                                            <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
+                                        </svg>
+                                    </a>
                                     <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}#guests-table-section" title="Editar familia o grupo" aria-label="Editar familia o grupo">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9"/>
