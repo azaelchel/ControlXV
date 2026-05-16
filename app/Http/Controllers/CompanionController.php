@@ -46,101 +46,15 @@ class CompanionController extends Controller
             $editingCompanion = Companion::find($editId);
         }
 
-        $confirmedGuests = Guest::query()
-            ->where('status', 'Confirmado')
-            ->orderBy('name')
-            ->get(['name', 'adults', 'adolescents', 'children']);
+        $guestProfiles = $this->buildConfirmedGuestProfiles();
 
-        $registeredByGuest = Companion::query()
-            ->select('invited_group')
-            ->selectRaw("SUM(CASE WHEN type = 'Adulto' THEN 1 ELSE 0 END) as adults")
-            ->selectRaw("SUM(CASE WHEN type = 'Adolescente' THEN 1 ELSE 0 END) as adolescents")
-            ->selectRaw("SUM(CASE WHEN type = 'Niño' THEN 1 ELSE 0 END) as children")
-            ->groupBy('invited_group')
-            ->get()
-            ->keyBy('invited_group');
-
-        $pendingRegistrations = $confirmedGuests
-            ->map(function (Guest $guest) use ($registeredByGuest) {
-                $registered = $registeredByGuest->get($guest->name);
-
-                $expectedAdults = (int) $guest->adults;
-                $expectedAdolescents = (int) $guest->adolescents;
-                $expectedChildren = (int) $guest->children;
-
-                $registeredAdults = (int) ($registered->adults ?? 0);
-                $registeredAdolescents = (int) ($registered->adolescents ?? 0);
-                $registeredChildren = (int) ($registered->children ?? 0);
-
-                $adultDelta = $expectedAdults - $registeredAdults;
-                $adolescentDelta = $expectedAdolescents - $registeredAdolescents;
-                $childDelta = $expectedChildren - $registeredChildren;
-
-                $missingAdults = max(0, $adultDelta);
-                $missingAdolescents = max(0, $adolescentDelta);
-                $missingChildren = max(0, $childDelta);
-                $extraAdults = max(0, -$adultDelta);
-                $extraAdolescents = max(0, -$adolescentDelta);
-                $extraChildren = max(0, -$childDelta);
-                $missingTotal = $missingAdults + $missingAdolescents + $missingChildren;
-                $extraTotal = $extraAdults + $extraAdolescents + $extraChildren;
-
-                if ($missingTotal === 0 && $extraTotal === 0) {
+        $pendingRegistrations = $guestProfiles
+            ->map(function (array $profile) {
+                if ($profile['missing_total'] === 0 && $profile['extra_total'] === 0) {
                     return null;
                 }
 
-                $missingParts = [];
-                $extraParts = [];
-
-                if ($missingAdults > 0) {
-                    $missingParts[] = $missingAdults . ' adulto' . ($missingAdults === 1 ? '' : 's');
-                }
-
-                if ($missingAdolescents > 0) {
-                    $missingParts[] = $missingAdolescents . ' adolescente' . ($missingAdolescents === 1 ? '' : 's');
-                }
-
-                if ($missingChildren > 0) {
-                    $missingParts[] = $missingChildren . ' niño' . ($missingChildren === 1 ? '' : 's');
-                }
-
-                if ($extraAdults > 0) {
-                    $extraParts[] = $extraAdults . ' adulto' . ($extraAdults === 1 ? '' : 's');
-                }
-
-                if ($extraAdolescents > 0) {
-                    $extraParts[] = $extraAdolescents . ' adolescente' . ($extraAdolescents === 1 ? '' : 's');
-                }
-
-                if ($extraChildren > 0) {
-                    $extraParts[] = $extraChildren . ' niño' . ($extraChildren === 1 ? '' : 's');
-                }
-
-                return [
-                    'group_name' => $guest->name,
-                    'missing_total' => $missingTotal,
-                    'extra_total' => $extraTotal,
-                    'missing_adults' => $missingAdults,
-                    'missing_adolescents' => $missingAdolescents,
-                    'missing_children' => $missingChildren,
-                    'extra_adults' => $extraAdults,
-                    'extra_adolescents' => $extraAdolescents,
-                    'extra_children' => $extraChildren,
-                    'registered_total' => $registeredAdults + $registeredAdolescents + $registeredChildren,
-                    'confirmed_total' => $expectedAdults + $expectedAdolescents + $expectedChildren,
-                    'expected_breakdown' => implode(', ', array_filter([
-                        $expectedAdults > 0 ? $expectedAdults . ' adulto' . ($expectedAdults === 1 ? '' : 's') : null,
-                        $expectedAdolescents > 0 ? $expectedAdolescents . ' adolescente' . ($expectedAdolescents === 1 ? '' : 's') : null,
-                        $expectedChildren > 0 ? $expectedChildren . ' niño' . ($expectedChildren === 1 ? '' : 's') : null,
-                    ])),
-                    'registered_breakdown' => implode(', ', array_filter([
-                        $registeredAdults > 0 ? $registeredAdults . ' adulto' . ($registeredAdults === 1 ? '' : 's') : null,
-                        $registeredAdolescents > 0 ? $registeredAdolescents . ' adolescente' . ($registeredAdolescents === 1 ? '' : 's') : null,
-                        $registeredChildren > 0 ? $registeredChildren . ' niño' . ($registeredChildren === 1 ? '' : 's') : null,
-                    ])),
-                    'missing_breakdown' => implode(', ', $missingParts),
-                    'extra_breakdown' => implode(', ', $extraParts),
-                ];
+                return $profile;
             })
             ->filter()
             ->sortByDesc(fn (array $row) => $row['missing_total'] + $row['extra_total'])
@@ -158,7 +72,11 @@ class CompanionController extends Controller
             'groups' => Companion::query()->select('invited_group')->distinct()->orderBy('invited_group')->pluck('invited_group'),
             'types' => Companion::query()->select('type')->distinct()->whereNotNull('type')->where('type', '!=', '')->orderBy('type')->pluck('type'),
             'sexes' => ['Hombre', 'Mujer'],
-            'guestOptions' => Guest::query()->where('status', 'Confirmado')->orderBy('name')->pluck('name'),
+            'guestProfiles' => $guestProfiles,
+            'guestOptions' => $guestProfiles
+                ->filter(fn (array $profile) => $profile['missing_total'] > 0)
+                ->keys()
+                ->values(),
             'filters' => $request->only(['group', 'type', 'search']),
             'editingCompanion' => $editingCompanion,
             'pendingRegistrations' => $pendingRegistrations,
@@ -178,28 +96,104 @@ class CompanionController extends Controller
 
     public function create(): View
     {
+        $guestProfiles = $this->buildConfirmedGuestProfiles();
+
         return view('companions.create', [
             'companion' => new Companion(),
-            'guestOptions' => Guest::query()->where('status', 'Confirmado')->orderBy('name')->pluck('name'),
+            'guestOptions' => $guestProfiles
+                ->filter(fn (array $profile) => $profile['missing_total'] > 0)
+                ->keys()
+                ->values(),
+            'guestProfiles' => $guestProfiles,
             'types' => ['Adulto', 'Adolescente', 'Niño'],
             'sexes' => ['Hombre', 'Mujer'],
         ]);
     }
 
-    public function store(StoreCompanionRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        Companion::create($request->validated());
+        $validated = $request->validate([
+            'invited_group' => ['required', 'string', 'max:120'],
+            'entries' => ['required', 'array', 'min:1'],
+            'entries.*.name' => ['nullable', 'string', 'max:180'],
+            'entries.*.type' => ['required', 'string', 'in:Adulto,Adolescente,Niño'],
+            'entries.*.sex' => ['nullable', 'string', 'max:60'],
+            'entries.*.notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $profile = $this->buildConfirmedGuestProfiles()->get($validated['invited_group']);
+
+        if (! $profile) {
+            return redirect()
+                ->back()
+                ->withErrors(['invited_group' => 'Solo puedes registrar invitados para familias o grupos confirmados.'])
+                ->withInput();
+        }
+
+        $entries = collect($validated['entries'])
+            ->map(fn (array $entry) => [
+                'name' => trim((string) ($entry['name'] ?? '')),
+                'type' => (string) $entry['type'],
+                'sex' => $entry['sex'] ?? null,
+                'notes' => $entry['notes'] ?? null,
+            ])
+            ->filter(fn (array $entry) => $entry['name'] !== '')
+            ->values();
+
+        if ($entries->isEmpty()) {
+            return redirect()
+                ->back()
+                ->withErrors(['entries' => 'Captura al menos un invitado pendiente.'])
+                ->withInput();
+        }
+
+        $submittedByType = [
+            'Adulto' => (int) $entries->where('type', 'Adulto')->count(),
+            'Adolescente' => (int) $entries->where('type', 'Adolescente')->count(),
+            'Niño' => (int) $entries->where('type', 'Niño')->count(),
+        ];
+
+        $allowedByType = [
+            'Adulto' => $profile['missing_adults'],
+            'Adolescente' => $profile['missing_adolescents'],
+            'Niño' => $profile['missing_children'],
+        ];
+
+        foreach ($submittedByType as $type => $count) {
+            if ($count > $allowedByType[$type]) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['entries' => "Se intentaron registrar más {$type}s de los pendientes para esta familia o grupo."])
+                    ->withInput();
+            }
+        }
+
+        $entries->each(function (array $entry) use ($validated) {
+            Companion::create([
+                'invited_group' => $validated['invited_group'],
+                'name' => $entry['name'],
+                'type' => $entry['type'],
+                'sex' => $entry['sex'],
+                'notes' => $entry['notes'],
+            ]);
+        });
 
         return redirect()
             ->route('companions.index')
-            ->with('status', 'Invitado creado correctamente.');
+            ->with('status', 'Invitados creados correctamente.');
     }
 
     public function edit(Companion $companion): View
     {
+        $guestProfiles = $this->buildConfirmedGuestProfiles();
+
         return view('companions.edit', [
             'companion' => $companion,
-            'guestOptions' => Guest::query()->where('status', 'Confirmado')->orderBy('name')->pluck('name'),
+            'guestOptions' => $guestProfiles
+                ->filter(fn (array $profile) => $profile['missing_total'] > 0 || $profile['group_name'] === $companion->invited_group)
+                ->keys()
+                ->values(),
+            'guestProfiles' => $guestProfiles,
             'types' => ['Adulto', 'Adolescente', 'Niño'],
             'sexes' => ['Hombre', 'Mujer'],
         ]);
@@ -308,5 +302,101 @@ class CompanionController extends Controller
             'reporte_invitados_xv.xlsx',
             ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
         )->deleteFileAfterSend(true);
+    }
+
+    private function buildConfirmedGuestProfiles()
+    {
+        $confirmedGuests = Guest::query()
+            ->where('status', 'Confirmado')
+            ->orderBy('name')
+            ->get(['name', 'adults', 'adolescents', 'children']);
+
+        $registeredByGuest = Companion::query()
+            ->select('invited_group')
+            ->selectRaw("SUM(CASE WHEN type = 'Adulto' THEN 1 ELSE 0 END) as adults")
+            ->selectRaw("SUM(CASE WHEN type = 'Adolescente' THEN 1 ELSE 0 END) as adolescents")
+            ->selectRaw("SUM(CASE WHEN type = 'Niño' THEN 1 ELSE 0 END) as children")
+            ->groupBy('invited_group')
+            ->get()
+            ->keyBy('invited_group');
+
+        return $confirmedGuests->mapWithKeys(function (Guest $guest) use ($registeredByGuest) {
+            $registered = $registeredByGuest->get($guest->name);
+
+            $expectedAdults = (int) $guest->adults;
+            $expectedAdolescents = (int) $guest->adolescents;
+            $expectedChildren = (int) $guest->children;
+
+            $registeredAdults = (int) ($registered->adults ?? 0);
+            $registeredAdolescents = (int) ($registered->adolescents ?? 0);
+            $registeredChildren = (int) ($registered->children ?? 0);
+
+            $adultDelta = $expectedAdults - $registeredAdults;
+            $adolescentDelta = $expectedAdolescents - $registeredAdolescents;
+            $childDelta = $expectedChildren - $registeredChildren;
+
+            $missingAdults = max(0, $adultDelta);
+            $missingAdolescents = max(0, $adolescentDelta);
+            $missingChildren = max(0, $childDelta);
+            $extraAdults = max(0, -$adultDelta);
+            $extraAdolescents = max(0, -$adolescentDelta);
+            $extraChildren = max(0, -$childDelta);
+
+            $pendingSlots = collect()
+                ->merge($missingAdults > 0 ? collect(range(1, $missingAdults))->map(fn (int $index) => [
+                    'slot' => 'adulto-'.$index,
+                    'type' => 'Adulto',
+                    'label' => 'Adulto '.$index,
+                ]) : collect())
+                ->merge($missingAdolescents > 0 ? collect(range(1, $missingAdolescents))->map(fn (int $index) => [
+                    'slot' => 'adolescente-'.$index,
+                    'type' => 'Adolescente',
+                    'label' => 'Adolescente '.$index,
+                ]) : collect())
+                ->merge($missingChildren > 0 ? collect(range(1, $missingChildren))->map(fn (int $index) => [
+                    'slot' => 'nino-'.$index,
+                    'type' => 'Niño',
+                    'label' => 'Niño '.$index,
+                ]) : collect())
+                ->values()
+                ->all();
+
+            return [
+                $guest->name => [
+                    'group_name' => $guest->name,
+                    'missing_total' => $missingAdults + $missingAdolescents + $missingChildren,
+                    'extra_total' => $extraAdults + $extraAdolescents + $extraChildren,
+                    'missing_adults' => $missingAdults,
+                    'missing_adolescents' => $missingAdolescents,
+                    'missing_children' => $missingChildren,
+                    'extra_adults' => $extraAdults,
+                    'extra_adolescents' => $extraAdolescents,
+                    'extra_children' => $extraChildren,
+                    'registered_total' => $registeredAdults + $registeredAdolescents + $registeredChildren,
+                    'confirmed_total' => $expectedAdults + $expectedAdolescents + $expectedChildren,
+                    'expected_breakdown' => implode(', ', array_filter([
+                        $expectedAdults > 0 ? $expectedAdults . ' adulto' . ($expectedAdults === 1 ? '' : 's') : null,
+                        $expectedAdolescents > 0 ? $expectedAdolescents . ' adolescente' . ($expectedAdolescents === 1 ? '' : 's') : null,
+                        $expectedChildren > 0 ? $expectedChildren . ' niño' . ($expectedChildren === 1 ? '' : 's') : null,
+                    ])),
+                    'registered_breakdown' => implode(', ', array_filter([
+                        $registeredAdults > 0 ? $registeredAdults . ' adulto' . ($registeredAdults === 1 ? '' : 's') : null,
+                        $registeredAdolescents > 0 ? $registeredAdolescents . ' adolescente' . ($registeredAdolescents === 1 ? '' : 's') : null,
+                        $registeredChildren > 0 ? $registeredChildren . ' niño' . ($registeredChildren === 1 ? '' : 's') : null,
+                    ])),
+                    'missing_breakdown' => implode(', ', array_filter([
+                        $missingAdults > 0 ? $missingAdults . ' adulto' . ($missingAdults === 1 ? '' : 's') : null,
+                        $missingAdolescents > 0 ? $missingAdolescents . ' adolescente' . ($missingAdolescents === 1 ? '' : 's') : null,
+                        $missingChildren > 0 ? $missingChildren . ' niño' . ($missingChildren === 1 ? '' : 's') : null,
+                    ])),
+                    'extra_breakdown' => implode(', ', array_filter([
+                        $extraAdults > 0 ? $extraAdults . ' adulto' . ($extraAdults === 1 ? '' : 's') : null,
+                        $extraAdolescents > 0 ? $extraAdolescents . ' adolescente' . ($extraAdolescents === 1 ? '' : 's') : null,
+                        $extraChildren > 0 ? $extraChildren . ' niño' . ($extraChildren === 1 ? '' : 's') : null,
+                    ])),
+                    'pending_slots' => $pendingSlots,
+                ],
+            ];
+        });
     }
 }

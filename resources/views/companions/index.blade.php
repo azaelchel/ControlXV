@@ -30,9 +30,9 @@
 
             <form method="post" action="{{ route('companions.store') }}">
                 @csrf
-                @include('companions._fields', ['companion' => new \App\Models\Companion()])
+                @include('companions._batch_fields')
                 <div class="inline" style="margin-top: 18px;">
-                    <button class="btn" type="submit">Guardar invitado</button>
+                    <button class="btn" type="submit">Guardar invitados</button>
                     <button class="btn secondary" type="button" @click="showCompanionModal = false">Cancelar</button>
                 </div>
             </form>
@@ -98,7 +98,7 @@
             </div>
         </div>
 
-        <div class="table-wrap" style="margin-top: 18px;">
+        <div class="table-wrap" style="margin-top: 18px; max-height: 320px; overflow: auto;">
             <table style="min-width: 100%;">
                 <thead>
                     <tr>
@@ -234,4 +234,119 @@
         </div>
     </div>
     </div>
+
+    <script>
+        (() => {
+            const builder = document.querySelector('[data-companion-batch-builder]');
+
+            if (!builder) {
+                return;
+            }
+
+            const profileSource = document.getElementById('companion-profiles-json');
+            const profiles = profileSource ? JSON.parse(profileSource.textContent || '{}') : {};
+            const select = builder.querySelector('[data-companion-group-select]');
+            const rowsContainer = builder.querySelector('[data-companion-rows]');
+            const emptyState = builder.querySelector('[data-companion-empty-state]');
+            const summary = builder.querySelector('[data-companion-profile-summary]');
+            const oldEntries = @json(old('entries', []));
+
+            const buildRow = (slot, oldEntry = {}, index = 0) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'card';
+                wrapper.style.padding = '16px';
+
+                const sex = oldEntry.sex || '';
+                const notes = oldEntry.notes || '';
+                const name = oldEntry.name || '';
+                const notesVisible = notes !== '';
+
+                wrapper.innerHTML = `
+                    <div style="display:grid; grid-template-columns: 1.3fr .7fr 1fr auto; gap: 12px; align-items: end;">
+                        <div>
+                            <label>Nombre del invitado</label>
+                            <input type="text" name="entries[${index}][name]" value="${name.replace(/"/g, '&quot;')}" placeholder="Captura el nombre" />
+                        </div>
+                        <div>
+                            <label>Tipo asignado</label>
+                            <input type="hidden" name="entries[${index}][type]" value="${slot.type}">
+                            <input type="text" value="${slot.type}" readonly style="background:#f7f2fb;color:#6a4f81;" />
+                        </div>
+                        <div>
+                            <label>Sexo</label>
+                            <select name="entries[${index}][sex]">
+                                <option value="" ${sex === '' ? 'selected' : ''}>Sin definir</option>
+                                <option value="Hombre" ${sex === 'Hombre' ? 'selected' : ''}>Hombre</option>
+                                <option value="Mujer" ${sex === 'Mujer' ? 'selected' : ''}>Mujer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="opacity:0;">Más</label>
+                            <button type="button" class="btn secondary small" data-toggle-notes>${notesVisible ? '−' : '+'}</button>
+                        </div>
+                    </div>
+                    <div data-notes-row style="margin-top: 12px; display:${notesVisible ? 'block' : 'none'};">
+                        <label>Observaciones</label>
+                        <textarea name="entries[${index}][notes]" rows="2" placeholder="Opcional">${notes}</textarea>
+                    </div>
+                    <div class="small" style="margin-top: 10px; color:#8a6aa8;">
+                        Registro pendiente: <strong>${slot.label}</strong>
+                    </div>
+                `;
+
+                return wrapper;
+            };
+
+            const render = () => {
+                const value = select.value;
+                const profile = profiles[value];
+                rowsContainer.innerHTML = '';
+
+                if (!profile) {
+                    summary.textContent = 'Selecciona una familia o grupo para ver cuántos invitados faltan por registrar.';
+                    emptyState.style.display = '';
+                    return;
+                }
+
+                summary.innerHTML = `
+                    <strong>Confirmados:</strong> ${profile.confirmed_total} (${profile.expected_breakdown || 'sin detalle'})<br>
+                    <strong>Ya registrados:</strong> ${profile.registered_total} (${profile.registered_breakdown || 'sin invitados registrados'})<br>
+                    <strong>Pendientes:</strong> ${profile.missing_total} (${profile.missing_breakdown || 'sin pendientes'})
+                `;
+
+                if (!profile.pending_slots || profile.pending_slots.length === 0) {
+                    emptyState.style.display = '';
+                    emptyState.textContent = 'Esta familia o grupo ya no tiene registros pendientes por capturar.';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+
+                profile.pending_slots.forEach((slot, index) => {
+                    rowsContainer.appendChild(buildRow(slot, oldEntries[index] || {}, index));
+                });
+            };
+
+            select.addEventListener('change', render);
+            rowsContainer.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-toggle-notes]');
+
+                if (!button) {
+                    return;
+                }
+
+                const card = button.closest('.card');
+                const notesRow = card?.querySelector('[data-notes-row]');
+
+                if (!notesRow) {
+                    return;
+                }
+
+                const isHidden = notesRow.style.display === 'none';
+                notesRow.style.display = isHidden ? 'block' : 'none';
+                button.textContent = isHidden ? '−' : '+';
+            });
+            render();
+        })();
+    </script>
 @endsection

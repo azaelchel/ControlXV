@@ -7,7 +7,12 @@
 @section('content')
     <div class="card">
         <form method="post" action="{{ route('companions.store') }}">
-            @include('companions._form')
+            @csrf
+            @include('companions._batch_fields')
+            <div class="inline" style="margin-top: 18px;">
+                <button class="btn" type="submit">Guardar invitados</button>
+                <a class="btn secondary" href="{{ route('companions.index') }}">Cancelar</a>
+            </div>
         </form>
     </div>
 @endsection
