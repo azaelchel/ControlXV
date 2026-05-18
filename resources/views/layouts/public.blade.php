@@ -7,7 +7,7 @@
         @php
             $metaTitle = trim($__env->yieldContent('meta_title', $__env->yieldContent('title', 'Revisión de asistencia | XV de Zugeily')));
             $metaDescription = trim($__env->yieldContent('meta_description', 'Confirma o valida la asistencia de tu familia a los XV de Zugeily. Revisa que la información de las personas que asistirán sea correcta.'));
-            $metaImage = trim($__env->yieldContent('meta_image', asset('images/og/xv-zugeily-revision.png')));
+            $metaImage = trim($__env->yieldContent('meta_image', asset('images/og/xv-zugeily-revision-og.jpg')));
             $metaUrl = url()->current();
         @endphp
         <title>{{ $metaTitle }}</title>
@@ -18,8 +18,9 @@
         <meta property="og:description" content="{{ $metaDescription }}">
         <meta property="og:url" content="{{ $metaUrl }}">
         <meta property="og:image" content="{{ $metaImage }}">
-        <meta property="og:image:width" content="1731">
-        <meta property="og:image:height" content="909">
+        <meta property="og:image:secure_url" content="{{ $metaImage }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="{{ $metaTitle }}">
         <meta name="twitter:description" content="{{ $metaDescription }}">
