@@ -16,6 +16,57 @@ const dataTableRegistry = new Map();
 let activeGuestStatusFilter = '';
 let activeGuestCategoryFilter = '';
 
+const tableStateStorageKey = (tableId) => `controlxv:${tableId}:return-state`;
+
+const saveReturnTableState = (tableId) => {
+    const table = dataTableRegistry.get(tableId);
+
+    if (!table) {
+        return;
+    }
+
+    const info = table.page.info();
+
+    window.sessionStorage.setItem(tableStateStorageKey(tableId), JSON.stringify({
+        page: info.page,
+        length: info.length,
+    }));
+};
+
+const restoreReturnTableState = (tableId) => {
+    const table = dataTableRegistry.get(tableId);
+
+    if (!table) {
+        return;
+    }
+
+    const raw = window.sessionStorage.getItem(tableStateStorageKey(tableId));
+
+    if (!raw) {
+        return;
+    }
+
+    try {
+        const state = JSON.parse(raw);
+        const targetLength = Number(state.length);
+        const targetPage = Number(state.page);
+
+        if (Number.isFinite(targetLength) && targetLength > 0 && table.page.len() !== targetLength) {
+            table.page.len(targetLength);
+        }
+
+        if (Number.isFinite(targetPage) && targetPage >= 0) {
+            table.page(targetPage).draw(false);
+        } else {
+            table.draw(false);
+        }
+    } catch (_error) {
+        // ignore malformed session data
+    } finally {
+        window.sessionStorage.removeItem(tableStateStorageKey(tableId));
+    }
+};
+
 const initTomSelect = () => {
     document.querySelectorAll('select').forEach((element) => {
         if (element.tomselect || element.dataset.nativeSelect !== undefined) {
@@ -149,6 +200,51 @@ const showErrorAlert = (message) => {
         icon: 'error',
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#8f55be',
+    });
+};
+
+const initCopyButtons = () => {
+    document.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-copy-text]');
+
+        if (!button) {
+            return;
+        }
+
+        const text = button.dataset.copyText || '';
+
+        if (text.trim() === '') {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccessToast('Link copiado');
+        } catch (error) {
+            showErrorAlert('No se pudo copiar el link automáticamente.');
+        }
+    });
+};
+
+const initReturnTableStatePersistence = () => {
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-preserve-table]');
+
+        if (!trigger) {
+            return;
+        }
+
+        saveReturnTableState(trigger.dataset.preserveTable);
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement) || !form.dataset.preserveTable) {
+            return;
+        }
+
+        saveReturnTableState(form.dataset.preserveTable);
     });
 };
 
@@ -432,6 +528,8 @@ const initDataTables = () => {
             : (type === 'companions' ? 'No hay invitados registrados' : 'No hay registros disponibles');
 
         const table = new DataTable(element, {
+            stateSave: true,
+            stateDuration: -1,
             pageLength: 10,
             lengthMenu: [25, 50, 100, 250, 500],
             order: [[0, 'asc'], [1, 'asc']],
@@ -457,11 +555,72 @@ const initDataTables = () => {
                 { orderable: false, targets: nonOrderableTargets },
                 { searchable: false, targets: nonSearchableTargets },
             ],
+            stateSaveParams: (_settings, data) => {
+                data.activeGuestStatusFilter = activeGuestStatusFilter;
+                data.activeGuestCategoryFilter = activeGuestCategoryFilter;
+            },
+            stateLoadParams: (_settings, data) => {
+                if (type === 'guests') {
+                    activeGuestStatusFilter = data.activeGuestStatusFilter || '';
+                    activeGuestCategoryFilter = data.activeGuestCategoryFilter || '';
+                }
+            },
         });
 
         dataTableRegistry.set(element.id || type, table);
 
+        if (type === 'guests') {
+            setActiveStatusCard(activeGuestStatusFilter);
+            setActiveCategoryCard(activeGuestCategoryFilter);
+        }
+
+        restoreReturnTableState(element.id || type);
+
         element.dataset.datatableReady = '1';
+    });
+};
+
+const initFilterAwareExports = () => {
+    document.querySelectorAll('[data-filter-export]').forEach((link) => {
+        if (link.dataset.filterExportBound === '1') {
+            return;
+        }
+
+        link.dataset.filterExportBound = '1';
+
+        link.addEventListener('click', (event) => {
+            const formSelector = link.dataset.filterExport;
+            const form = formSelector ? document.querySelector(formSelector) : null;
+
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const url = new URL(link.href, window.location.origin);
+            const formData = new FormData(form);
+
+            url.search = '';
+
+            for (const [key, value] of formData.entries()) {
+                if (typeof value === 'string' && value.trim() !== '') {
+                    url.searchParams.set(key, value);
+                }
+            }
+
+            if (link.dataset.datatableContext === 'guests') {
+                if (activeGuestStatusFilter !== '') {
+                    url.searchParams.set('status', activeGuestStatusFilter);
+                }
+
+                if (activeGuestCategoryFilter !== '') {
+                    url.searchParams.set('category', activeGuestCategoryFilter);
+                }
+            }
+
+            window.location.href = url.toString();
+        });
     });
 };
 
@@ -540,12 +699,15 @@ const initCategorySummaryFilters = () => {
 document.addEventListener('DOMContentLoaded', initDataTables);
 document.addEventListener('DOMContentLoaded', initConfirmActions);
 document.addEventListener('DOMContentLoaded', initFlashAlerts);
+document.addEventListener('DOMContentLoaded', initCopyButtons);
+document.addEventListener('DOMContentLoaded', initReturnTableStatePersistence);
 document.addEventListener('DOMContentLoaded', initInlineToneSelects);
 document.addEventListener('DOMContentLoaded', initAjaxForms);
 document.addEventListener('DOMContentLoaded', initAutoSaveForms);
 document.addEventListener('DOMContentLoaded', primeAutoSaveControls);
 document.addEventListener('DOMContentLoaded', initCategorySummaryFilters);
 document.addEventListener('DOMContentLoaded', initStatusSummaryFilters);
+document.addEventListener('DOMContentLoaded', initFilterAwareExports);
 document.addEventListener('change', (event) => {
     const element = event.target;
 

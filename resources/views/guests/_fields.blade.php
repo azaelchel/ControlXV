@@ -85,39 +85,6 @@
         @error('children') <div class="error">{{ $message }}</div> @enderror
     </div>
 
-    <div>
-        <label for="whatsapp_2_months">Whats 2 meses</label>
-        <select id="whatsapp_2_months" name="whatsapp_2_months">
-            <option value="">Sin definir</option>
-            @foreach ($options['followups'] as $value)
-                <option value="{{ $value }}" @selected(old('whatsapp_2_months', $guest->whatsapp_2_months) === $value)>{{ $value }}</option>
-            @endforeach
-        </select>
-        @error('whatsapp_2_months') <div class="error">{{ $message }}</div> @enderror
-    </div>
-
-    <div>
-        <label for="whatsapp_1_month">Whats 1 mes</label>
-        <select id="whatsapp_1_month" name="whatsapp_1_month">
-            <option value="">Sin definir</option>
-            @foreach ($options['followups'] as $value)
-                <option value="{{ $value }}" @selected(old('whatsapp_1_month', $guest->whatsapp_1_month) === $value)>{{ $value }}</option>
-            @endforeach
-        </select>
-        @error('whatsapp_1_month') <div class="error">{{ $message }}</div> @enderror
-    </div>
-
-    <div>
-        <label for="whatsapp_15_days">Whats 15 dias</label>
-        <select id="whatsapp_15_days" name="whatsapp_15_days">
-            <option value="">Sin definir</option>
-            @foreach ($options['followups'] as $value)
-                <option value="{{ $value }}" @selected(old('whatsapp_15_days', $guest->whatsapp_15_days) === $value)>{{ $value }}</option>
-            @endforeach
-        </select>
-        @error('whatsapp_15_days') <div class="error">{{ $message }}</div> @enderror
-    </div>
-
     <div class="full">
         <label for="notes">Observaciones</label>
         <textarea id="notes" name="notes">{{ old('notes', $guest->notes) }}</textarea>

@@ -38,7 +38,7 @@
     </div>
 
     <div>
-        <label for="sex">Sexo</label>
+        <label for="sex">Género</label>
         <select id="sex" name="sex">
             <option value="">Sin definir</option>
             @foreach ($sexes as $value)

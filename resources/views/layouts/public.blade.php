@@ -91,10 +91,6 @@
     </head>
     <body>
         <div class="shell">
-            @if (session('status'))
-                <div class="flash" data-flash-status="{{ session('status') }}">{{ session('status') }}</div>
-            @endif
-
             @if ($errors->any())
                 <div class="error-box">
                     {{ $errors->first() }}

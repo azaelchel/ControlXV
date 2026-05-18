@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Companion;
 use App\Models\Guest;
+use App\Models\PublicGuestLink;
 use App\Support\GuestCompanionSynchronizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -12,8 +13,18 @@ use Illuminate\Support\Facades\DB;
 
 class PublicGuestReviewController extends Controller
 {
-    public function show(Request $request, Guest $guest): View
+    public function show(Request $request, Guest $guest, string $token): View
     {
+        $publicLink = $this->resolveLink($guest, $token);
+
+        if (! $publicLink->isExpired() && $publicLink->responded_at === null && ! $publicLink->opened_at) {
+            $publicLink->forceFill(['opened_at' => now()])->save();
+
+            if ($guest->public_link_token === $publicLink->token) {
+                $guest->forceFill(['public_link_opened_at' => $publicLink->opened_at])->save();
+            }
+        }
+
         $companions = Companion::query()
             ->where('invited_group', $guest->name)
             ->orderBy('id')
@@ -27,17 +38,24 @@ class PublicGuestReviewController extends Controller
             'rows' => $rows,
             'types' => ['Adulto', 'Adolescente', 'Niño'],
             'sexes' => ['Hombre', 'Mujer'],
-            'signedUpdateUrl' => \URL::signedRoute('guest-review.update', ['guest' => $guest], absolute: false),
-            'signedDeclineUrl' => \URL::signedRoute('guest-review.decline', ['guest' => $guest], absolute: false),
+            'updateUrl' => route('guest-review.update', ['guest' => $guest, 'token' => $token], absolute: false),
+            'declineUrl' => route('guest-review.decline', ['guest' => $guest, 'token' => $token], absolute: false),
+            'mode' => $publicLink->mode,
+            'daysRemaining' => $publicLink->daysRemaining(),
+            'isExpired' => $publicLink->isExpired(),
+            'isLocked' => $publicLink->isLocked(),
+            'publicLink' => $publicLink,
         ]);
     }
 
-    public function update(Request $request, Guest $guest): RedirectResponse
+    public function update(Request $request, Guest $guest, string $token): RedirectResponse
     {
-        if ($guest->status === 'Rechazado') {
+        $publicLink = $this->resolveLink($guest, $token);
+
+        if ($publicLink->isLocked()) {
             return redirect()
-                ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false))
-                ->with('status', 'Esta familia ya indicó que no podrá asistir. El formulario quedó bloqueado.');
+                ->to(route('guest-review.show', ['guest' => $guest, 'token' => $token], absolute: false))
+                ->with('status', 'Este enlace ya no está disponible para cambios.');
         }
 
         $validated = $request->validate([
@@ -46,7 +64,6 @@ class PublicGuestReviewController extends Controller
             'rows.*.name' => ['nullable', 'string', 'max:180'],
             'rows.*.type' => ['nullable', 'string', 'in:Adulto,Adolescente,Niño'],
             'rows.*.sex' => ['nullable', 'string', 'max:60'],
-            'rows.*.notes' => ['nullable', 'string', 'max:1000'],
             'rows.*.delete' => ['nullable', 'boolean'],
         ]);
 
@@ -99,7 +116,7 @@ class PublicGuestReviewController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($guest, $rows, $keptRows, $currentCompanions) {
+        DB::transaction(function () use ($guest, $rows, $keptRows, $currentCompanions, $publicLink) {
             $keptIds = [];
 
             foreach ($keptRows as $row) {
@@ -108,7 +125,6 @@ class PublicGuestReviewController extends Controller
                     'name' => trim((string) $row['name']),
                     'type' => $row['type'],
                     'sex' => $row['sex'] ?: null,
-                    'notes' => $row['notes'] ?: null,
                     'active' => true,
                 ];
 
@@ -140,16 +156,38 @@ class PublicGuestReviewController extends Controller
                 ->each(fn (Companion $companion) => $companion->update(['active' => false]));
 
             GuestCompanionSynchronizer::syncGuestCounts($guest);
+
+            $publicLink->update([
+                'response' => $publicLink->mode === 'invitation' ? 'confirmed' : 'validated',
+                'responded_at' => now(),
+                'closed_reason' => 'responded',
+            ]);
+
+            $guest->update([
+                'status' => $publicLink->mode === 'invitation' ? 'Confirmado' : $guest->status,
+                'public_link_response' => $publicLink->mode === 'invitation' ? 'confirmed' : 'validated',
+                'public_link_responded_at' => now(),
+            ]);
         });
 
         return redirect()
-            ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false))
-            ->with('status', 'La lista de invitados se actualizó correctamente. Gracias por revisar la información.');
+            ->to(route('guest-review.show', ['guest' => $guest, 'token' => $token], absolute: false))
+            ->with('status', $publicLink->mode === 'invitation'
+                ? '¡Gracias por confirmar!'
+                : 'Gracias por revisar tu información.');
     }
 
-    public function decline(Request $request, Guest $guest): RedirectResponse
+    public function decline(Request $request, Guest $guest, string $token): RedirectResponse
     {
-        DB::transaction(function () use ($guest) {
+        $publicLink = $this->resolveLink($guest, $token);
+
+        if ($publicLink->isLocked()) {
+            return redirect()
+                ->to(route('guest-review.show', ['guest' => $guest, 'token' => $token], absolute: false))
+                ->with('status', 'Este enlace ya no está disponible para cambios.');
+        }
+
+        DB::transaction(function () use ($guest, $publicLink) {
             Companion::query()
                 ->where('invited_group', $guest->name)
                 ->update(['active' => false]);
@@ -159,12 +197,20 @@ class PublicGuestReviewController extends Controller
                 'adults' => 0,
                 'adolescents' => 0,
                 'children' => 0,
+                'public_link_response' => 'declined',
+                'public_link_responded_at' => now(),
+            ]);
+
+            $publicLink->update([
+                'response' => 'declined',
+                'responded_at' => now(),
+                'closed_reason' => 'responded',
             ]);
         });
 
         return redirect()
-            ->to(\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false))
-            ->with('status', 'Gracias por avisarnos. Se registró que esta familia no podrá asistir.');
+            ->to(route('guest-review.show', ['guest' => $guest, 'token' => $token], absolute: false))
+            ->with('status', 'Gracias por avisarnos.');
     }
 
     private function buildRows(Guest $guest, $companions): array
@@ -179,13 +225,12 @@ class PublicGuestReviewController extends Controller
 
         $rows = $companions->map(fn (Companion $companion) => [
             'id' => $companion->id,
-            'name' => $companion->name,
-            'type' => $companion->type,
-            'sex' => $companion->sex,
-            'notes' => $companion->notes,
-            'existing' => true,
-            'label' => 'Registrado',
-        ])->values();
+                'name' => $companion->name,
+                'type' => $companion->type,
+                'sex' => $companion->sex,
+                'existing' => true,
+                'label' => 'Registrado',
+            ])->values();
 
         $pendingRows = collect()
             ->merge($missingAdults > 0 ? collect(range(1, $missingAdults))->map(fn (int $index) => [
@@ -193,7 +238,6 @@ class PublicGuestReviewController extends Controller
                 'name' => '',
                 'type' => 'Adulto',
                 'sex' => '',
-                'notes' => '',
                 'existing' => false,
                 'label' => 'Pendiente adulto '.$index,
             ]) : collect())
@@ -202,7 +246,6 @@ class PublicGuestReviewController extends Controller
                 'name' => '',
                 'type' => 'Adolescente',
                 'sex' => '',
-                'notes' => '',
                 'existing' => false,
                 'label' => 'Pendiente adolescente '.$index,
             ]) : collect())
@@ -211,12 +254,23 @@ class PublicGuestReviewController extends Controller
                 'name' => '',
                 'type' => 'Niño',
                 'sex' => '',
-                'notes' => '',
                 'existing' => false,
                 'label' => 'Pendiente niño '.$index,
             ]) : collect())
             ->values();
 
         return $rows->concat($pendingRows)->values()->all();
+    }
+
+    private function resolveLink(Guest $guest, string $token): PublicGuestLink
+    {
+        $publicLink = PublicGuestLink::query()
+            ->where('guest_id', $guest->id)
+            ->where('token', $token)
+            ->first();
+
+        abort_unless($publicLink !== null, 403, 'Invalid link token.');
+
+        return $publicLink;
     }
 }

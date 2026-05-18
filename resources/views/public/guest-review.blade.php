@@ -2,18 +2,31 @@
 
 @section('title', 'Revisión de invitados | XV de Zugeily')
 
+@php
+    $modeTitle = 'Personas que asistirán';
+    $modeMessage = $mode === 'invitation'
+        ? 'Por favor registra a las personas que asistirán contigo y confirma tu respuesta.'
+        : 'Ya tenemos registrada tu respuesta. Por favor revisa que la información de las personas que asistirán sea correcta.';
+    $timeLabel = $mode === 'invitation' ? 'para confirmar' : 'para validar';
+    $heroTitle = $mode === 'invitation'
+        ? 'Confirma tu asistencia a los XV de Zugeily'
+        : 'Ya tenemos tu respuesta, solo revisa que todo esté correcto';
+    $heroKicker = $mode === 'invitation'
+        ? 'Confirmación de asistencia'
+        : 'Revisa y valida tu asistencia a los XV de Zugeily';
+    $sectionKicker = $mode === 'invitation'
+        ? 'Confirmación de asistencia'
+        : 'Validación de asistencia';
+@endphp
+
 @section('content')
     <div class="hero">
         <div class="brand">
             <div class="badge">XV</div>
             <div>
-                <div class="kicker">Revisión de invitados</div>
-                <h1>Gracias por su participación para los XV de Zugeily</h1>
-                <p>
-                    Les pedimos revisar su lista de invitados. Si existe alguna modificación, por favor aplíquenla aquí.
-                    Si todavía no han registrado a sus invitados, pueden hacerlo en este mismo formulario.
-                    Cuando terminen, guarden los cambios para que el sistema actualice su información.
-                </p>
+                <div class="kicker">{{ $heroKicker }}</div>
+                <h1>{{ $heroTitle }}</h1>
+                <p>{{ $modeMessage }}</p>
             </div>
         </div>
     </div>
@@ -24,124 +37,181 @@
             <strong>{{ $guest->name }}</strong>
         </div>
         <div class="metric">
-            <span class="small">Estado actual</span>
-            <strong>{{ $guest->status }}</strong>
+            <span class="small">
+                @if ($guest->public_link_responded_at)
+                    Respuesta registrada
+                @elseif ($isExpired)
+                    Vigencia agotada
+                @else
+                    {{ $mode === 'invitation' ? 'Tiempo disponible' : 'Tiempo para validar' }}
+                @endif
+            </span>
+            <strong>
+                @if ($isExpired)
+                    Link vencido
+                @elseif ($guest->public_link_responded_at instanceof \Illuminate\Support\Carbon)
+                    {{ $guest->public_link_responded_at->format('d/m/Y H:i') }}
+                @else
+                    {{ $daysRemaining }} día(s)
+                @endif
+            </strong>
         </div>
     </div>
 
-    @if ($guest->status === 'Rechazado')
-        <div class="card" style="margin-bottom: 22px; border-color:#f0c4d2; background:#fff3f7;">
-            <div class="kicker" style="color:#b44f74;">Confirmación final</div>
-            <h2>Esta familia indicó que no podrá asistir</h2>
-            <p>
-                Agradecemos mucho su atención y el tiempo de revisar la invitación.
-                El formulario quedó bloqueado para evitar cambios posteriores.
-            </p>
+    @if ($publicLink->opened_at && ! $publicLink->responded_at && ! $isExpired)
+        <div class="card" style="margin-bottom: 22px; background:#fcf7ff;">
+            <div class="small">
+                @if ($mode === 'invitation')
+                    Les quedan {{ $daysRemaining }} día(s) {{ $timeLabel }}.
+                @else
+                    Tienes {{ $daysRemaining }} día(s) para revisar o corregir la información registrada.
+                @endif
+            </div>
         </div>
     @endif
 
+    @if ($guest->status === 'Rechazado')
+        <div class="card" style="margin-bottom: 22px; border-color:#f0c4d2; background:#fff3f7;">
+            <h2>Gracias por avisarnos</h2>
+            <p>Hemos registrado que tu familia no podrá asistir a los XV de Zugeily.</p>
+            <div class="small">Si necesitas cambiar tu respuesta, comunícate con quien te compartió este enlace.</div>
+        </div>
+    @elseif ($isExpired)
+        <div class="card" style="margin-bottom: 22px; border-color:#ead4a2; background:#fff8e8;">
+            <h2>Este enlace ya venció</h2>
+            <p>Si todavía necesitan hacer algún cambio, por favor comuníquense con quien les compartió este enlace.</p>
+        </div>
+    @elseif ($publicLink->responded_at)
+        <div class="card" style="margin-bottom: 22px; border-color:#cde6d5; background:#f3fbf6;">
+            @if ($publicLink->response === 'confirmed')
+                <h2>¡Gracias por confirmar!</h2>
+                <p>Hemos registrado la asistencia de tu familia a los XV de Zugeily.</p>
+                <div class="small">Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.</div>
+            @elseif ($publicLink->response === 'validated')
+                <h2>¡Gracias por revisar la información!</h2>
+                <p>Hemos registrado la validación de los invitados de tu familia para los XV de Zugeily.</p>
+                <div class="small">Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.</div>
+            @elseif ($publicLink->response === 'declined')
+                <h2>Gracias por avisarnos</h2>
+                <p>Hemos registrado que tu familia no podrá asistir a los XV de Zugeily.</p>
+                <div class="small">Si necesitas cambiar tu respuesta, comunícate con quien te compartió este enlace.</div>
+            @endif
+        </div>
+    @endif
+
+    @if (! $isLocked)
     <div class="card">
         <div class="inline" style="justify-content: space-between; margin-bottom: 16px;">
             <div>
-                <div class="kicker">Formulario familiar</div>
-                <h2>Lista de invitados</h2>
+                <div class="kicker">{{ $sectionKicker }}</div>
+                <h2>{{ $modeTitle }}</h2>
             </div>
-            <div class="small">Pueden revisar su lista y corregir únicamente la información necesaria de sus invitados.</div>
+            <div class="small">Revisen su lista y corrijan únicamente la información necesaria.</div>
         </div>
 
-        @if ($guest->status !== 'Rechazado')
-            <form method="post" action="{{ $signedDeclineUrl }}"
+        @if (! $isLocked)
+            <form method="post" action="{{ $declineUrl }}"
                 style="margin-bottom: 16px;"
-                data-confirm-title="¿Seguro que no podrán asistir?"
-                data-confirm-text="Se cambiará el estatus de la familia a Rechazado y el formulario quedará bloqueado."
+                data-confirm-title="¿Confirmas que no podrán asistir?"
+                data-confirm-text="Al aceptar, registraremos que tu familia no asistirá y ya no será necesario llenar la información de invitados."
                 data-confirm-button="Sí, no podremos asistir"
                 data-confirm-color="#d8527f"
                 data-confirm-icon="warning">
                 @csrf
-                <button class="btn danger" type="submit">Una disculpa, no podremos asistir</button>
+                <button class="btn danger" type="submit">No podremos asistir</button>
             </form>
         @endif
 
-        <form method="post" action="{{ $signedUpdateUrl }}" id="public-guest-review-form">
+        <form method="post" action="{{ $updateUrl }}" id="public-guest-review-form">
             @csrf
             @method('put')
 
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Tipo</th>
-                            <th>Sexo</th>
-                            <th>Observaciones</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="public-guest-review-rows">
-                        @forelse ($rows as $index => $row)
-                            <tr data-review-row class="{{ old("rows.$index.delete") ? 'row-card-removed' : '' }}">
-                                <td class="row-fields">
+            <div style="display:grid; gap: 14px;">
+                @forelse ($rows as $index => $row)
+                    <div data-review-row class="card {{ old("rows.$index.delete") ? 'row-card-removed' : '' }}" style="padding:18px; border-radius:20px; background:#fcf9ff;">
+                        <div class="inline" style="justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <div>
+                                <strong style="display:block; color:#4a2f60;">Invitado {{ $index + 1 }}</strong>
+                                <span class="row-note">{{ $row['existing'] ? 'Información completa' : 'Falta completar información' }}</span>
+                            </div>
+                            @unless ($isLocked)
+                                <div>
                                     <input type="hidden" name="rows[{{ $index }}][id]" value="{{ old("rows.$index.id", $row['id']) }}">
                                     <input type="hidden" name="rows[{{ $index }}][delete]" value="{{ old("rows.$index.delete", 0) }}" data-delete-flag>
-                                    <input type="text" name="rows[{{ $index }}][name]" value="{{ old("rows.$index.name", $row['name']) }}" placeholder="Nombre del invitado" @disabled($guest->status === 'Rechazado')>
-                                    <div class="row-note">{{ $row['existing'] ? 'Registro actual' : 'Pendiente por registrar' }}</div>
-                                </td>
-                                <td class="row-fields">
-                                    <select name="rows[{{ $index }}][type]" @disabled($guest->status === 'Rechazado')>
-                                        @foreach ($types as $type)
-                                            <option value="{{ $type }}" @selected(old("rows.$index.type", $row['type']) === $type)>{{ $type }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="row-fields">
-                                    <select name="rows[{{ $index }}][sex]" @disabled($guest->status === 'Rechazado')>
-                                        <option value="">Sin definir</option>
-                                        @foreach ($sexes as $sex)
-                                            <option value="{{ $sex }}" @selected(old("rows.$index.sex", $row['sex']) === $sex)>{{ $sex }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="row-fields">
-                                    <textarea name="rows[{{ $index }}][notes]" placeholder="Opcional" @disabled($guest->status === 'Rechazado')>{{ old("rows.$index.notes", $row['notes']) }}</textarea>
-                                </td>
-                                <td>
-                                    @unless ($guest->status === 'Rechazado')
-                                        <button class="btn danger small" type="button" data-remove-row>
-                                            Eliminar
-                                        </button>
-                                        <div class="row-note" data-remove-note style="{{ old("rows.$index.delete") ? '' : 'display:none;' }}">
-                                            Se eliminará al guardar.
-                                        </div>
-                                    @endunless
-                                </td>
-                            </tr>
-                        @empty
-                            <tr data-empty-placeholder>
-                                <td colspan="5" class="small">No hay invitados registrados todavía. Puedes empezar a capturarlos aquí.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                    <button class="btn danger small" type="button" data-remove-row>Eliminar</button>
+                                    <div class="row-note" data-remove-note style="{{ old("rows.$index.delete") ? '' : 'display:none;' }}">Se eliminará al guardar.</div>
+                                </div>
+                            @else
+                                <input type="hidden" name="rows[{{ $index }}][id]" value="{{ old("rows.$index.id", $row['id']) }}">
+                                <input type="hidden" name="rows[{{ $index }}][delete]" value="{{ old("rows.$index.delete", 0) }}" data-delete-flag>
+                            @endunless
+                        </div>
+
+                        <div class="row-fields" style="display:grid; gap: 12px;">
+                            <div>
+                                <label>Nombre del invitado</label>
+                                <input type="text" name="rows[{{ $index }}][name]" value="{{ old("rows.$index.name", $row['name']) }}" placeholder="Nombre del invitado" @disabled($isLocked)>
+                            </div>
+                            <div>
+                                <label>Tipo de invitado</label>
+                                <select name="rows[{{ $index }}][type]" data-child-note-trigger @disabled($isLocked)>
+                                    @foreach ($types as $type)
+                                        <option value="{{ $type }}" @selected(old("rows.$index.type", $row['type']) === $type)>{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="row-note" data-child-note style="{{ old("rows.$index.type", $row['type']) === 'Niño' ? '' : 'display:none;' }}">
+                                    Niño será considerado hasta 9 años de edad.
+                                </div>
+                            </div>
+                            <div>
+                                <label>Género</label>
+                                <select name="rows[{{ $index }}][sex]" @disabled($isLocked)>
+                                    <option value="">Sin definir</option>
+                                    @foreach ($sexes as $sex)
+                                        <option value="{{ $sex }}" @selected(old("rows.$index.sex", $row['sex']) === $sex)>{{ $sex }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="card" style="padding:18px; border-radius:20px; background:#fcf9ff;">
+                        <div class="small">No hay invitados cargados para esta familia.</div>
+                    </div>
+                @endforelse
             </div>
 
-            @if ($guest->status !== 'Rechazado')
-                <div class="inline" style="margin-top: 18px; justify-content: space-between;">
-                    <div class="inline">
-                        <button class="btn" type="submit">Guardar cambios</button>
-                    </div>
+            @if (! $isLocked)
+                <div class="inline" style="margin-top: 18px; justify-content: flex-end;">
+                    <button class="btn" type="submit">{{ $mode === 'invitation' ? 'Guardar cambios y confirmar' : 'Guardar y validar información' }}</button>
                 </div>
             @endif
         </form>
     </div>
+    @endif
 
     <script>
         (() => {
-            const tbody = document.getElementById('public-guest-review-rows');
-            const form = document.getElementById('public-guest-review-form');
+            const tbody = document.getElementById('public-guest-review-form');
 
-            if (!tbody || !form) {
+            if (!tbody) {
                 return;
             }
+
+            document.querySelectorAll('[data-child-note-trigger]').forEach((select) => {
+                const note = select.closest('div')?.querySelector('[data-child-note]');
+
+                const toggle = () => {
+                    if (!note) {
+                        return;
+                    }
+
+                    note.style.display = select.value === 'Niño' ? '' : 'none';
+                };
+
+                toggle();
+                select.addEventListener('change', toggle);
+            });
 
             tbody.addEventListener('click', (event) => {
                 const button = event.target.closest('[data-remove-row]');

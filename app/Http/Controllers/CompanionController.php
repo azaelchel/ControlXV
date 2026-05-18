@@ -217,7 +217,7 @@ class CompanionController extends Controller
             ->with('status', 'Invitado actualizado correctamente.');
     }
 
-    public function destroy(Companion $companion): RedirectResponse
+    public function destroy(Request $request, Companion $companion): RedirectResponse
     {
         $guestName = $companion->invited_group;
         $companion->update(['active' => false]);
@@ -227,7 +227,7 @@ class CompanionController extends Controller
         }
 
         return redirect()
-            ->route('companions.index')
+            ->to($request->input('return_to', route('companions.index')))
             ->with('status', 'Invitado desactivado correctamente.');
     }
 
@@ -264,7 +264,7 @@ class CompanionController extends Controller
         $sheet->mergeCells('A2:E2');
         $sheet->setCellValue('A2', 'Listado exportado del módulo de invitados');
 
-        $headers = ['Familia o grupo', 'Nombre del invitado', 'Tipo', 'Sexo', 'Observaciones'];
+        $headers = ['Familia o grupo', 'Nombre del invitado', 'Tipo', 'Género', 'Observaciones'];
         foreach ($headers as $index => $header) {
             $column = chr(65 + $index);
             $sheet->setCellValue("{$column}4", $header);

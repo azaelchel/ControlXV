@@ -12,11 +12,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
 
-Route::middleware('signed:relative')->group(function () {
-    Route::get('/revision-invitados/{guest}', [PublicGuestReviewController::class, 'show'])->name('guest-review.show');
-    Route::put('/revision-invitados/{guest}', [PublicGuestReviewController::class, 'update'])->name('guest-review.update');
-    Route::post('/revision-invitados/{guest}/decline', [PublicGuestReviewController::class, 'decline'])->name('guest-review.decline');
-});
+Route::get('/revision-invitados/{guest}/{token}', [PublicGuestReviewController::class, 'show'])->name('guest-review.show');
+Route::put('/revision-invitados/{guest}/{token}', [PublicGuestReviewController::class, 'update'])->name('guest-review.update');
+Route::post('/revision-invitados/{guest}/{token}/decline', [PublicGuestReviewController::class, 'decline'])->name('guest-review.decline');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -25,6 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/guests/export', [GuestController::class, 'export'])->name('guests.export');
     Route::patch('/guests/{guest}/quick-update', [GuestController::class, 'quickUpdate'])->name('guests.quick-update');
     Route::patch('/guests/{guest}/status', [GuestController::class, 'updateStatus'])->name('guests.status');
+    Route::post('/guests/{guest}/public-link', [GuestController::class, 'generatePublicLink'])->name('guests.public-link');
     Route::resource('guests', GuestController::class)->except('show');
     Route::get('/companions', [CompanionController::class, 'index'])->name('companions.index');
     Route::get('/companions/create', [CompanionController::class, 'create'])->name('companions.create');

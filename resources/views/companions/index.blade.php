@@ -24,7 +24,7 @@
                 <button class="btn ghost" type="button" @click="showCompanionModal = false">Cerrar</button>
             </div>
 
-            <form method="post" action="{{ route('companions.store') }}">
+            <form method="post" action="{{ route('companions.store') }}" data-preserve-table="companions-table">
                 @csrf
                 <input type="hidden" name="return_to" value="{{ route('companions.index', request()->query()) }}#companions-table-section">
                 @include('companions._batch_fields')
@@ -47,7 +47,7 @@
                     <a class="btn ghost" href="{{ route('companions.index', request()->except('edit')) }}#companions-table-section">Cerrar</a>
                 </div>
 
-                <form method="post" action="{{ route('companions.update', $editingCompanion) }}">
+                <form method="post" action="{{ route('companions.update', $editingCompanion) }}" data-preserve-table="companions-table">
                     @csrf
                     @method('put')
                     <input type="hidden" name="return_to" value="{{ route('companions.index', request()->except('edit')) }}#companions-table-section">
@@ -179,7 +179,7 @@
                         <th>Familia o grupo</th>
                         <th>Nombre del invitado</th>
                         <th>Tipo</th>
-                        <th>Sexo</th>
+                        <th>Género</th>
                         <th>Observaciones</th>
                         <th></th>
                     </tr>
@@ -197,13 +197,13 @@
                             <td>{{ $companion->notes ?: '—' }}</td>
                             <td>
                                 <div class="inline">
-                                    <a class="btn secondary icon-btn" href="{{ route('companions.index', $rowEditQuery) }}#companions-table-section" title="Editar invitado" aria-label="Editar invitado">
+                                    <a class="btn secondary icon-btn" href="{{ route('companions.index', $rowEditQuery) }}#companions-table-section" data-preserve-table="companions-table" title="Editar invitado" aria-label="Editar invitado">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9"/>
                                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
                                         </svg>
                                     </a>
-                                    <form method="post" action="{{ route('companions.destroy', $companion) }}"
+                                    <form method="post" action="{{ route('companions.destroy', $companion) }}" data-preserve-table="companions-table"
                                         data-confirm-title="¿Desactivar este invitado?"
                                         data-confirm-text="El registro dejará de mostrarse en el listado actual."
                                         data-confirm-button="Sí, desactivar"
@@ -211,6 +211,7 @@
                                         data-confirm-icon="warning">
                                         @csrf
                                         @method('delete')
+                                        <input type="hidden" name="return_to" value="{{ route('companions.index', request()->query()) }}#companions-table-section">
                                         <button class="btn danger icon-btn" type="submit" title="Desactivar invitado" aria-label="Desactivar invitado">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M3 6h18"/>
@@ -271,7 +272,7 @@
                             <input type="text" value="${slot.type}" readonly style="background:#f7f2fb;color:#6a4f81;" />
                         </div>
                         <div>
-                            <label>Sexo</label>
+                            <label>Género</label>
                             <select name="entries[${index}][sex]">
                                 <option value="" ${sex === '' ? 'selected' : ''}>Sin definir</option>
                                 <option value="Hombre" ${sex === 'Hombre' ? 'selected' : ''}>Hombre</option>
@@ -282,6 +283,9 @@
                             <label style="opacity:0;">Más</label>
                             <button type="button" class="btn secondary small" data-toggle-notes>${notesVisible ? '−' : '+'}</button>
                         </div>
+                    </div>
+                    <div class="small" style="margin-top: 10px; color:#8a6aa8; display:${slot.type === 'Niño' ? 'block' : 'none'};" data-child-note>
+                        Niño será considerado hasta 9 años de edad.
                     </div>
                     <div data-notes-row style="margin-top: 12px; display:${notesVisible ? 'block' : 'none'};">
                         <label>Observaciones</label>

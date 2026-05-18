@@ -9,7 +9,7 @@
     <div class="toolbar">
         <div class="inline">
             <button class="btn secondary" type="button" @click="showGuestModal = true">Agregar familia o grupo</button>
-            <a class="btn" href="{{ route('guests.export', request()->query()) }}">Reporte de familias o grupos</a>
+            <a class="btn" href="{{ route('guests.export', request()->query()) }}" data-filter-export="#guest-filters-form" data-datatable-context="guests">Reporte de familias o grupos</a>
         </div>
     </div>
 
@@ -23,7 +23,7 @@
                 <button class="btn ghost" type="button" @click="showGuestModal = false">Cerrar</button>
             </div>
 
-            <form method="post" action="{{ route('guests.store') }}">
+            <form method="post" action="{{ route('guests.store') }}" data-preserve-table="guests-table">
                 @csrf
                 <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
                 @include('guests._fields', ['guest' => new \App\Models\Guest()])
@@ -46,7 +46,7 @@
                     <a class="btn ghost" href="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">Cerrar</a>
                 </div>
 
-                <form method="post" action="{{ route('guests.update', $editingGuest) }}">
+                <form method="post" action="{{ route('guests.update', $editingGuest) }}" data-preserve-table="guests-table">
                     @csrf
                     @method('put')
                     <input type="hidden" name="return_to" value="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">
@@ -59,6 +59,21 @@
             </div>
         </div>
     @endif
+
+    <div class="modal-overlay" id="guest-history-modal" style="display:none;" aria-hidden="true">
+        <div class="modal-panel" style="max-width: 760px;">
+            <div class="inline" style="justify-content: space-between; margin-bottom: 18px;">
+                <div>
+                    <div class="section-kicker">Histórico de links</div>
+                    <h3 class="section-title" id="guest-history-title"></h3>
+                </div>
+                <button class="btn ghost" type="button" data-history-close>Cerrar</button>
+            </div>
+
+            <div style="display:grid; gap: 12px;" id="guest-history-items">
+            </div>
+        </div>
+    </div>
 
     <div class="grid cols-4" style="margin-bottom: 18px;">
         <div class="card metric">
@@ -127,16 +142,16 @@
                 tabindex="0"
                 aria-pressed="false">
                 <div class="label">{{ $category }}</div>
-                <div class="value" data-category-key="{{ $category }}">{{ number_format($totals['total']) }}</div>
-                <div class="small" style="margin-top: 6px;">Invitados</div>
+                <div class="value" data-category-net-key="{{ $category }}">{{ number_format($totals['without_rejected']) }}</div>
+                <div class="small" style="margin-top: 6px;">Sin rechazados</div>
                 <div class="metric-subvalue">
-                    <strong data-category-percent-key="{{ $category }}">{{ $summary['total_people'] > 0 ? number_format(($totals['total'] / $summary['total_people']) * 100, 1) : '0.0' }}%</strong>
+                    <strong data-category-net-percent-key="{{ $category }}">{{ $summary['total_people'] > 0 ? number_format(($totals['without_rejected'] / $summary['total_people']) * 100, 1) : '0.0' }}%</strong>
                     <span>del total</span>
                 </div>
                 <div class="metric-net">
-                    <span>Sin rechazados</span>
-                    <strong data-category-net-key="{{ $category }}">{{ number_format($totals['without_rejected']) }}</strong>
-                    <em data-category-net-percent-key="{{ $category }}">{{ $summary['total_people'] > 0 ? number_format(($totals['without_rejected'] / $summary['total_people']) * 100, 1) : '0.0' }}%</em>
+                    <span style="font-size: 11px;">Total general</span>
+                    <strong data-category-key="{{ $category }}">{{ number_format($totals['total']) }}</strong>
+                    <em data-category-percent-key="{{ $category }}">{{ $summary['total_people'] > 0 ? number_format(($totals['total'] / $summary['total_people']) * 100, 1) : '0.0' }}%</em>
                 </div>
                 <div style="margin-top: 10px;">
                     <span class="pill {{ $categoryClass }}">{{ $category }}</span>
@@ -146,7 +161,7 @@
     </div>
 
     <div class="card" style="margin-bottom: 18px;">
-        <form method="get" class="form-grid">
+        <form method="get" class="form-grid" id="guest-filters-form">
             <div>
                 <label for="search">Buscar</label>
                 <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nombre, telefono o padrino">
@@ -227,6 +242,25 @@
                             };
                             $rowEditQuery = array_merge(request()->query(), ['edit' => $guest->id]);
                             $quickFormId = 'quick-update-'.$guest->id;
+                            $currentLink = $guest->publicLinks->firstWhere('is_current', true) ?? $guest->publicLinks->first();
+                            $historyItems = $guest->publicLinks->map(fn ($link) => [
+                                'mode' => $link->modeLabel(),
+                                'status' => $link->statusLabel(),
+                                'generated_at' => $link->generated_at?->format('d/m/Y H:i'),
+                                'expires_at' => $link->expires_at?->format('d/m/Y H:i'),
+                                'opened_at' => $link->opened_at?->format('d/m/Y H:i'),
+                                'responded_at' => $link->responded_at?->format('d/m/Y H:i'),
+                            ])->values()->all();
+
+                            if (! $currentLink) {
+                                $linkStatusShort = 'Sin link';
+                            } elseif ($currentLink->responded_at) {
+                                $linkStatusShort = 'Contestó';
+                            } elseif ($currentLink->isExpired()) {
+                                $linkStatusShort = 'No contestó';
+                            } else {
+                                $linkStatusShort = 'Pendiente';
+                            }
                         @endphp
                         <tr data-status-current="{{ $guest->status }}" data-category-current="{{ $guest->category }}">
                             <td>{{ $guest->group_name }}</td>
@@ -268,9 +302,54 @@
                             <td>{{ $guest->total_people }}</td>
                             <td>{{ $guest->sponsor ?: '—' }}</td>
                             <td>
-                                <div class="small">2m: {{ $guest->whatsapp_2_months ?: '—' }}</div>
-                                <div class="small">1m: {{ $guest->whatsapp_1_month ?: '—' }}</div>
-                                <div class="small">15d: {{ $guest->whatsapp_15_days ?: '—' }}</div>
+                                <div class="small" style="margin-bottom: 8px;">
+                                    <strong>{{ $linkStatusShort }}</strong>
+                                    @if ($currentLink && ! $currentLink->responded_at && ! $currentLink->isExpired())
+                                        <br>Vigente {{ $currentLink->daysRemaining() }} día(s)
+                                    @elseif ($currentLink && $currentLink->isExpired())
+                                        <br>Venció sin respuesta
+                                    @elseif ($currentLink && $currentLink->responded_at)
+                                        <br>{{ $currentLink->responded_at->format('d/m/Y H:i') }}
+                                    @endif
+                                </div>
+                                <div class="inline" style="margin-bottom: 8px;">
+                                    @if ($guest->canGeneratePublicLink())
+                                        <form method="post" action="{{ route('guests.public-link', $guest) }}" data-preserve-table="guests-table">
+                                            @csrf
+                                            <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
+                                            <button class="btn success icon-btn" type="submit" title="{{ $currentLink && $currentLink->is_current && ! $currentLink->responded_at && ! $currentLink->isExpired() ? 'Regenerar link público' : 'Generar link público' }}" aria-label="{{ $currentLink && $currentLink->is_current && ! $currentLink->responded_at && ! $currentLink->isExpired() ? 'Regenerar link público' : 'Generar link público' }}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M15 3h6v6"/>
+                                                    <path d="M10 14 21 3"/>
+                                                    <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if ($currentLink)
+                                        <a class="btn secondary icon-btn" href="{{ route('guest-review.show', ['guest' => $guest, 'token' => $currentLink->token], absolute: true) }}" target="_blank" rel="noopener" title="Abrir link actual" aria-label="Abrir link actual">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14 3h7v7"/>
+                                                <path d="M10 14 21 3"/>
+                                                <path d="M5 5v14h14"/>
+                                            </svg>
+                                        </a>
+                                        <button class="btn secondary icon-btn" type="button" data-copy-text="{{ route('guest-review.show', ['guest' => $guest, 'token' => $currentLink->token], absolute: true) }}" title="Copiar link actual" aria-label="Copiar link actual">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    @endif
+                                    <button
+                                        class="btn secondary small"
+                                        type="button"
+                                        data-history-open
+                                        data-history-title="{{ $guest->display_name }}"
+                                        data-history-items='@json($historyItems)'>
+                                        Histórico
+                                    </button>
+                                </div>
                             </td>
                             <td>
                                 <form id="{{ $quickFormId }}" method="post" action="{{ route('guests.quick-update', $guest) }}" data-ajax-submit data-autosave-form>
@@ -278,20 +357,13 @@
                                     @method('patch')
                                 </form>
                                 <div class="inline">
-                                    <a class="btn success icon-btn" href="{{ \Illuminate\Support\Facades\URL::signedRoute('guest-review.show', ['guest' => $guest], absolute: false) }}" target="_blank" rel="noopener" title="Abrir enlace público de revisión" aria-label="Abrir enlace público de revisión">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M15 3h6v6"/>
-                                            <path d="M10 14 21 3"/>
-                                            <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
-                                        </svg>
-                                    </a>
-                                    <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}#guests-table-section" title="Editar familia o grupo" aria-label="Editar familia o grupo">
+                                    <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}#guests-table-section" data-preserve-table="guests-table" title="Editar familia o grupo" aria-label="Editar familia o grupo">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9"/>
                                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
                                         </svg>
                                     </a>
-                                    <form method="post" action="{{ route('guests.destroy', $guest) }}"
+                                    <form method="post" action="{{ route('guests.destroy', $guest) }}" data-preserve-table="guests-table"
                                         data-confirm-title="¿Desactivar esta familia o grupo?"
                                         data-confirm-text="También se desactivarán sus invitados relacionados, si existen."
                                         data-confirm-button="Sí, desactivar"
@@ -299,6 +371,7 @@
                                         data-confirm-icon="warning">
                                         @csrf
                                         @method('delete')
+                                        <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
                                         <button class="btn danger icon-btn" type="submit" title="Desactivar familia o grupo" aria-label="Desactivar familia o grupo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M3 6h18"/>
@@ -322,4 +395,79 @@
         </div>
     </div>
     </div>
+
+    <script>
+        (() => {
+            const modal = document.getElementById('guest-history-modal');
+            const title = document.getElementById('guest-history-title');
+            const items = document.getElementById('guest-history-items');
+
+            if (!modal || !title || !items) {
+                return;
+            }
+
+            const closeModal = () => {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+                items.innerHTML = '';
+            };
+
+            const openModal = (historyTitle, historyItems) => {
+                title.textContent = historyTitle || 'Histórico';
+
+                if (!Array.isArray(historyItems) || historyItems.length === 0) {
+                    items.innerHTML = `
+                        <div class="card" style="padding:18px;">
+                            <div class="small">Todavía no hay historial para esta familia o grupo.</div>
+                        </div>
+                    `;
+                } else {
+                    items.innerHTML = historyItems.map((item) => `
+                        <div class="card" style="padding:18px;">
+                            <div class="inline" style="justify-content: space-between; margin-bottom: 8px;">
+                                <strong>${item.mode ?? ''}</strong>
+                                <span class="small">${item.generated_at ?? ''}</span>
+                            </div>
+                            <div class="small" style="line-height:1.6;">
+                                <div><strong>Estado:</strong> ${item.status ?? ''}</div>
+                                <div><strong>Vigencia:</strong> ${item.expires_at ?? ''}</div>
+                                ${item.opened_at ? `<div><strong>Abierto:</strong> ${item.opened_at}</div>` : ''}
+                                ${item.responded_at ? `<div><strong>Respondió:</strong> ${item.responded_at}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                modal.style.display = 'flex';
+                modal.setAttribute('aria-hidden', 'false');
+            };
+
+            document.addEventListener('click', (event) => {
+                const openButton = event.target.closest('[data-history-open]');
+
+                if (openButton) {
+                    let parsedItems = [];
+
+                    try {
+                        parsedItems = JSON.parse(openButton.dataset.historyItems || '[]');
+                    } catch (error) {
+                        parsedItems = [];
+                    }
+
+                    openModal(openButton.dataset.historyTitle || 'Histórico', parsedItems);
+                    return;
+                }
+
+                if (event.target.closest('[data-history-close]') || event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && modal.style.display !== 'none') {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
 @endsection

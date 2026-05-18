@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGuestRequest;
 use App\Models\Guest;
+use App\Models\PublicGuestLink;
 use App\Support\CatalogOptions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -24,7 +26,10 @@ class GuestController extends Controller
         $editId = $request->integer('edit');
         $this->applyFilters($query, $request);
 
-        $guests = $query->limit(500)->get();
+        $guests = $query
+            ->with(['publicLinks' => fn ($links) => $links->latest('generated_at')])
+            ->limit(500)
+            ->get();
 
         $summary = [
             'records' => Guest::count(),
@@ -129,6 +134,57 @@ class GuestController extends Controller
             ->with('status', "Estatus de la familia o grupo actualizado a {$validated['status']}.");
     }
 
+    public function generatePublicLink(Request $request, Guest $guest): RedirectResponse
+    {
+        if (! $guest->canGeneratePublicLink()) {
+            return redirect()
+                ->to($request->input('return_to', route('guests.index')))
+                ->with('status', 'Solo puedes generar links para familias con estatus Invitacion Enviada o Confirmado.');
+        }
+
+        $publicLink = \DB::transaction(function () use ($guest) {
+            PublicGuestLink::query()
+                ->where('guest_id', $guest->id)
+                ->where('is_current', true)
+                ->get()
+                ->each(function (PublicGuestLink $link) {
+                    $link->update([
+                        'is_current' => false,
+                        'closed_reason' => $link->responded_at
+                            ? ($link->closed_reason ?: 'responded')
+                            : ($link->isExpired() ? 'expired' : 'replaced'),
+                    ]);
+                });
+
+            $link = PublicGuestLink::create([
+                'guest_id' => $guest->id,
+                'token' => Str::random(48),
+                'mode' => $guest->status === 'Invitacion Enviada' ? 'invitation' : 'validation',
+                'generated_at' => now(),
+                'expires_at' => now()->addDays(7),
+                'is_current' => true,
+            ]);
+
+            $guest->update([
+                'public_link_token' => $link->token,
+                'public_link_mode' => $link->mode,
+                'public_link_response' => null,
+                'public_link_generated_at' => $link->generated_at,
+                'public_link_expires_at' => $link->expires_at,
+                'public_link_opened_at' => null,
+                'public_link_responded_at' => null,
+            ]);
+
+            return $link;
+        });
+
+        return redirect()
+            ->to($request->input('return_to', route('guests.index')))
+            ->with('status', 'Link generado correctamente. La vigencia es de 7 días.')
+            ->with('generated_link_url', route('guest-review.show', ['guest' => $guest, 'token' => $publicLink->token], absolute: true))
+            ->with('generated_link_guest_id', $guest->id);
+    }
+
     public function quickUpdate(Request $request, Guest $guest): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
@@ -164,7 +220,7 @@ class GuestController extends Controller
             ->with('status', 'Familia o grupo actualizada desde el listado.');
     }
 
-    public function destroy(Guest $guest): RedirectResponse
+    public function destroy(Request $request, Guest $guest): RedirectResponse
     {
         \App\Models\Companion::query()
             ->where('invited_group', $guest->name)
@@ -172,7 +228,7 @@ class GuestController extends Controller
         $guest->update(['active' => false]);
 
         return redirect()
-            ->route('guests.index')
+            ->to($request->input('return_to', route('guests.index')))
             ->with('status', 'Familia o grupo desactivada correctamente.');
     }
 
