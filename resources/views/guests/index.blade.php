@@ -254,6 +254,8 @@
 
                             if (! $currentLink) {
                                 $linkStatusShort = 'Sin link';
+                            } elseif ($currentLink->closed_reason === 'cancelled') {
+                                $linkStatusShort = 'Cancelado';
                             } elseif ($currentLink->responded_at) {
                                 $linkStatusShort = 'Contestó';
                             } elseif ($currentLink->isExpired()) {
@@ -304,7 +306,9 @@
                             <td>
                                 <div class="small" style="margin-bottom: 8px;">
                                     <strong>{{ $linkStatusShort }}</strong>
-                                    @if ($currentLink && ! $currentLink->responded_at && ! $currentLink->isExpired())
+                                    @if ($currentLink && $currentLink->closed_reason === 'cancelled')
+                                        <br>Cancelado manualmente
+                                    @elseif ($currentLink && ! $currentLink->responded_at && ! $currentLink->isExpired())
                                         <br>Vigente {{ $currentLink->daysRemaining() }} día(s)
                                     @elseif ($currentLink && $currentLink->isExpired())
                                         <br>Venció sin respuesta
@@ -340,6 +344,23 @@
                                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                             </svg>
                                         </button>
+                                        @if ($currentLink->is_current && ! $currentLink->responded_at && ! $currentLink->isExpired())
+                                            <form method="post" action="{{ route('guests.public-link.cancel', $guest) }}" data-preserve-table="guests-table"
+                                                data-confirm-title="¿Cancelar este link?"
+                                                data-confirm-text="Para el invitado se verá como vencido y ya no podrá capturar ni guardar cambios."
+                                                data-confirm-button="Sí, cancelar link"
+                                                data-confirm-color="#d8527f"
+                                                data-confirm-icon="warning">
+                                                @csrf
+                                                <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
+                                                <button class="btn danger icon-btn" type="submit" title="Cancelar link actual" aria-label="Cancelar link actual">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M18 6 6 18"/>
+                                                        <path d="m6 6 12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
                                     <button
                                         class="btn secondary small"

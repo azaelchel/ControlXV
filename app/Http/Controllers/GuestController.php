@@ -185,6 +185,41 @@ class GuestController extends Controller
             ->with('generated_link_guest_id', $guest->id);
     }
 
+    public function cancelPublicLink(Request $request, Guest $guest): RedirectResponse
+    {
+        $currentLink = $guest->publicLinks()
+            ->where('is_current', true)
+            ->first();
+
+        if (! $currentLink || $currentLink->responded_at !== null || $currentLink->isExpired()) {
+            return redirect()
+                ->to($request->input('return_to', route('guests.index')))
+                ->with('status', 'No había un link vigente para cancelar.');
+        }
+
+        \DB::transaction(function () use ($guest, $currentLink) {
+            $currentLink->update([
+                'is_current' => false,
+                'expires_at' => now(),
+                'closed_reason' => 'cancelled',
+            ]);
+
+            $guest->update([
+                'public_link_token' => $currentLink->token,
+                'public_link_mode' => $currentLink->mode,
+                'public_link_response' => null,
+                'public_link_generated_at' => $currentLink->generated_at,
+                'public_link_expires_at' => now(),
+                'public_link_opened_at' => $currentLink->opened_at,
+                'public_link_responded_at' => null,
+            ]);
+        });
+
+        return redirect()
+            ->to($request->input('return_to', route('guests.index')))
+            ->with('status', 'Link cancelado correctamente.');
+    }
+
     public function quickUpdate(Request $request, Guest $guest): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([

@@ -46,6 +46,7 @@ class PublicGuestLink extends Model
         return $this->responded_at !== null
             || $this->isExpired()
             || $this->closed_reason === 'replaced'
+            || $this->closed_reason === 'cancelled'
             || $this->guest?->status === 'Rechazado';
     }
 
@@ -83,6 +84,10 @@ class PublicGuestLink extends Model
 
         if ($this->closed_reason === 'replaced') {
             return 'Fue reemplazado por un link más reciente';
+        }
+
+        if ($this->closed_reason === 'cancelled') {
+            return 'Fue cancelado manualmente';
         }
 
         if ($this->isExpired()) {

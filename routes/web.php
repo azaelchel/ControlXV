@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/guests/{guest}/quick-update', [GuestController::class, 'quickUpdate'])->name('guests.quick-update');
     Route::patch('/guests/{guest}/status', [GuestController::class, 'updateStatus'])->name('guests.status');
     Route::post('/guests/{guest}/public-link', [GuestController::class, 'generatePublicLink'])->name('guests.public-link');
+    Route::post('/guests/{guest}/public-link/cancel', [GuestController::class, 'cancelPublicLink'])->name('guests.public-link.cancel');
     Route::resource('guests', GuestController::class)->except('show');
     Route::get('/companions', [CompanionController::class, 'index'])->name('companions.index');
     Route::get('/companions/create', [CompanionController::class, 'create'])->name('companions.create');
