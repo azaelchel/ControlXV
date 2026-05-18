@@ -562,8 +562,6 @@
                             <strong>{{ Auth::user()->name }}</strong><br>
                             {{ Auth::user()->email }}
                         </div>
-                        <a class="btn secondary" href="{{ route('guests.index') }}">Familias o grupos</a>
-                        <a class="btn secondary" href="{{ route('users.index') }}">Usuarios</a>
                         <a class="btn secondary" href="{{ route('profile.edit') }}">Perfil</a>
                         <form method="POST" action="{{ route('logout', absolute: false) }}">
                             @csrf
@@ -579,13 +577,27 @@
 
             @auth
                 <nav class="nav-tabs">
-                    <a class="nav-tab {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Resumen</a>
-                    <a class="nav-tab {{ request()->routeIs('guests.*') ? 'active' : '' }}" href="{{ route('guests.index') }}">Familias o grupos</a>
-                    <a class="nav-tab {{ request()->routeIs('companions.*') ? 'active' : '' }}" href="{{ route('companions.index') }}">Invitados</a>
-                    <a class="nav-tab {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">Mesas confirmadas</a>
-                    <a class="nav-tab {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">Catálogos</a>
-                    <a class="nav-tab {{ request()->routeIs('system-transfer.*') ? 'active' : '' }}" href="{{ route('system-transfer.edit') }}">Respaldo</a>
-                    <a class="nav-tab {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Usuarios</a>
+                    @if (Auth::user()->canAccessModule('dashboard'))
+                        <a class="nav-tab {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Resumen</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('guests'))
+                        <a class="nav-tab {{ request()->routeIs('guests.*') ? 'active' : '' }}" href="{{ route('guests.index') }}">Familias o grupos</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('companions'))
+                        <a class="nav-tab {{ request()->routeIs('companions.*') ? 'active' : '' }}" href="{{ route('companions.index') }}">Invitados</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('tables'))
+                        <a class="nav-tab {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">Mesas confirmadas</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('catalogs'))
+                        <a class="nav-tab {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">Catálogos</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('system_transfer'))
+                        <a class="nav-tab {{ request()->routeIs('system-transfer.*') ? 'active' : '' }}" href="{{ route('system-transfer.edit') }}">Respaldo</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('users'))
+                        <a class="nav-tab {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Usuarios</a>
+                    @endif
                 </nav>
             @endauth
 

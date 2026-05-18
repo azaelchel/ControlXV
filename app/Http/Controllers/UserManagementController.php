@@ -27,6 +27,8 @@ class UserManagementController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'active' => ['nullable', 'boolean'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['nullable', 'boolean'],
         ]);
 
         User::create([
@@ -34,6 +36,7 @@ class UserManagementController extends Controller
             'email' => trim($validated['email']),
             'password' => $validated['password'],
             'active' => (bool) ($validated['active'] ?? true),
+            'permissions' => $this->normalizePermissions($request),
         ]);
 
         return redirect()
@@ -48,6 +51,8 @@ class UserManagementController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
             'active' => ['nullable', 'boolean'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['nullable', 'boolean'],
         ]);
 
         if ((int) $request->user()->id === (int) $user->id && ! $request->boolean('active', true)) {
@@ -60,6 +65,7 @@ class UserManagementController extends Controller
             'name' => trim($validated['name']),
             'email' => trim($validated['email']),
             'active' => $request->boolean('active', false),
+            'permissions' => $this->normalizePermissions($request),
         ];
 
         if (! empty($validated['password'])) {
@@ -86,5 +92,14 @@ class UserManagementController extends Controller
         return redirect()
             ->to($request->input('return_to', route('users.index')))
             ->with('status', $user->active ? 'Usuario activado correctamente.' : 'Usuario desactivado correctamente.');
+    }
+
+    private function normalizePermissions(Request $request): array
+    {
+        $submitted = $request->input('permissions', []);
+
+        return collect(User::defaultPermissions())
+            ->mapWithKeys(fn (bool $_default, string $key) => [$key => (bool) ($submitted[$key] ?? false)])
+            ->all();
     }
 }

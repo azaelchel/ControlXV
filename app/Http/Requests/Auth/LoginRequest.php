@@ -28,7 +28,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'login' => ['required', 'string'],
+            'login' => ['nullable', 'string', 'required_without:email'],
+            'email' => ['nullable', 'string', 'required_without:login'],
             'password' => ['required', 'string'],
         ];
     }
@@ -42,7 +43,7 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $login = trim((string) $this->input('login'));
+        $login = trim((string) ($this->input('login') ?? $this->input('email') ?? ''));
         $credentials = ['password' => (string) $this->input('password'), 'active' => true];
         $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
         $credentials[$field] = $login;
@@ -86,6 +87,8 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('login')).'|'.$this->ip());
+        $identifier = (string) ($this->input('login') ?? $this->input('email') ?? '');
+
+        return Str::transliterate(Str::lower($identifier).'|'.$this->ip());
     }
 }
