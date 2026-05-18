@@ -563,6 +563,7 @@
                             {{ Auth::user()->email }}
                         </div>
                         <a class="btn secondary" href="{{ route('guests.index') }}">Familias o grupos</a>
+                        <a class="btn secondary" href="{{ route('users.index') }}">Usuarios</a>
                         <a class="btn secondary" href="{{ route('profile.edit') }}">Perfil</a>
                         <form method="POST" action="{{ route('logout', absolute: false) }}">
                             @csrf
@@ -584,6 +585,7 @@
                     <a class="nav-tab {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">Mesas confirmadas</a>
                     <a class="nav-tab {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">Catálogos</a>
                     <a class="nav-tab {{ request()->routeIs('system-transfer.*') ? 'active' : '' }}" href="{{ route('system-transfer.edit') }}">Respaldo</a>
+                    <a class="nav-tab {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Usuarios</a>
                 </nav>
             @endauth
 

@@ -1,13 +1,10 @@
 <x-guest-layout>
     <div style="margin-bottom: 20px;">
-        <div style="font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #9b6bc8; font-weight: 700; margin-bottom: 8px;">
-            Acceso de prueba
-        </div>
         <h2 style="margin: 0; font-size: 30px; line-height: 1.1; font-weight: 800; color: #4c2d63;">
             Inicia sesión
         </h2>
         <p style="margin: 10px 0 0; color: #786582; line-height: 1.65;">
-            Entra al panel de familias e invitados para capturar, editar y revisar confirmaciones.
+            Entra al panel para revisar confirmaciones y administrar la información del evento.
         </p>
     </div>
 
@@ -27,7 +24,7 @@
                 required
                 autofocus
                 autocomplete="username"
-                placeholder="Ejemplo: azael"
+                placeholder="Tu usuario o correo"
             />
             <x-input-error :messages="$errors->get('login')" class="mt-2" />
         </div>
@@ -42,7 +39,7 @@
                 name="password"
                 required
                 autocomplete="current-password"
-                placeholder="Tu contraseña"
+                placeholder="Ingresa tu contraseña"
             />
 
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
@@ -53,12 +50,6 @@
                 <input id="remember_me" type="checkbox" class="rounded border-purple-300 text-purple-600 shadow-sm focus:ring-purple-400" name="remember">
                 <span class="ms-2 text-sm text-gray-600">{{ __('Mantener sesión') }}</span>
             </label>
-        </div>
-
-        <div style="margin-top: 22px; padding: 14px 16px; border-radius: 16px; background: #f7effc; color: #7b56a0; font-size: 13px; line-height: 1.6;">
-            <strong>Acceso temporal para pruebas:</strong><br>
-            Usuario: <strong>azael</strong><br>
-            Contraseña: <strong>123</strong>
         </div>
 
         <div class="flex items-center justify-end mt-6">

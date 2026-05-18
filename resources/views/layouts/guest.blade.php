@@ -285,15 +285,8 @@
                     <div class="xv-kicker">Panel de organización</div>
                     <h1 class="xv-title">Control de Familias e Invitados para XV</h1>
                     <p class="xv-copy">
-                        Un acceso limpio para revisar familias o grupos, invitados, confirmaciones, seguimientos y conteos
-                        desde cualquier lugar, sin depender del Excel.
+                        Accede al panel para revisar confirmaciones, invitados y la información general del evento.
                     </p>
-
-                    <div class="xv-points">
-                        <div class="xv-point"><span>1</span>Consulta rápida de familias o grupos, estatus y totales.</div>
-                        <div class="xv-point"><span>2</span>Edición cómoda para ajustes diarios y seguimiento.</div>
-                        <div class="xv-point"><span>3</span>Base lista para subirse después a Railway.</div>
-                    </div>
                 </div>
             </section>
 

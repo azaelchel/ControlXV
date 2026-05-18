@@ -8,6 +8,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\PublicGuestReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemTransferController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -40,6 +41,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/catalogs/{catalog}', [CatalogController::class, 'destroy'])->name('catalogs.destroy');
     Route::get('/system-transfer', [SystemTransferController::class, 'edit'])->name('system-transfer.edit');
     Route::post('/system-transfer/import', [SystemTransferController::class, 'import'])->name('system-transfer.import');
+    Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+    Route::patch('/users/{user}/toggle', [UserManagementController::class, 'toggle'])->name('users.toggle');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
