@@ -4,7 +4,26 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>@yield('title', 'Revisión de invitados | XV de Zugeily')</title>
+        @php
+            $metaTitle = trim($__env->yieldContent('meta_title', $__env->yieldContent('title', 'Revisión de asistencia | XV de Zugeily')));
+            $metaDescription = trim($__env->yieldContent('meta_description', 'Confirma o valida la asistencia de tu familia a los XV de Zugeily. Revisa que la información de las personas que asistirán sea correcta.'));
+            $metaImage = trim($__env->yieldContent('meta_image', asset('images/og/xv-zugeily-revision.png')));
+            $metaUrl = url()->current();
+        @endphp
+        <title>{{ $metaTitle }}</title>
+        <meta name="description" content="{{ $metaDescription }}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="XV de Zugeily">
+        <meta property="og:title" content="{{ $metaTitle }}">
+        <meta property="og:description" content="{{ $metaDescription }}">
+        <meta property="og:url" content="{{ $metaUrl }}">
+        <meta property="og:image" content="{{ $metaImage }}">
+        <meta property="og:image:width" content="1731">
+        <meta property="og:image:height" content="909">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $metaTitle }}">
+        <meta name="twitter:description" content="{{ $metaDescription }}">
+        <meta name="twitter:image" content="{{ $metaImage }}">
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])

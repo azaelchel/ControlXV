@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
-@section('title', 'Revisión de invitados | XV de Zugeily')
+@section('title', 'Revisión de asistencia | XV de Zugeily')
+@section('meta_title', 'XV Zugeily | Revisión de asistencia')
+@section('meta_description', 'Confirma o valida la asistencia de tu familia a los XV de Zugeily. Revisa la información de las personas que asistirán contigo.')
 
 @php
     $modeTitle = 'Personas que asistirán';
