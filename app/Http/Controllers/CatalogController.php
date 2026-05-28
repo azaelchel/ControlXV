@@ -7,6 +7,7 @@ use App\Support\CatalogOptions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CatalogController extends Controller
 {
@@ -63,9 +64,25 @@ class CatalogController extends Controller
             'value' => ['required', 'string', 'max:120'],
         ]);
 
-        $catalog->update([
-            'value' => trim($data['value']),
-        ]);
+        $oldValue = $catalog->value;
+        $newValue = trim($data['value']);
+
+        $catalog->update(['value' => $newValue]);
+
+        $cascades = [
+            'statuses'         => [['table' => 'guests',     'column' => 'status']],
+            'categories'       => [['table' => 'guests',     'column' => 'category']],
+            'guest_groups'     => [['table' => 'guests',     'column' => 'group_name']],
+            'prefixes'         => [['table' => 'guests',     'column' => 'prefix']],
+            'sponsors'         => [['table' => 'guests',     'column' => 'sponsor']],
+            'companion_groups' => [['table' => 'companions', 'column' => 'invited_group']],
+        ];
+
+        foreach ($cascades[$catalog->type] ?? [] as $target) {
+            DB::table($target['table'])
+                ->where($target['column'], $oldValue)
+                ->update([$target['column'] => $newValue]);
+        }
 
         return redirect()
             ->route('catalogs.index', ['type' => $catalog->type])
