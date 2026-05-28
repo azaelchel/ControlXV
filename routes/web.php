@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('module:system_transfer')->group(function () {
         Route::get('/system-transfer', [SystemTransferController::class, 'edit'])->name('system-transfer.edit');
         Route::post('/system-transfer/import', [SystemTransferController::class, 'import'])->name('system-transfer.import');
+        Route::get('/system-transfer/contacts-csv', [SystemTransferController::class, 'exportContactsCsv'])->name('system-transfer.contacts-csv');
     });
 
     Route::middleware('module:users')->group(function () {

@@ -14,6 +14,21 @@
         </p>
     </div>
 
+    <div class="card" style="margin-bottom: 18px;">
+        <div class="section-kicker">Contactos para WhatsApp</div>
+        <h3 class="section-title">Exportar contactos a Google</h3>
+        <p class="small" style="margin-top: 10px; line-height: 1.7;">
+            Descarga un CSV listo para importar en Google Contacts. Incluye solo familias activas con teléfono registrado,
+            excluyendo las que ya declinaron. Se agrupan bajo la etiqueta <strong>XV Zugeily</strong>.
+        </p>
+        <div class="inline" style="margin-top: 16px; align-items: center; gap: 16px;">
+            <a href="{{ route('system-transfer.contacts-csv') }}" class="btn">
+                Descargar contactos ({{ $contactCount }})
+            </a>
+            <span class="small">Formato compatible con Google Contacts</span>
+        </div>
+    </div>
+
     <div class="card">
         <form method="post" action="{{ route('system-transfer.import', absolute: false) }}" enctype="multipart/form-data" class="form-grid">
             @csrf
