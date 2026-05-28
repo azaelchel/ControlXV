@@ -35,7 +35,7 @@ class SystemTransferController extends Controller
         fputcsv($output, ['Name', 'Phone 1 - Type', 'Phone 1 - Value', 'Group Membership']);
 
         foreach ($guests as $guest) {
-            fputcsv($output, ['XV - '.$guest->name, 'Mobile', $guest->phone, 'XV Zugeily']);
+            fputcsv($output, [$guest->name, 'Mobile', $guest->phone, 'XV Zugeily']);
         }
 
         rewind($output);
