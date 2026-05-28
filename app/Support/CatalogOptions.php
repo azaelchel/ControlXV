@@ -20,8 +20,6 @@ class CatalogOptions
 
     public static function all(): array
     {
-        self::syncDefaults();
-
         return [
             'groups' => self::values('guest_groups'),
             'prefixes' => self::values('prefixes'),

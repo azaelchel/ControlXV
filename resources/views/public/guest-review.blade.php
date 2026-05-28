@@ -26,8 +26,8 @@
         <div class="brand">
             <div class="badge">XV</div>
             <div>
-                <div class="kicker">{{ $heroKicker }}</div>
-                <h1>{{ $heroTitle }}</h1>
+                <div class="kicker">Revisión y confirmación</div>
+                <h1>XV Zugeily</h1>
                 <p>{{ $modeMessage }}</p>
             </div>
         </div>
@@ -35,7 +35,7 @@
 
     <div class="grid cols-2" style="margin-bottom: 22px;">
         <div class="metric">
-            <span class="small">Familia o grupo</span>
+            <span class="small">Invitación para</span>
             <strong>{{ $guest->name }}</strong>
         </div>
         <div class="metric">
@@ -108,7 +108,7 @@
                 <div class="kicker">{{ $sectionKicker }}</div>
                 <h2>{{ $modeTitle }}</h2>
             </div>
-            <div class="small">Revisen su lista y corrijan únicamente la información necesaria.</div>
+            <div class="small">Confirma que los datos estén correctos o actualiza la información necesaria.</div>
         </div>
 
         @if (! $isLocked)
@@ -155,7 +155,7 @@
                                 <input type="text" name="rows[{{ $index }}][name]" value="{{ old("rows.$index.name", $row['name']) }}" placeholder="Nombre del invitado" @disabled($isLocked)>
                             </div>
                             <div>
-                                <label>Tipo de invitado</label>
+                                <label>Categoría</label>
                                 <select name="rows[{{ $index }}][type]" data-child-note-trigger @disabled($isLocked)>
                                     @foreach ($types as $type)
                                         <option value="{{ $type }}" @selected(old("rows.$index.type", $row['type']) === $type)>{{ $type }}</option>

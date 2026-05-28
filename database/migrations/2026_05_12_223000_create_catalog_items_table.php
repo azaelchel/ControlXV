@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
 
-            $table->unique(['type', 'value']);
+            // sin unique — duplicados controlados con campo active
         });
     }
 

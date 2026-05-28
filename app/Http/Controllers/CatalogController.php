@@ -12,8 +12,6 @@ class CatalogController extends Controller
 {
     public function index(Request $request): View
     {
-        CatalogOptions::syncDefaults();
-
         $catalogs = [];
         $labels = CatalogOptions::labelMap();
         $activeType = (string) $request->query('type', array_key_first($labels));
