@@ -244,7 +244,7 @@
                 color: #256141;
                 border-color: #bfe2cb;
             }
-            .inline-edit-select[data-inline-tone="status"].tone-status-rechazado {
+            .inline-edit-select[data-inline-tone="status"].tone-status-no-asistira {
                 background: #ffe1eb;
                 color: #9d355b;
                 border-color: #f3bfd0;
@@ -491,7 +491,7 @@
             }
 
             .status-confirmado { background: var(--success); color: #256141; }
-            .status-rechazado { background: var(--danger); color: #9d355b; }
+            .status-no-asistira { background: var(--danger); color: #9d355b; }
             .status-considerado { background: var(--warning); color: #9a6a1a; }
             .status-invitacion-enviada { background: #e5f4ff; color: #1f628e; }
             .status-pendiente { background: #fff5cb; color: #8b6a11; }

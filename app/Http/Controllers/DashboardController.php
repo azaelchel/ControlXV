@@ -66,7 +66,7 @@ class DashboardController extends Controller
                     WHEN 'Invitacion Enviada' THEN 2
                     WHEN 'Pendiente' THEN 3
                     WHEN 'Confirmado' THEN 4
-                    WHEN 'Rechazado' THEN 5
+                    WHEN 'No asistirá' THEN 5
                     WHEN 'No contesto' THEN 6
                     WHEN 'Por definir' THEN 7
                     ELSE 99

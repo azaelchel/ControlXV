@@ -98,7 +98,7 @@ class Guest extends Model
 
     public function publicLinkIsLocked(): bool
     {
-        return $this->status === 'Rechazado'
+        return $this->status === 'No asistirá'
             || $this->publicLinkIsExpired()
             || $this->public_link_expires_at instanceof Carbon && $this->public_link_expires_at->isPast() && $this->public_link_responded_at === null
             || $this->public_link_responded_at !== null;

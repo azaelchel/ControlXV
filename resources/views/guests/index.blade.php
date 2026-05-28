@@ -99,7 +99,7 @@
             @php
                 $statusClass = match ($status) {
                     'Confirmado' => 'status-confirmado',
-                    'Rechazado' => 'status-rechazado',
+                    'No asistirá' => 'status-no-asistira',
                     'Considerado' => 'status-considerado',
                     'Invitacion Enviada' => 'status-invitacion-enviada',
                     'Pendiente' => 'status-pendiente',
@@ -143,7 +143,7 @@
                 aria-pressed="false">
                 <div class="label">{{ $category }}</div>
                 <div class="value" data-category-net-key="{{ $category }}">{{ number_format($totals['without_rejected']) }}</div>
-                <div class="small" style="margin-top: 6px;">Sin rechazados</div>
+                <div class="small" style="margin-top: 6px;">Sin declinados</div>
                 <div class="metric-subvalue">
                     <strong data-category-net-percent-key="{{ $category }}">{{ $summary['total_people'] > 0 ? number_format(($totals['without_rejected'] / $summary['total_people']) * 100, 1) : '0.0' }}%</strong>
                     <span>del total</span>
@@ -232,7 +232,7 @@
                         @php
                             $statusClass = match ($guest->status) {
                                 'Confirmado' => 'status-confirmado',
-                                'Rechazado' => 'status-rechazado',
+                                'No asistirá' => 'status-no-asistira',
                                 'Considerado' => 'status-considerado',
                                 'Invitacion Enviada' => 'status-invitacion-enviada',
                                 'Pendiente' => 'status-pendiente',

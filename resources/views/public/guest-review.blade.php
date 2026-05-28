@@ -72,7 +72,7 @@
         </div>
     @endif
 
-    @if ($guest->status === 'Rechazado')
+    @if ($guest->status === 'No asistirá')
         <div class="card" style="margin-bottom: 22px; border-color:#f0c4d2; background:#fff3f7;">
             <h2>Gracias por avisarnos</h2>
             <p>Hemos registrado que tu familia no podrá asistir a los XV de Zugeily.</p>

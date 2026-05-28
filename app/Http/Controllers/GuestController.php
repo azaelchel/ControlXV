@@ -120,7 +120,7 @@ class GuestController extends Controller
     public function updateStatus(Request $request, Guest $guest): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', 'in:Confirmado,Rechazado'],
+            'status' => ['required', 'in:Confirmado,No asistirá'],
         ]);
 
         $originalName = $guest->name;
@@ -433,7 +433,7 @@ class GuestController extends Controller
         $counts = Guest::query()
             ->select('category')
             ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as category_people_total')
-            ->selectRaw("COALESCE(SUM(CASE WHEN status != 'Rechazado' THEN adults + adolescents + children ELSE 0 END), 0) as category_people_without_rejected")
+            ->selectRaw("COALESCE(SUM(CASE WHEN status != 'No asistirá' THEN adults + adolescents + children ELSE 0 END), 0) as category_people_without_rejected")
             ->groupBy('category')
             ->get()
             ->mapWithKeys(fn ($row) => [$row->category => [

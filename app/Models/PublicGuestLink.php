@@ -47,7 +47,7 @@ class PublicGuestLink extends Model
             || $this->isExpired()
             || $this->closed_reason === 'replaced'
             || $this->closed_reason === 'cancelled'
-            || $this->guest?->status === 'Rechazado';
+            || $this->guest?->status === 'No asistirá';
     }
 
     public function daysRemaining(): int

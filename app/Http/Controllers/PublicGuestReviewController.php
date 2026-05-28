@@ -193,7 +193,7 @@ class PublicGuestReviewController extends Controller
                 ->update(['active' => false]);
 
             $guest->update([
-                'status' => 'Rechazado',
+                'status' => 'No asistirá',
                 'adults' => 0,
                 'adolescents' => 0,
                 'children' => 0,
