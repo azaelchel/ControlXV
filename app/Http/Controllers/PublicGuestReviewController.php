@@ -17,7 +17,9 @@ class PublicGuestReviewController extends Controller
     {
         $publicLink = $this->resolveLink($guest, $token);
 
-        if (! $publicLink->isExpired() && $publicLink->responded_at === null && ! $publicLink->opened_at) {
+        $isPreviewBot = $this->isPreviewBot($request->userAgent() ?? '');
+
+        if (! $isPreviewBot && ! $publicLink->isExpired() && $publicLink->responded_at === null && ! $publicLink->opened_at) {
             $publicLink->forceFill(['opened_at' => now()])->save();
 
             if ($guest->public_link_token === $publicLink->token) {
@@ -272,5 +274,44 @@ class PublicGuestReviewController extends Controller
         abort_unless($publicLink !== null, 403, 'Invalid link token.');
 
         return $publicLink;
+    }
+
+    private function isPreviewBot(string $userAgent): bool
+    {
+        if ($userAgent === '') {
+            return true; // Sin user agent = probable bot
+        }
+
+        $patterns = [
+            'WhatsApp',
+            'facebookexternalhit',
+            'Facebot',
+            'Twitterbot',
+            'TelegramBot',
+            'Slackbot',
+            'LinkedInBot',
+            'Discordbot',
+            'Applebot',
+            'SkypeUriPreview',
+            'redditbot',
+            'embedly',
+            'quora link preview',
+            'showyoubot',
+            'outbrain',
+            'pinterest',
+            'vkShare',
+            'W3C_Validator',
+            'bot',
+            'crawler',
+            'spider',
+        ];
+
+        foreach ($patterns as $p) {
+            if (stripos($userAgent, $p) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
