@@ -119,6 +119,11 @@
         $rejectedTotal = (int) optional($byStatus->firstWhere('status', 'No asistirá'))->total_people;
         $pendingTotal  = $summary['total_people'] - $summary['confirmed_total_people'] - $rejectedTotal;
         $realPendingTotal = $summary['real_total_people'] - $summary['real_confirmed_total_people'] - $summary['real_rejected_total_people'];
+
+        // Personas realmente a considerar en planeación (total menos los que declinaron)
+        $consideredReal = $summary['real_total_people'] - $summary['real_rejected_total_people'];
+        $consideredTotal = $summary['total_people'] - $rejectedTotal;
+
         $diff = $companionsSummary['difference_vs_confirmed_people'];
 
         // Donut math
@@ -176,6 +181,10 @@
                         <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
                             {{ number_format($summary['real_confirmed_total_people']) }}<span style="opacity: 0.6; font-weight: 600;"> / {{ number_format($summary['real_total_people']) }}</span>
                         </div>
+                        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(255, 213, 74, 0.25); border-radius: 8px; border-left: 3px solid #ffd54a; font-size: 12px; font-weight: 600;">
+                            📋 Para planeación: <strong style="font-size: 14px;">{{ number_format($consideredReal) }}</strong>
+                            <div style="font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px;">Total menos los que no asistirán</div>
+                        </div>
                         <div style="font-size: 12px; opacity: 0.85; margin-top: 6px;">
                             ✓ {{ number_format($summary['real_confirmed_records']) }} familias confirmadas<br>
                             ⏳ {{ number_format($realPendingTotal) }} personas pendientes<br>
@@ -206,9 +215,12 @@
                         <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
                             {{ number_format($summary['confirmed_total_people']) }}<span style="opacity: 0.6; font-weight: 600;"> / {{ number_format($summary['total_people']) }}</span>
                         </div>
+                        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(255, 255, 255, 0.15); border-radius: 8px; border-left: 3px solid white; font-size: 12px; font-weight: 600;">
+                            📋 Para planeación: <strong style="font-size: 14px;">{{ number_format($consideredTotal) }}</strong>
+                            <div style="font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px;">Total menos los que no asistirán</div>
+                        </div>
                         <div style="font-size: 12px; opacity: 0.85; margin-top: 6px;">
-                            Incluye el "colchón" de probables.<br>
-                            ⏳ {{ number_format($pendingTotal) }} pendientes en total<br>
+                            ⏳ {{ number_format($pendingTotal) }} pendientes<br>
                             ✕ {{ number_format($rejectedTotal) }} no asistirán
                         </div>
                     </div>
