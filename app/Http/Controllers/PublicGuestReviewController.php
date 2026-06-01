@@ -279,12 +279,29 @@ class PublicGuestReviewController extends Controller
     private function isPreviewBot(string $userAgent): bool
     {
         if ($userAgent === '') {
-            return true; // Sin user agent = probable bot
+            return true;
         }
 
-        $patterns = [
-            'WhatsApp',
-            'facebookexternalhit',
+        // Si el UA parece navegador real (Mozilla + iPhone/Android/Mac/Linux/Windows),
+        // es una persona real, aunque la app sea WhatsApp/FB/etc. (navegador in-app).
+        $looksLikeRealBrowser = stripos($userAgent, 'Mozilla') !== false
+            && (
+                stripos($userAgent, 'iPhone') !== false
+                || stripos($userAgent, 'Android') !== false
+                || stripos($userAgent, 'Macintosh') !== false
+                || stripos($userAgent, 'Mac OS') !== false
+                || stripos($userAgent, 'Windows') !== false
+                || stripos($userAgent, 'Linux') !== false
+            );
+
+        if ($looksLikeRealBrowser) {
+            return false;
+        }
+
+        // Patrones de bots de preview o crawlers que NO son navegadores reales
+        $botPatterns = [
+            'WhatsApp/',              // Bot de preview de WhatsApp
+            'facebookexternalhit',    // Bot de preview de Facebook/Messenger
             'Facebot',
             'Twitterbot',
             'TelegramBot',
@@ -301,12 +318,22 @@ class PublicGuestReviewController extends Controller
             'pinterest',
             'vkShare',
             'W3C_Validator',
-            'bot',
-            'crawler',
-            'spider',
+            'Googlebot',
+            'bingbot',
+            'YandexBot',
+            'DuckDuckBot',
+            'Baiduspider',
+            'AhrefsBot',
+            'SemrushBot',
+            'MJ12bot',
+            'curl/',
+            'wget/',
+            'python-requests',
+            'HeadlessChrome',
+            'PhantomJS',
         ];
 
-        foreach ($patterns as $p) {
+        foreach ($botPatterns as $p) {
             if (stripos($userAgent, $p) !== false) {
                 return true;
             }
