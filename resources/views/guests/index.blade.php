@@ -5,11 +5,33 @@
 @section('subheading', 'Módulo principal para dar de alta familias o grupos, revisar su información, actualizar estatus y exportar el listado cuando haga falta.')
 
 @section('content')
+    <style>
+        .gx-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .gx-hero .card { padding: 16px; display: flex; gap: 12px; align-items: center; }
+        .gx-hero .ico { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; color: white; }
+        .gx-hero .ico.purple { background: linear-gradient(135deg, #c693ea, #8f55be); }
+        .gx-hero .ico.blue { background: linear-gradient(135deg, #92c2e8, #4a8cc9); }
+        .gx-hero .ico.amber { background: linear-gradient(135deg, #f0c674, #c69440); }
+        .gx-hero .ico.green { background: linear-gradient(135deg, #aedca0, #5fa657); }
+        .gx-hero .info .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; color: var(--muted); }
+        .gx-hero .info .val { font-size: 22px; font-weight: 800; line-height: 1; color: var(--text); margin-top: 4px; }
+
+        .gx-filter-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+        .gx-filter-grid label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+        .gx-filter-grid input, .gx-filter-grid select { width: 100%; box-sizing: border-box; height: 42px; }
+    </style>
+
     <div x-data="{ showGuestModal: false, showEditGuestModal: {{ $editingGuest ? 'true' : 'false' }} }">
-    <div class="toolbar">
-        <div class="inline">
-            <button class="btn secondary" type="button" @click="showGuestModal = true">Agregar familia o grupo</button>
-            <a class="btn" href="{{ route('guests.export', request()->query()) }}" data-filter-export="#guest-filters-form" data-datatable-context="guests">Reporte de familias o grupos</a>
+    <div class="card" style="margin-bottom: 18px; background: linear-gradient(135deg, var(--primary) 0%, #6b3b9e 100%); color: white; border: none;">
+        <div class="inline" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <div style="font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Gestión</div>
+                <h3 style="margin: 4px 0 0 0; font-size: 20px;">Familias y grupos invitados</h3>
+            </div>
+            <div class="inline" style="gap: 10px;">
+                <button class="btn" style="background: white; color: var(--primary-dark);" type="button" @click="showGuestModal = true">+ Agregar familia</button>
+                <a class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);" href="{{ route('guests.export', request()->query()) }}" data-filter-export="#guest-filters-form" data-datatable-context="guests">📥 Exportar reporte</a>
+            </div>
         </div>
     </div>
 
@@ -60,37 +82,34 @@
         </div>
     @endif
 
-    <div class="modal-overlay" id="guest-history-modal" style="display:none;" aria-hidden="true">
-        <div class="modal-panel" style="max-width: 760px;">
-            <div class="inline" style="justify-content: space-between; margin-bottom: 18px;">
-                <div>
-                    <div class="section-kicker">Histórico de links</div>
-                    <h3 class="section-title" id="guest-history-title"></h3>
-                </div>
-                <button class="btn ghost" type="button" data-history-close>Cerrar</button>
-            </div>
-
-            <div style="display:grid; gap: 12px;" id="guest-history-items">
+    <div class="gx-hero">
+        <div class="card">
+            <div class="ico purple">📋</div>
+            <div class="info">
+                <div class="lbl">Registros</div>
+                <div class="val">{{ number_format($summary['records']) }}</div>
             </div>
         </div>
-    </div>
-
-    <div class="grid cols-4" style="margin-bottom: 18px;">
-        <div class="card metric">
-            <div class="label">Registros</div>
-            <div class="value">{{ number_format($summary['records']) }}</div>
+        <div class="card">
+            <div class="ico blue">👤</div>
+            <div class="info">
+                <div class="lbl">Adultos</div>
+                <div class="val">{{ number_format($summary['adults']) }}</div>
+            </div>
         </div>
-        <div class="card metric">
-            <div class="label">Adultos</div>
-            <div class="value">{{ number_format($summary['adults']) }}</div>
+        <div class="card">
+            <div class="ico amber">🧒</div>
+            <div class="info">
+                <div class="lbl">Adolescentes y niños</div>
+                <div class="val">{{ number_format($summary['adolescents'] + $summary['children']) }}</div>
+            </div>
         </div>
-        <div class="card metric">
-            <div class="label">Adolescentes y niños</div>
-            <div class="value">{{ number_format($summary['adolescents'] + $summary['children']) }}</div>
-        </div>
-        <div class="card metric">
-            <div class="label">Total personas</div>
-            <div class="value">{{ number_format($summary['total_people']) }}</div>
+        <div class="card">
+            <div class="ico green">👥</div>
+            <div class="info">
+                <div class="lbl">Total personas</div>
+                <div class="val">{{ number_format($summary['total_people']) }}</div>
+            </div>
         </div>
     </div>
 
@@ -161,10 +180,10 @@
     </div>
 
     <div class="card" style="margin-bottom: 18px;">
-        <form method="get" class="form-grid" id="guest-filters-form">
+        <form method="get" class="gx-filter-grid" id="guest-filters-form">
             <div>
                 <label for="search">Buscar</label>
-                <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nombre, telefono o padrino">
+                <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nombre, teléfono o padrino…">
             </div>
             <div>
                 <label for="group_name">Grupo</label>
@@ -176,7 +195,7 @@
                 </select>
             </div>
             <div>
-                <label for="category">Categoria</label>
+                <label for="category">Categoría</label>
                 <select id="category" name="category">
                     <option value="">Todas</option>
                     @foreach ($options['categories'] as $value)
@@ -193,7 +212,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="full inline">
+            <div class="inline" style="gap: 6px;">
                 <button class="btn" type="submit">Filtrar</button>
                 <a class="btn secondary" href="{{ route('guests.index') }}">Limpiar</a>
                 @if ($editingGuest)
@@ -223,7 +242,6 @@
                         <th>Conteo</th>
                         <th>Total</th>
                         <th>Padrino</th>
-                        <th>Seguimiento</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -242,27 +260,6 @@
                             };
                             $rowEditQuery = array_merge(request()->query(), ['edit' => $guest->id]);
                             $quickFormId = 'quick-update-'.$guest->id;
-                            $currentLink = $guest->publicLinks->firstWhere('is_current', true) ?? $guest->publicLinks->first();
-                            $historyItems = $guest->publicLinks->map(fn ($link) => [
-                                'mode' => $link->modeLabel(),
-                                'status' => $link->statusLabel(),
-                                'generated_at' => $link->generated_at?->format('d/m/Y H:i'),
-                                'expires_at' => $link->expires_at?->format('d/m/Y H:i'),
-                                'opened_at' => $link->opened_at?->format('d/m/Y H:i'),
-                                'responded_at' => $link->responded_at?->format('d/m/Y H:i'),
-                            ])->values()->all();
-
-                            if (! $currentLink) {
-                                $linkStatusShort = 'Sin link';
-                            } elseif ($currentLink->closed_reason === 'cancelled') {
-                                $linkStatusShort = 'Cancelado';
-                            } elseif ($currentLink->responded_at) {
-                                $linkStatusShort = 'Contestó';
-                            } elseif ($currentLink->isExpired()) {
-                                $linkStatusShort = 'No contestó';
-                            } else {
-                                $linkStatusShort = 'Pendiente';
-                            }
                         @endphp
                         <tr data-status-current="{{ $guest->status }}" data-category-current="{{ $guest->category }}">
                             <td>{{ $guest->group_name }}</td>
@@ -304,28 +301,6 @@
                             <td>{{ $guest->total_people }}</td>
                             <td>{{ $guest->sponsor ?: '—' }}</td>
                             <td>
-                                <div class="small" style="margin-bottom: 8px;">
-                                    <strong>{{ $linkStatusShort }}</strong>
-                                    @if ($currentLink && $currentLink->closed_reason === 'cancelled')
-                                        <br>Cancelado manualmente
-                                    @elseif ($currentLink && ! $currentLink->responded_at && ! $currentLink->isExpired())
-                                        <br>Vigente {{ $currentLink->daysRemaining() }} día(s)
-                                    @elseif ($currentLink && $currentLink->isExpired())
-                                        <br>Venció sin respuesta
-                                    @elseif ($currentLink && $currentLink->responded_at)
-                                        <br>{{ $currentLink->responded_at->format('d/m/Y H:i') }}
-                                    @endif
-                                </div>
-                                <button
-                                    class="btn secondary small"
-                                    type="button"
-                                    data-history-open
-                                    data-history-title="{{ $guest->display_name }}"
-                                    data-history-items='@json($historyItems)'>
-                                    Histórico
-                                </button>
-                            </td>
-                            <td>
                                 <form id="{{ $quickFormId }}" method="post" action="{{ route('guests.quick-update', $guest) }}" data-ajax-submit data-autosave-form>
                                     @csrf
                                     @method('patch')
@@ -361,7 +336,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="empty">Aún no hay familias o grupos registrados.</td>
+                            <td colspan="9" class="empty">Aún no hay familias o grupos registrados.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -370,78 +345,4 @@
     </div>
     </div>
 
-    <script>
-        (() => {
-            const modal = document.getElementById('guest-history-modal');
-            const title = document.getElementById('guest-history-title');
-            const items = document.getElementById('guest-history-items');
-
-            if (!modal || !title || !items) {
-                return;
-            }
-
-            const closeModal = () => {
-                modal.style.display = 'none';
-                modal.setAttribute('aria-hidden', 'true');
-                items.innerHTML = '';
-            };
-
-            const openModal = (historyTitle, historyItems) => {
-                title.textContent = historyTitle || 'Histórico';
-
-                if (!Array.isArray(historyItems) || historyItems.length === 0) {
-                    items.innerHTML = `
-                        <div class="card" style="padding:18px;">
-                            <div class="small">Todavía no hay historial para esta familia o grupo.</div>
-                        </div>
-                    `;
-                } else {
-                    items.innerHTML = historyItems.map((item) => `
-                        <div class="card" style="padding:18px;">
-                            <div class="inline" style="justify-content: space-between; margin-bottom: 8px;">
-                                <strong>${item.mode ?? ''}</strong>
-                                <span class="small">${item.generated_at ?? ''}</span>
-                            </div>
-                            <div class="small" style="line-height:1.6;">
-                                <div><strong>Estado:</strong> ${item.status ?? ''}</div>
-                                <div><strong>Vigencia:</strong> ${item.expires_at ?? ''}</div>
-                                ${item.opened_at ? `<div><strong>Abierto:</strong> ${item.opened_at}</div>` : ''}
-                                ${item.responded_at ? `<div><strong>Respondió:</strong> ${item.responded_at}</div>` : ''}
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-                modal.style.display = 'flex';
-                modal.setAttribute('aria-hidden', 'false');
-            };
-
-            document.addEventListener('click', (event) => {
-                const openButton = event.target.closest('[data-history-open]');
-
-                if (openButton) {
-                    let parsedItems = [];
-
-                    try {
-                        parsedItems = JSON.parse(openButton.dataset.historyItems || '[]');
-                    } catch (error) {
-                        parsedItems = [];
-                    }
-
-                    openModal(openButton.dataset.historyTitle || 'Histórico', parsedItems);
-                    return;
-                }
-
-                if (event.target.closest('[data-history-close]') || event.target === modal) {
-                    closeModal();
-                }
-            });
-
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && modal.style.display !== 'none') {
-                    closeModal();
-                }
-            });
-        })();
-    </script>
 @endsection

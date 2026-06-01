@@ -17,9 +17,9 @@ class MessageTemplateSeeder extends Seeder
                 'includes_link' => true,
                 'position'      => 1,
                 'content'       => <<<TXT
-Estimada Fam. {nombre}, buenas tardes.
+Estimada/o {prefijo} {nombre}, buenas tardes.
 
-Te escribimos del equipo *Event Planner* de los *XV años de Zugeily*, que se celebrarán el próximo *{fecha_evento}*. Nos ponemos en contacto para pedirte que confirmes tu asistencia a través de tu enlace personalizado:
+Te escribimos del equipo *{equipo}* de los *{evento}*, que se celebrarán el próximo *{fecha_evento}*. Nos ponemos en contacto para pedirte que confirmes tu asistencia a través de tu enlace personalizado:
 
 {link}
 
@@ -35,9 +35,9 @@ TXT,
                 'includes_link' => true,
                 'position'      => 2,
                 'content'       => <<<TXT
-Estimada Familia {nombre}, ¡buenas tardes!
+Estimada/o {prefijo} {nombre}, ¡buenas tardes!
 
-Te escribimos del equipo de *Event Planner* de los *XV años de Zugeily*. ¡Ya falta poco más de un mes para el *{fecha_evento}* y la emoción está al máximo! 🎊
+Te escribimos del equipo de *{equipo}* de los *{evento}*. ¡Ya falta poco más de un mes para el *{fecha_evento}* y la emoción está al máximo! 🎊
 
 Para que todo esté perfecto ese día, te pedimos que revises y, si es necesario, actualices la información de tu grupo en tu enlace:
 
@@ -55,9 +55,9 @@ TXT,
                 'includes_link' => false,
                 'position'      => 3,
                 'content'       => <<<TXT
-Estimada Familia {nombre}, esperamos que se encuentren muy bien.
+Estimada/o {prefijo} {nombre}, esperamos que se encuentren muy bien.
 
-Te escribimos del equipo de *Event Planner* de los *XV años de Zugeily*, que se celebrarán el *{fecha_evento}*. Sabemos que los tiempos y compromisos no siempre coinciden, y queremos agradecerles por habernos tenido en mente.
+Te escribimos del equipo de *{equipo}* de los *{evento}*, que se celebrarán el *{fecha_evento}*. Sabemos que los tiempos y compromisos no siempre coinciden, y queremos agradecerles por habernos tenido en mente.
 
 Lamentamos no poder contar con su presencia ese día, pero esperamos coincidir en una próxima celebración. ¡Muchos saludos y hasta pronto! 🙌
 TXT,

@@ -521,8 +521,8 @@ const initDataTables = () => {
         }
 
         const type = element.dataset.datatable;
-        const nonOrderableTargets = type === 'guests' ? [8, 9] : (type === 'companions' ? [5] : []);
-        const nonSearchableTargets = type === 'guests' ? [9] : (type === 'companions' ? [5] : []);
+        const nonOrderableTargets = type === 'guests' ? [8] : (type === 'companions' ? [5] : []);
+        const nonSearchableTargets = type === 'guests' ? [8] : (type === 'companions' ? [5] : []);
         const emptyTable = type === 'guests'
             ? 'No hay familias o grupos registrados'
             : (type === 'companions' ? 'No hay invitados registrados' : 'No hay registros disponibles');

@@ -41,26 +41,79 @@
 
             a { color: inherit; text-decoration: none; }
 
-            .shell { max-width: 1320px; margin: 0 auto; padding: 24px; }
-            .nav-tabs {
+            .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
+            .sidebar {
+                background: rgba(255,255,255,0.85);
+                border-right: 1px solid var(--border);
+                padding: 24px 16px;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
+                backdrop-filter: blur(14px);
                 display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-                margin-bottom: 20px;
+                flex-direction: column;
+                gap: 18px;
             }
-            .nav-tab {
-                padding: 11px 15px;
-                border-radius: 14px;
-                background: rgba(255,255,255,.9);
-                border: 1px solid var(--border);
-                color: var(--primary-dark);
+            .sidebar .brand-block {
+                display: flex; align-items: center; gap: 12px;
+                padding: 4px 8px 18px 8px;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar .brand-block .badge {
+                width: 42px; height: 42px;
+                border-radius: 12px;
+                display: grid; place-items: center;
+                background: linear-gradient(135deg, #c693ea, #8f55be);
+                color: #fff; font-weight: 700; font-size: 14px;
+                box-shadow: 0 6px 18px rgba(143, 85, 190, .24);
+            }
+            .sidebar .brand-block .titles { line-height: 1.2; }
+            .sidebar .brand-block .titles strong { font-size: 14px; color: var(--text); display: block; }
+            .sidebar .brand-block .titles span { font-size: 11px; color: var(--muted); }
+
+            .sidebar .nav-section { display: flex; flex-direction: column; gap: 2px; }
+            .sidebar .nav-section-label {
+                font-size: 10.5px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                font-weight: 700;
+                color: var(--muted);
+                padding: 6px 12px;
+                margin-top: 2px;
+            }
+            .nav-item {
+                display: flex; align-items: center; gap: 10px;
+                padding: 9px 12px;
+                border-radius: 10px;
+                color: var(--text);
+                font-size: 14px;
+                font-weight: 500;
+                transition: background 0.15s;
+                cursor: pointer;
+            }
+            .nav-item:hover { background: rgba(158, 104, 201, 0.08); }
+            .nav-item.active {
+                background: linear-gradient(135deg, var(--primary) 0%, #8f55be 100%);
+                color: white;
                 font-weight: 600;
+                box-shadow: 0 6px 16px rgba(158, 104, 201, .25);
             }
-            .nav-tab.active {
-                background: linear-gradient(135deg, #f0defb, #ffffff);
-                border-color: #c99ceb;
-                box-shadow: 0 12px 30px rgba(158, 104, 201, .12);
+            .nav-item .ico { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+
+            .main-area { padding: 28px 32px; min-width: 0; max-width: 1400px; }
+
+            .userbar-sidebar {
+                margin-top: auto;
+                padding-top: 16px;
+                border-top: 1px solid var(--border);
+                display: flex; flex-direction: column; gap: 8px;
             }
+            .userbar-sidebar .user-info { padding: 8px 12px; font-size: 13px; }
+            .userbar-sidebar .user-info strong { display: block; color: var(--text); }
+            .userbar-sidebar .user-info span { color: var(--muted); font-size: 12px; }
+            .userbar-sidebar .actions { display: flex; gap: 6px; padding: 0 8px; }
+            .userbar-sidebar .actions a, .userbar-sidebar .actions button { flex: 1; font-size: 12px; padding: 7px 10px; }
             .subnav {
                 display: flex;
                 flex-direction: column;
@@ -532,7 +585,9 @@
             }
 
             @media (max-width: 760px) {
-                .shell { padding: 16px; }
+                .shell { grid-template-columns: 1fr; }
+                .sidebar { position: static; height: auto; }
+                .main-area { padding: 16px; }
                 .topbar, .toolbar, .userbar, .compact-grid, .form-grid {
                     grid-template-columns: 1fr;
                     flex-direction: column;
@@ -547,86 +602,124 @@
     </head>
     <body>
         <div class="shell">
-            <div class="topbar">
-                <div class="brand">
-                    <div class="brand-badge">XV</div>
-                    <div>
-                        <h1>Control de Familias e Invitados para XV</h1>
-                        <div class="small">Familias o grupos, invitados, mesas confirmadas y catálogos</div>
-                    </div>
-                </div>
-
-                @auth
-                    <div class="userbar">
-                        <div class="small">
-                            <strong>{{ Auth::user()->name }}</strong><br>
-                            {{ Auth::user()->email }}
-                        </div>
-                        <a class="btn secondary" href="{{ route('profile.edit') }}">Perfil</a>
-                        <form method="POST" action="{{ route('logout', absolute: false) }}">
-                            @csrf
-                            <button class="btn ghost" type="submit">Salir</button>
-                        </form>
-                    </div>
-                @endauth
-            </div>
-
-            @if (session('status'))
-                <div data-flash-status="{{ session('status') }}" hidden></div>
-            @endif
-
             @auth
-                <nav class="nav-tabs">
-                    @if (Auth::user()->canAccessModule('dashboard'))
-                        <a class="nav-tab {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Resumen</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('guests'))
-                        <a class="nav-tab {{ request()->routeIs('guests.*') ? 'active' : '' }}" href="{{ route('guests.index') }}">Familias o grupos</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('companions'))
-                        <a class="nav-tab {{ request()->routeIs('companions.*') ? 'active' : '' }}" href="{{ route('companions.index') }}">Invitados</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('tables'))
-                        <a class="nav-tab {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">Mesas confirmadas</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('message_sends'))
-                        <a class="nav-tab {{ request()->routeIs('message-sends.*') ? 'active' : '' }}" href="{{ route('message-sends.index') }}">Envíos</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('message_templates'))
-                        <a class="nav-tab {{ request()->routeIs('message-templates.*') ? 'active' : '' }}" href="{{ route('message-templates.index') }}">Plantillas</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('catalogs'))
-                        <a class="nav-tab {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">Catálogos</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('system_transfer'))
-                        <a class="nav-tab {{ request()->routeIs('system-transfer.*') ? 'active' : '' }}" href="{{ route('system-transfer.edit') }}">Respaldo</a>
-                    @endif
-                    @if (Auth::user()->canAccessModule('users'))
-                        <a class="nav-tab {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Usuarios</a>
-                    @endif
-                </nav>
+                <aside class="sidebar">
+                    <div class="brand-block">
+                        <div class="badge">XV</div>
+                        <div class="titles">
+                            <strong>ControlXV</strong>
+                            <span>XV de Zugeily</span>
+                        </div>
+                    </div>
+
+                    <div class="nav-section">
+                        <div class="nav-section-label">Inicio</div>
+                        @if (Auth::user()->canAccessModule('dashboard'))
+                            <a class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                                <span class="ico">📊</span><span>Resumen</span>
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="nav-section">
+                        <div class="nav-section-label">Invitados</div>
+                        @if (Auth::user()->canAccessModule('guests'))
+                            <a class="nav-item {{ request()->routeIs('guests.*') ? 'active' : '' }}" href="{{ route('guests.index') }}">
+                                <span class="ico">👨‍👩‍👧</span><span>Familias / grupos</span>
+                            </a>
+                        @endif
+                        @if (Auth::user()->canAccessModule('companions'))
+                            <a class="nav-item {{ request()->routeIs('companions.*') ? 'active' : '' }}" href="{{ route('companions.index') }}">
+                                <span class="ico">👤</span><span>Invitados</span>
+                            </a>
+                        @endif
+                        @if (Auth::user()->canAccessModule('tables'))
+                            <a class="nav-item {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">
+                                <span class="ico">🍽️</span><span>Mesas</span>
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="nav-section">
+                        <div class="nav-section-label">Comunicación</div>
+                        @if (Auth::user()->canAccessModule('message_sends'))
+                            <a class="nav-item {{ request()->routeIs('message-sends.*') ? 'active' : '' }}" href="{{ route('message-sends.index') }}">
+                                <span class="ico">💬</span><span>Mensajes</span>
+                            </a>
+                        @endif
+                        @if (Auth::user()->canAccessModule('message_templates'))
+                            <a class="nav-item {{ request()->routeIs('message-templates.*') ? 'active' : '' }}" href="{{ route('message-templates.index') }}">
+                                <span class="ico">📝</span><span>Plantillas</span>
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="nav-section">
+                        <div class="nav-section-label">Sistema</div>
+                        @if (Auth::user()->canAccessModule('catalogs'))
+                            <a class="nav-item {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">
+                                <span class="ico">📚</span><span>Catálogos</span>
+                            </a>
+                        @endif
+                        @if (Auth::user()->canAccessModule('settings'))
+                            <a class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}" href="{{ route('settings.index') }}">
+                                <span class="ico">⚙️</span><span>Configuración</span>
+                            </a>
+                        @endif
+                        @if (Auth::user()->canAccessModule('system_transfer'))
+                            <a class="nav-item {{ request()->routeIs('system-transfer.*') ? 'active' : '' }}" href="{{ route('system-transfer.edit') }}">
+                                <span class="ico">💾</span><span>Respaldo</span>
+                            </a>
+                        @endif
+                        @if (Auth::user()->canAccessModule('users'))
+                            <a class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
+                                <span class="ico">🔐</span><span>Usuarios</span>
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="userbar-sidebar">
+                        <div class="user-info">
+                            <strong>{{ Auth::user()->name }}</strong>
+                            <span>{{ Auth::user()->email }}</span>
+                        </div>
+                        <div class="actions">
+                            <a class="btn secondary" href="{{ route('profile.edit') }}">Perfil</a>
+                            <form method="POST" action="{{ route('logout', absolute: false) }}" style="flex: 1;">
+                                @csrf
+                                <button class="btn ghost" type="submit" style="width: 100%;">Salir</button>
+                            </form>
+                        </div>
+                    </div>
+                </aside>
             @endauth
 
-            @hasSection('content')
-                <div class="page-head">
-                    <h2>@yield('heading', 'Panel')</h2>
-                    @hasSection('subheading')
-                        <p>@yield('subheading')</p>
-                    @endif
-                </div>
+            <div class="main-area">
+                @if (session('status'))
+                    <div data-flash-status="{{ session('status') }}" hidden></div>
+                @endif
 
-                @yield('content')
-            @else
-                @isset($header)
+                @hasSection('content')
                     <div class="page-head">
-                        {{ $header }}
+                        <h2>@yield('heading', 'Panel')</h2>
+                        @hasSection('subheading')
+                            <p>@yield('subheading')</p>
+                        @endif
                     </div>
-                @endisset
 
-                <main>
-                    {{ $slot }}
-                </main>
-            @endif
+                    @yield('content')
+                @else
+                    @isset($header)
+                        <div class="page-head">
+                            {{ $header }}
+                        </div>
+                    @endisset
+
+                    <main>
+                        {{ $slot }}
+                    </main>
+                @endif
+            </div>
         </div>
     </body>
 </html>

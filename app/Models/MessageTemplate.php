@@ -40,20 +40,35 @@ class MessageTemplate extends Model
     public static function placeholders(): array
     {
         return [
-            '{nombre}'         => 'Nombre del grupo o familia',
-            '{link}'           => 'URL del link de revisión / confirmación',
-            '{fecha_evento}'   => 'Fecha del evento (1 de agosto de 2026)',
-            '{dias_vigencia}'  => 'Días de vigencia del link (7)',
+            '{prefijo}'       => 'Prefijo del registro (Sr., Sra., etc.) — vacío si no tiene',
+            '{nombre}'        => 'Nombre del grupo o familia',
+            '{link}'          => 'URL del link de revisión / confirmación',
+            '{evento}'        => 'Nombre del evento (desde Configuración)',
+            '{fecha_evento}'  => 'Fecha del evento (desde Configuración)',
+            '{equipo}'        => 'Nombre del equipo o planner (desde Configuración)',
+            '{dias_vigencia}' => 'Días de vigencia del link (desde Configuración)',
         ];
+    }
+
+    public function hasLinkPlaceholder(): bool
+    {
+        return str_contains($this->content, '{link}');
     }
 
     public function render(Guest $guest, ?string $linkUrl = null): string
     {
-        return strtr($this->content, [
+        $prefix = trim((string) $guest->prefix);
+
+        $rendered = strtr($this->content, [
+            '{prefijo}'       => $prefix,
             '{nombre}'        => $guest->name,
             '{link}'          => $linkUrl ?? '',
-            '{fecha_evento}'  => '1 de agosto de 2026',
-            '{dias_vigencia}' => '7',
+            '{evento}'        => Setting::get('event_name', 'XV años de Zugeily'),
+            '{fecha_evento}'  => Setting::get('event_date', '1 de agosto de 2026'),
+            '{equipo}'        => Setting::get('team_name', 'Event Planner'),
+            '{dias_vigencia}' => Setting::get('link_validity_days', '7'),
         ]);
+
+        return preg_replace('/[ ]{2,}/', ' ', $rendered);
     }
 }

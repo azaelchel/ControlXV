@@ -26,6 +26,17 @@ class DashboardController extends Controller
             'confirmed_total_people' => (int) Guest::where('status', 'Confirmado')
                 ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as total')
                 ->value('total'),
+            // Métricas específicas de la categoría REAL (lo que realmente esperamos)
+            'real_total_people' => (int) Guest::where('category', 'Real')
+                ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as total')
+                ->value('total'),
+            'real_confirmed_records' => (int) Guest::where('category', 'Real')->where('status', 'Confirmado')->count(),
+            'real_confirmed_total_people' => (int) Guest::where('category', 'Real')->where('status', 'Confirmado')
+                ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as total')
+                ->value('total'),
+            'real_rejected_total_people' => (int) Guest::where('category', 'Real')->where('status', 'No asistirá')
+                ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as total')
+                ->value('total'),
         ];
 
         $byGroup = Guest::query()

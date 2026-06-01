@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Guest;
 use App\Models\MessageSend;
 use App\Models\MessageTemplate;
+use App\Models\PublicGuestLink;
 use App\Services\PublicGuestLinkService;
 use App\Support\CatalogOptions;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class MessageSendController extends Controller
 {
@@ -18,37 +21,52 @@ class MessageSendController extends Controller
 
     public function index(Request $request): View
     {
-        $statusFilter   = $request->string('status')->toString();
-        $templateFilter = (int) $request->integer('template_id');
+        $statusFilter    = $request->string('status')->toString();
+        $linkStateFilter = $request->string('link_state')->toString();
+        $groupFilter     = $request->string('group')->toString();
+        $nameQuery       = $request->string('q')->toString();
+        $perPage         = (int) ($request->integer('per_page') ?: 25);
+        $page            = (int) ($request->integer('page') ?: 1);
 
-        $sends = MessageSend::query()
-            ->with(['guest', 'template', 'publicLink', 'user'])
-            ->when($templateFilter, fn ($q) => $q->where('message_template_id', $templateFilter))
-            ->when($statusFilter, function ($q) use ($statusFilter) {
-                $q->whereHas('guest', fn ($g) => $g->where('status', $statusFilter));
-            })
-            ->latest()
-            ->paginate(40)
-            ->withQueryString();
+        $guests = Guest::query()
+            ->with(['currentPublicLink', 'messageSends' => fn ($q) => $q->latest()->with('template')])
+            ->when($statusFilter, fn ($q) => $q->where('status', $statusFilter))
+            ->when($groupFilter, fn ($q) => $q->where('group_name', $groupFilter))
+            ->when($nameQuery, fn ($q) => $q->where('name', 'like', '%' . $nameQuery . '%'))
+            ->orderBy('name')
+            ->get();
 
-        $stats = $this->buildStats();
+        $rows = $guests->map(fn (Guest $g) => $this->buildRow($g));
+
+        if ($linkStateFilter) {
+            $rows = $rows->filter(fn ($r) => $r['state']['key'] === $linkStateFilter)->values();
+        }
+
+        $paginator = new LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('message-sends.index', [
-            'sends'          => $sends,
-            'stats'          => $stats,
-            'templates'      => MessageTemplate::orderBy('position')->get(),
-            'statuses'       => CatalogOptions::values('statuses'),
-            'statusFilter'   => $statusFilter,
-            'templateFilter' => $templateFilter,
+            'rows'            => $paginator,
+            'stats'           => $this->buildStats(),
+            'statuses'        => CatalogOptions::values('statuses'),
+            'groups'          => CatalogOptions::values('guest_groups'),
+            'templates'       => MessageTemplate::orderBy('position')->get(),
+            'statusFilter'    => $statusFilter,
+            'linkStateFilter' => $linkStateFilter,
+            'groupFilter'     => $groupFilter,
+            'nameQuery'       => $nameQuery,
+            'linkStates'      => $this->linkStateLabels(),
         ]);
     }
 
     public function create(Request $request): View
     {
         $defaultTemplateId = (int) $request->integer('template_id');
-        $defaultStatuses   = array_filter(explode(',', (string) $request->query('statuses', '')));
-
-        $statuses = CatalogOptions::values('statuses');
 
         $guests = Guest::query()
             ->with('currentPublicLink', 'messageSends.template')
@@ -57,10 +75,48 @@ class MessageSendController extends Controller
 
         return view('message-sends.create', [
             'guests'            => $guests,
-            'statuses'          => $statuses,
+            'statuses'          => CatalogOptions::values('statuses'),
+            'categories'        => CatalogOptions::values('categories'),
+            'groups'            => CatalogOptions::values('guest_groups'),
             'templates'         => MessageTemplate::orderBy('position')->get(),
             'defaultTemplateId' => $defaultTemplateId,
-            'defaultStatuses'   => $defaultStatuses,
+        ]);
+    }
+
+    public function history(Request $request): View
+    {
+        $templateFilter = (int) $request->integer('template_id');
+        $statusFilter   = $request->string('status')->toString();
+        $nameQuery      = $request->string('q')->toString();
+        $dateFrom       = $request->string('from')->toString();
+        $dateTo         = $request->string('to')->toString();
+
+        $sends = MessageSend::query()
+            ->with(['guest', 'template', 'publicLink', 'user'])
+            ->when($templateFilter, fn ($q) => $q->where('message_template_id', $templateFilter))
+            ->when($statusFilter, fn ($q) => $q->whereHas('guest', fn ($g) => $g->where('status', $statusFilter)))
+            ->when($nameQuery, fn ($q) => $q->whereHas('guest', fn ($g) => $g->where('name', 'like', '%' . $nameQuery . '%')))
+            ->when($dateFrom, fn ($q) => $q->whereDate('sent_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('sent_at', '<=', $dateTo))
+            ->latest('sent_at')
+            ->paginate(30)
+            ->withQueryString();
+
+        $totalsByTemplate = MessageSend::query()
+            ->selectRaw('message_template_id, COUNT(*) as total')
+            ->groupBy('message_template_id')
+            ->pluck('total', 'message_template_id');
+
+        return view('message-sends.history', [
+            'sends'            => $sends,
+            'templates'        => MessageTemplate::orderBy('position')->get(),
+            'statuses'         => CatalogOptions::values('statuses'),
+            'templateFilter'   => $templateFilter,
+            'statusFilter'     => $statusFilter,
+            'nameQuery'        => $nameQuery,
+            'dateFrom'         => $dateFrom,
+            'dateTo'           => $dateTo,
+            'totalsByTemplate' => $totalsByTemplate,
         ]);
     }
 
@@ -73,43 +129,34 @@ class MessageSendController extends Controller
         ]);
 
         $template = MessageTemplate::findOrFail($data['message_template_id']);
-        $guests   = Guest::whereIn('id', $data['guest_ids'])
-            ->orderBy('name')
-            ->get();
+        $guests   = Guest::whereIn('id', $data['guest_ids'])->orderBy('name')->get();
 
-        $rows = $guests->map(function (Guest $guest) use ($template) {
-            $linkUrl = null;
-            $linkInfo = null;
+        $rows = $guests->map(fn ($g) => $this->renderForSend($g, $template));
 
-            if ($template->includes_link) {
-                $link = $this->linkService->ensureLinkFor($guest);
+        return view('message-sends.prepare', ['template' => $template, 'rows' => $rows]);
+    }
 
-                if ($link) {
-                    $linkUrl  = $this->linkService->linkUrl($guest, $link);
-                    $linkInfo = [
-                        'id'         => $link->id,
-                        'expires_at' => $link->expires_at,
-                        'reused'     => $link->wasRecentlyCreated === false,
-                    ];
-                }
-            }
+    public function renderOne(Request $request, Guest $guest): JsonResponse
+    {
+        $data = $request->validate([
+            'message_template_id' => ['required', 'integer', 'exists:message_templates,id'],
+        ]);
 
-            return [
-                'guest'    => $guest,
-                'link'     => $linkInfo,
-                'link_url' => $linkUrl,
-                'message'  => $template->render($guest, $linkUrl),
-                'eligible' => ! $template->includes_link || $linkUrl !== null,
-            ];
-        });
+        $template = MessageTemplate::findOrFail($data['message_template_id']);
+        $row = $this->renderForSend($guest, $template);
 
-        return view('message-sends.prepare', [
-            'template' => $template,
-            'rows'     => $rows,
+        return response()->json([
+            'message'              => $row['message'],
+            'public_guest_link_id' => $row['link']['id'] ?? null,
+            'link_url'             => $row['link_url'],
+            'eligible'             => $row['eligible'],
+            'phone_intl'           => $this->phoneIntl($guest),
+            'guest_name'           => $guest->name,
+            'template_name'        => $template->name,
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
             'guest_id'             => ['required', 'integer', 'exists:guests,id'],
@@ -131,10 +178,7 @@ class MessageSendController extends Controller
         ]);
 
         if ($request->wantsJson()) {
-            return response()->json([
-                'ok'      => true,
-                'send_id' => $send->id,
-            ]);
+            return response()->json(['ok' => true, 'send_id' => $send->id]);
         }
 
         return back()->with('status', "Envío registrado para {$guest->name}.");
@@ -146,34 +190,125 @@ class MessageSendController extends Controller
         $messageSend->delete();
 
         return redirect()
-            ->route('message-sends.index')
+            ->route('message-sends.history')
             ->with('status', "Envío de {$name} eliminado del histórico.");
+    }
+
+    private function renderForSend(Guest $guest, MessageTemplate $template): array
+    {
+        $linkUrl = null;
+        $linkInfo = null;
+
+        if ($template->hasLinkPlaceholder()) {
+            $link = $this->linkService->ensureLinkFor($guest);
+            if ($link) {
+                $linkUrl  = $this->linkService->linkUrl($guest, $link);
+                $linkInfo = [
+                    'id'         => $link->id,
+                    'expires_at' => $link->expires_at,
+                    'reused'     => $link->wasRecentlyCreated === false,
+                ];
+            }
+        }
+
+        return [
+            'guest'    => $guest,
+            'link'     => $linkInfo,
+            'link_url' => $linkUrl,
+            'message'  => $template->render($guest, $linkUrl),
+            'eligible' => ! $template->hasLinkPlaceholder() || $linkUrl !== null,
+        ];
+    }
+
+    private function buildRow(Guest $guest): array
+    {
+        $link = $guest->currentPublicLink;
+        $lastSend = $guest->messageSends->first();
+
+        return [
+            'guest'      => $guest,
+            'link'       => $link,
+            'state'      => $this->describeLinkState($link),
+            'last_send'  => $lastSend,
+            'sends_count'=> $guest->messageSends->count(),
+            'phone_intl' => $this->phoneIntl($guest),
+        ];
+    }
+
+    private function phoneIntl(Guest $guest): ?string
+    {
+        $clean = preg_replace('/[^0-9]/', '', $guest->phone ?? '');
+        if (! $clean) return null;
+        return strlen($clean) === 10 ? '52' . $clean : $clean;
+    }
+
+    private function describeLinkState(?PublicGuestLink $link): array
+    {
+        if (! $link) {
+            return ['key' => 'none', 'label' => 'Sin link', 'class' => 'status-default'];
+        }
+        if ($link->responded_at) {
+            return ['key' => 'responded', 'label' => 'Respondió', 'class' => 'status-confirmado'];
+        }
+        if ($link->closed_reason === 'cancelled') {
+            return ['key' => 'cancelled', 'label' => 'Cancelado', 'class' => 'status-no-asistira'];
+        }
+        if ($link->isExpired()) {
+            return ['key' => 'expired', 'label' => 'Venció', 'class' => 'status-no-asistira'];
+        }
+        if ($link->opened_at) {
+            return ['key' => 'opened', 'label' => 'Abrió, no respondió', 'class' => 'status-pendiente'];
+        }
+        return ['key' => 'active', 'label' => 'Enviado, sin abrir', 'class' => 'status-considerado'];
+    }
+
+    private function linkStateLabels(): array
+    {
+        return [
+            'none'      => 'Sin link',
+            'active'    => 'Enviado, sin abrir',
+            'opened'    => 'Abrió, no respondió',
+            'responded' => 'Respondió',
+            'expired'   => 'Venció',
+            'cancelled' => 'Cancelado',
+        ];
     }
 
     private function buildStats(): array
     {
         $today = MessageSend::whereDate('sent_at', today())->count();
         $week  = MessageSend::where('sent_at', '>=', now()->startOfWeek())->count();
-        $total = MessageSend::count();
 
-        $respondedToday = MessageSend::join('public_guest_links as l', 'l.id', '=', 'message_sends.public_guest_link_id')
-            ->whereNotNull('l.responded_at')
-            ->whereDate('l.responded_at', today())
+        $responded = PublicGuestLink::whereNotNull('responded_at')
+            ->where('is_current', true)
             ->count();
 
-        $pending = Guest::whereHas('messageSends')
+        $waiting = PublicGuestLink::whereNull('responded_at')
+            ->where('is_current', true)
+            ->where('expires_at', '>', now())
             ->where(function ($q) {
-                $q->whereDoesntHave('currentPublicLink', fn ($l) => $l->whereNotNull('responded_at'));
+                $q->whereNull('closed_reason')->orWhere('closed_reason', '!=', 'cancelled');
             })
-            ->where('status', '!=', 'No asistirá')
+            ->count();
+
+        $expired = PublicGuestLink::whereNull('responded_at')
+            ->where('is_current', true)
+            ->where('expires_at', '<=', now())
+            ->count();
+
+        $needsResend = Guest::whereHas('currentPublicLink', function ($q) {
+                $q->whereNull('responded_at')->where('expires_at', '<=', now());
+            })
+            ->whereIn('status', ['Invitacion Enviada', 'Confirmado'])
             ->count();
 
         return [
-            'today'           => $today,
-            'week'            => $week,
-            'total'           => $total,
-            'responded_today' => $respondedToday,
-            'pending'         => $pending,
+            'today'        => $today,
+            'week'         => $week,
+            'responded'    => $responded,
+            'waiting'      => $waiting,
+            'expired'      => $expired,
+            'needs_resend' => $needsResend,
         ];
     }
 }

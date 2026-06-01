@@ -5,13 +5,44 @@
 @section('subheading', 'Módulo para registrar a las personas invitadas dentro de cada familia o grupo confirmado')
 
 @section('content')
+    <style>
+        .cx-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .cx-hero .card { padding: 16px; display: flex; gap: 12px; align-items: center; }
+        .cx-hero .ico { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; color: white; }
+        .cx-hero .ico.purple { background: linear-gradient(135deg, #c693ea, #8f55be); }
+        .cx-hero .ico.blue { background: linear-gradient(135deg, #92c2e8, #4a8cc9); }
+        .cx-hero .ico.amber { background: linear-gradient(135deg, #f0c674, #c69440); }
+        .cx-hero .ico.pink { background: linear-gradient(135deg, #f0a5c5, #d8527f); }
+        .cx-hero .ico.green { background: linear-gradient(135deg, #aedca0, #5fa657); }
+        .cx-hero .info .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; color: var(--muted); }
+        .cx-hero .info .val { font-size: 22px; font-weight: 800; line-height: 1; color: var(--text); margin-top: 4px; }
+
+        .cx-pending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+        .cx-pending-stat { padding: 12px 14px; background: #fff3f7; border: 1px solid #f0c4d2; border-radius: 10px; }
+        .cx-pending-stat.ok { background: #ecf7e9; border-color: #c6e4be; }
+        .cx-pending-stat .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; color: var(--muted); }
+        .cx-pending-stat .val { font-size: 20px; font-weight: 800; color: #d8527f; margin-top: 4px; }
+        .cx-pending-stat.ok .val { color: #5fa657; }
+
+        .cx-filter-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 12px; align-items: end; }
+        .cx-filter-grid label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+        .cx-filter-grid input, .cx-filter-grid select { width: 100%; box-sizing: border-box; height: 42px; }
+    </style>
+
     <div x-data="{ showCompanionModal: false, showEditCompanionModal: {{ $editingCompanion ? 'true' : 'false' }} }">
-    <div class="toolbar">
-        <div class="inline">
-            <button class="btn secondary" type="button" @click="showCompanionModal = true">Dar de alta invitado</button>
-            <a class="btn" href="{{ route('companions.export', request()->query()) }}">Reporte de invitados</a>
+
+    <div class="card" style="margin-bottom: 18px; background: linear-gradient(135deg, var(--primary) 0%, #6b3b9e 100%); color: white; border: none;">
+        <div class="inline" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <div style="font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Personas individuales</div>
+                <h3 style="margin: 4px 0 0 0; font-size: 20px;">Registro de invitados</h3>
+                <div style="font-size: 12px; opacity: 0.85; margin-top: 4px;">Solo familias con estatus Confirmado pueden recibir invitados</div>
+            </div>
+            <div class="inline" style="gap: 10px;">
+                <button class="btn" style="background: white; color: var(--primary-dark);" type="button" @click="showCompanionModal = true">+ Dar de alta invitado</button>
+                <a class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);" href="{{ route('companions.export', request()->query()) }}">📥 Exportar reporte</a>
+            </div>
         </div>
-        <div class="small">Solo se pueden registrar invitados para familias o grupos con estatus `Confirmado`.</div>
     </div>
 
     <div class="modal-overlay" x-cloak x-show="showCompanionModal" x-transition.opacity @keydown.escape.window="showCompanionModal = false" @click.self="showCompanionModal = false">
@@ -61,39 +92,83 @@
         </div>
     @endif
 
-    <div class="card" style="margin-bottom: 18px;">
-        <div class="table-wrap">
-            <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; width: 100%;">
-                <div class="muted-box"><strong>Registros</strong><br>{{ $summary['records'] }}</div>
-                <div class="muted-box"><strong>Familia / grupo</strong><br>{{ $summary['guest_groups'] }}</div>
-                <div class="muted-box"><strong>Adultos</strong><br>{{ $summary['adults'] }}</div>
-                <div class="muted-box"><strong>Adolescentes</strong><br>{{ $summary['adolescents'] }}</div>
-                <div class="muted-box"><strong>Niños</strong><br>{{ $summary['children'] }}</div>
-            </div>
+    <div class="cx-hero">
+        <div class="card">
+            <div class="ico purple">📋</div>
+            <div class="info"><div class="lbl">Registros</div><div class="val">{{ number_format($summary['records']) }}</div></div>
+        </div>
+        <div class="card">
+            <div class="ico blue">👨‍👩‍👧</div>
+            <div class="info"><div class="lbl">Familias</div><div class="val">{{ number_format($summary['guest_groups']) }}</div></div>
+        </div>
+        <div class="card">
+            <div class="ico green">👤</div>
+            <div class="info"><div class="lbl">Adultos</div><div class="val">{{ number_format($summary['adults']) }}</div></div>
+        </div>
+        <div class="card">
+            <div class="ico amber">🧒</div>
+            <div class="info"><div class="lbl">Adolescentes</div><div class="val">{{ number_format($summary['adolescents']) }}</div></div>
+        </div>
+        <div class="card">
+            <div class="ico pink">👶</div>
+            <div class="info"><div class="lbl">Niños</div><div class="val">{{ number_format($summary['children']) }}</div></div>
         </div>
     </div>
 
     <div class="card" style="margin-bottom: 18px;">
         <div class="section-kicker">Control de faltantes</div>
         <h3 class="section-title">Confirmados pendientes por registrar</h3>
-        <div class="small" style="margin-top: 10px;">
-            Aquí se compara lo confirmado por cada familia o grupo contra los invitados ya registrados en este módulo. Si algo se capturó con tipo incorrecto, también se marca para que sepas qué falta y qué sobra.
+        <div class="small" style="margin-top: 6px; line-height: 1.6;">
+            Compara cuántas personas confirmó cada familia contra los invitados ya capturados. Marca lo que falta y lo que sobra (si hubo error en el tipo).
         </div>
 
-        <div class="table-wrap" style="margin-top: 16px;">
-            <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; width: 100%;">
-                <div class="muted-box"><strong>Familias / grupos pendientes</strong><br>{{ $pendingSummary['groups'] }}</div>
-                <div class="muted-box"><strong>Invitados pendientes</strong><br>{{ $pendingSummary['people'] }}</div>
-                <div class="muted-box"><strong>Adultos por registrar</strong><br>{{ $pendingSummary['adults'] }}</div>
-                <div class="muted-box"><strong>Adolescentes por registrar</strong><br>{{ $pendingSummary['adolescents'] }}</div>
-                <div class="muted-box"><strong>Niños por registrar</strong><br>{{ $pendingSummary['children'] }}</div>
+        <div style="margin-top: 14px;">
+            <div class="cx-pending-grid">
+                <div class="cx-pending-stat {{ $pendingSummary['groups'] == 0 ? 'ok' : '' }}">
+                    <div class="lbl">Familias pendientes</div>
+                    <div class="val">{{ number_format($pendingSummary['groups']) }}</div>
+                </div>
+                <div class="cx-pending-stat {{ $pendingSummary['people'] == 0 ? 'ok' : '' }}">
+                    <div class="lbl">Personas faltantes</div>
+                    <div class="val">{{ number_format($pendingSummary['people']) }}</div>
+                </div>
+                <div class="cx-pending-stat {{ $pendingSummary['adults'] == 0 ? 'ok' : '' }}">
+                    <div class="lbl">Adultos por registrar</div>
+                    <div class="val">{{ number_format($pendingSummary['adults']) }}</div>
+                </div>
+                <div class="cx-pending-stat {{ $pendingSummary['adolescents'] == 0 ? 'ok' : '' }}">
+                    <div class="lbl">Adolescentes por registrar</div>
+                    <div class="val">{{ number_format($pendingSummary['adolescents']) }}</div>
+                </div>
+                <div class="cx-pending-stat {{ $pendingSummary['children'] == 0 ? 'ok' : '' }}">
+                    <div class="lbl">Niños por registrar</div>
+                    <div class="val">{{ number_format($pendingSummary['children']) }}</div>
+                </div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; margin-top: 12px;">
-                <div class="muted-box"><strong>Invitados sobrantes o mal clasificados</strong><br>{{ $pendingSummary['extra_people'] }}</div>
-                <div class="muted-box"><strong>Adultos sobrantes</strong><br>{{ $pendingSummary['extra_adults'] }}</div>
-                <div class="muted-box"><strong>Adolescentes sobrantes</strong><br>{{ $pendingSummary['extra_adolescents'] }}</div>
-                <div class="muted-box"><strong>Niños sobrantes</strong><br>{{ $pendingSummary['extra_children'] }}</div>
-            </div>
+
+            @if ($pendingSummary['extra_people'] > 0)
+                <div style="margin-top: 14px;">
+                    <div class="small" style="margin-bottom: 8px; font-weight: 600; color: #d8527f;">⚠ Sobrantes o mal clasificados</div>
+                    <div class="cx-pending-grid">
+                        <div class="cx-pending-stat">
+                            <div class="lbl">Personas sobrantes</div>
+                            <div class="val">{{ number_format($pendingSummary['extra_people']) }}</div>
+                        </div>
+                        <div class="cx-pending-stat">
+                            <div class="lbl">Adultos sobrantes</div>
+                            <div class="val">{{ number_format($pendingSummary['extra_adults']) }}</div>
+                        </div>
+                        <div class="cx-pending-stat">
+                            <div class="lbl">Adolescentes sobrantes</div>
+                            <div class="val">{{ number_format($pendingSummary['extra_adolescents']) }}</div>
+                        </div>
+                        <div class="cx-pending-stat">
+                            <div class="lbl">Niños sobrantes</div>
+                            <div class="val">{{ number_format($pendingSummary['extra_children']) }}</div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="table-wrap" style="margin-top: 18px; max-height: 320px; overflow: auto;">
@@ -138,10 +213,10 @@
     </div>
 
     <div class="card" style="margin-bottom: 18px;">
-        <form method="get" class="form-grid">
+        <form method="get" class="cx-filter-grid">
             <div>
                 <label for="search">Buscar</label>
-                <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nombre o grupo">
+                <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nombre o grupo…">
             </div>
             <div>
                 <label for="group">Familia o grupo</label>
@@ -161,7 +236,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="inline" style="align-self: end;">
+            <div class="inline" style="gap: 6px;">
                 <button class="btn" type="submit">Filtrar</button>
                 <a class="btn secondary" href="{{ route('companions.index') }}">Limpiar</a>
                 @if ($editingCompanion)
@@ -250,6 +325,8 @@
             const summary = builder.querySelector('[data-companion-profile-summary]');
             const oldEntries = @json(old('entries', []));
 
+            const availableTypes = @json($types);
+
             const buildRow = (slot, oldEntry = {}, index = 0) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'card';
@@ -258,18 +335,24 @@
                 const sex = oldEntry.sex || '';
                 const notes = oldEntry.notes || '';
                 const name = oldEntry.name || '';
+                const currentType = oldEntry.type || slot.type;
                 const notesVisible = notes !== '';
 
+                const typeOptions = availableTypes.map(t =>
+                    `<option value="${t}" ${currentType === t ? 'selected' : ''}>${t}${t === slot.type ? ' (sugerido)' : ''}</option>`
+                ).join('');
+
                 wrapper.innerHTML = `
-                    <div style="display:grid; grid-template-columns: 1.3fr .7fr 1fr auto; gap: 12px; align-items: end;">
+                    <div style="display:grid; grid-template-columns: 1.3fr .8fr 1fr auto; gap: 12px; align-items: end;">
                         <div>
                             <label>Nombre del invitado</label>
                             <input type="text" name="entries[${index}][name]" value="${name.replace(/"/g, '&quot;')}" placeholder="Captura el nombre" />
                         </div>
                         <div>
-                            <label>Tipo asignado</label>
-                            <input type="hidden" name="entries[${index}][type]" value="${slot.type}">
-                            <input type="text" value="${slot.type}" readonly style="background:#f7f2fb;color:#6a4f81;" />
+                            <label>Tipo</label>
+                            <select name="entries[${index}][type]" data-type-select>
+                                ${typeOptions}
+                            </select>
                         </div>
                         <div>
                             <label>Género</label>
@@ -284,7 +367,7 @@
                             <button type="button" class="btn secondary small" data-toggle-notes>${notesVisible ? '−' : '+'}</button>
                         </div>
                     </div>
-                    <div class="small" style="margin-top: 10px; color:#8a6aa8; display:${slot.type === 'Niño' ? 'block' : 'none'};" data-child-note>
+                    <div class="small" style="margin-top: 10px; color:#8a6aa8;" data-child-note>
                         Niño será considerado hasta 9 años de edad.
                     </div>
                     <div data-notes-row style="margin-top: 12px; display:${notesVisible ? 'block' : 'none'};">
@@ -292,9 +375,17 @@
                         <textarea name="entries[${index}][notes]" rows="2" placeholder="Opcional">${notes}</textarea>
                     </div>
                     <div class="small" style="margin-top: 10px; color:#8a6aa8;">
-                        Registro pendiente: <strong>${slot.label}</strong>
+                        Registro sugerido: <strong>${slot.label}</strong>
                     </div>
                 `;
+
+                const typeSelect = wrapper.querySelector('[data-type-select]');
+                const childNote = wrapper.querySelector('[data-child-note]');
+                const updateChildNote = () => {
+                    childNote.style.display = typeSelect.value === 'Niño' ? 'block' : 'none';
+                };
+                typeSelect.addEventListener('change', updateChildNote);
+                updateChildNote();
 
                 return wrapper;
             };

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Guest;
 use App\Models\PublicGuestLink;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -57,12 +58,14 @@ class PublicGuestLinkService
                     ]);
                 });
 
+            $days = Setting::getInt('link_validity_days', 7);
+
             $link = PublicGuestLink::create([
                 'guest_id'     => $guest->id,
                 'token'        => Str::random(48),
                 'mode'         => $guest->status === 'Invitacion Enviada' ? 'invitation' : 'validation',
                 'generated_at' => now(),
-                'expires_at'   => now()->addDays(7),
+                'expires_at'   => now()->addDays($days),
                 'is_current'   => true,
             ]);
 

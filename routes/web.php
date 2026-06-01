@@ -9,6 +9,7 @@ use App\Http\Controllers\MessageSendController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\PublicGuestReviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SystemTransferController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Auth;
@@ -72,8 +73,10 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('module:message_sends')->group(function () {
         Route::get('/message-sends', [MessageSendController::class, 'index'])->name('message-sends.index');
+        Route::get('/message-sends/history', [MessageSendController::class, 'history'])->name('message-sends.history');
         Route::get('/message-sends/new', [MessageSendController::class, 'create'])->name('message-sends.create');
         Route::post('/message-sends/prepare', [MessageSendController::class, 'prepare'])->name('message-sends.prepare');
+        Route::post('/message-sends/render/{guest}', [MessageSendController::class, 'renderOne'])->name('message-sends.render');
         Route::post('/message-sends', [MessageSendController::class, 'store'])->name('message-sends.store');
         Route::delete('/message-sends/{messageSend}', [MessageSendController::class, 'destroy'])->name('message-sends.destroy');
     });
@@ -82,6 +85,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/system-transfer', [SystemTransferController::class, 'edit'])->name('system-transfer.edit');
         Route::post('/system-transfer/import', [SystemTransferController::class, 'import'])->name('system-transfer.import');
         Route::get('/system-transfer/contacts-csv', [SystemTransferController::class, 'exportContactsCsv'])->name('system-transfer.contacts-csv');
+    });
+
+    Route::middleware('module:settings')->group(function () {
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     });
 
     Route::middleware('module:users')->group(function () {

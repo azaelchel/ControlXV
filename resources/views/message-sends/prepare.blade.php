@@ -1,36 +1,37 @@
 @extends('layouts.app')
 
-@section('title', 'Envío listo')
+@section('title', 'Mensajes listos')
 @section('heading', 'Mensajes listos para enviar')
-@section('subheading', 'Copia cada mensaje y pégalo en WhatsApp. Se registra automáticamente al copiar.')
+@section('subheading', 'Copia cada mensaje y mándalo por WhatsApp. Se registra el envío al copiar.')
 
 @section('content')
     <div class="card" style="margin-bottom: 18px;">
         <div class="inline" style="justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 14px;">
             <div>
                 <div class="section-kicker">Plantilla</div>
-                <h3 class="section-title">{{ $template->name }}</h3>
+                <h3 class="section-title" style="margin: 0;">{{ $template->name }}</h3>
                 @if ($template->description)
-                    <p class="small" style="margin-top: 4px;">{{ $template->description }}</p>
+                    <p class="small" style="margin: 6px 0 0 0;">{{ $template->description }}</p>
                 @endif
             </div>
             <div class="inline" style="gap: 8px;">
-                <a href="{{ route('message-sends.create') }}" class="btn secondary">Cambiar selección</a>
-                <a href="{{ route('message-sends.index') }}" class="btn secondary">Ver histórico</a>
+                <a href="{{ route('message-sends.create') }}" class="btn secondary">← Cambiar selección</a>
+                <a href="{{ route('message-sends.index') }}" class="btn secondary">Ver panel</a>
             </div>
         </div>
     </div>
 
     <div class="card" style="margin-bottom: 18px; background: #faf6ff; border-color: #e6dff1;">
-        <p class="small" style="line-height: 1.7;">
-            <strong>Cómo funciona:</strong> Cada mensaje ya tiene los datos sustituidos (nombre + link) y el formato de WhatsApp.
-            Al hacer clic en <strong>Copiar y abrir WhatsApp</strong>, el mensaje se copia al portapapeles, se registra el envío,
-            y se abre WhatsApp con el número de la familia (puedes pegar el mensaje con un toque).
+        <p class="small" style="line-height: 1.7; margin: 0;">
+            <strong>Cómo funciona:</strong> Cada tarjeta trae el mensaje ya armado.
+            Al hacer clic en <strong>Copiar y abrir WhatsApp Web</strong> se copia al portapapeles,
+            se registra el envío y se abre <strong>WhatsApp Web</strong> con el número del destinatario.
+            Puedes <strong>volver a copiar las veces que quieras</strong>.
         </p>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 14px;">
-        @foreach ($rows as $row)
+        @foreach ($rows as $index => $row)
             @php
                 $guest = $row['guest'];
                 $message = $row['message'];
@@ -38,51 +39,42 @@
                 $link = $row['link'];
                 $eligible = $row['eligible'];
                 $phoneClean = preg_replace('/[^0-9]/', '', $guest->phone ?? '');
-                $whatsappUrl = $phoneClean
-                    ? 'https://wa.me/' . (strlen($phoneClean) === 10 ? '52' . $phoneClean : $phoneClean)
-                    : null;
+                $phoneIntl = $phoneClean ? (strlen($phoneClean) === 10 ? '52' . $phoneClean : $phoneClean) : null;
             @endphp
             <div class="card" data-send-card data-guest-id="{{ $guest->id }}">
                 <div class="inline" style="justify-content: space-between; align-items: start; gap: 14px; flex-wrap: wrap;">
                     <div>
-                        <div class="section-kicker">{{ $guest->group_name }}</div>
-                        <h3 class="section-title">{{ $guest->name }}</h3>
-                        <div class="small" style="margin-top: 4px;">
+                        <div class="section-kicker">#{{ $index + 1 }} · {{ $guest->group_name }}</div>
+                        <h3 class="section-title" style="margin: 0;">{{ $guest->name }}</h3>
+                        <div class="small" style="margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                             <span class="pill status-default">{{ $guest->status }}</span>
                             @if ($guest->phone)
-                                <span style="margin-left: 8px;">📱 {{ $guest->phone }}</span>
+                                <span>📱 {{ $guest->phone }}</span>
                             @else
-                                <span style="margin-left: 8px; color: var(--danger);">Sin teléfono</span>
+                                <span style="color: var(--danger);">Sin teléfono</span>
                             @endif
                             @if ($link)
-                                <span style="margin-left: 8px;">
-                                    Link {{ $link['reused'] ? 'reutilizado' : 'nuevo' }}, vence {{ \Carbon\Carbon::parse($link['expires_at'])->format('d/m/Y H:i') }}
-                                </span>
+                                <span>Link {{ $link['reused'] ? 'reutilizado' : 'nuevo' }} · vence {{ \Carbon\Carbon::parse($link['expires_at'])->format('d/m/Y H:i') }}</span>
                             @endif
+                            <span data-send-status style="display: none; color: #256141; font-weight: 700;">✓ Enviado registrado</span>
                         </div>
                     </div>
-                    <div class="inline" style="gap: 8px;">
-                        @if ($eligible && $whatsappUrl)
-                            <button type="button" class="btn" data-copy-and-open
+                    <div class="inline" style="gap: 8px; align-items: center;">
+                        @if ($eligible)
+                            <button type="button" class="btn" data-copy-action
                                 data-message="{{ $message }}"
-                                data-wa="{{ $whatsappUrl }}"
+                                data-phone="{{ $phoneIntl ?? '' }}"
                                 data-store-url="{{ route('message-sends.store') }}"
                                 data-csrf="{{ csrf_token() }}"
                                 data-guest-id="{{ $guest->id }}"
                                 data-template-id="{{ $template->id }}"
                                 data-link-id="{{ $link['id'] ?? '' }}">
-                                Copiar y abrir WhatsApp
+                                {{ $phoneIntl ? 'Copiar y abrir WhatsApp Web' : 'Solo copiar mensaje' }}
                             </button>
-                        @elseif ($eligible)
-                            <button type="button" class="btn" data-copy-and-open
+                            <button type="button" class="btn secondary" data-recopy
                                 data-message="{{ $message }}"
-                                data-wa=""
-                                data-store-url="{{ route('message-sends.store') }}"
-                                data-csrf="{{ csrf_token() }}"
-                                data-guest-id="{{ $guest->id }}"
-                                data-template-id="{{ $template->id }}"
-                                data-link-id="{{ $link['id'] ?? '' }}">
-                                Solo copiar mensaje
+                                title="Solo copia, no registra envío ni abre WhatsApp">
+                                Re-copiar
                             </button>
                         @else
                             <span class="pill status-no-asistira">No elegible (sin link disponible)</span>
@@ -93,32 +85,34 @@
                 <div style="margin-top: 14px;">
                     <textarea readonly rows="{{ min(14, max(6, substr_count($message, "\n") + 2)) }}" style="width: 100%; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.6;">{{ $message }}</textarea>
                 </div>
-
-                <div data-send-feedback style="margin-top: 10px; display: none;">
-                    <span class="pill status-confirmado">✓ Mensaje copiado y envío registrado</span>
-                </div>
             </div>
         @endforeach
     </div>
 
     <script>
-        document.querySelectorAll('[data-copy-and-open]').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const card    = btn.closest('[data-send-card]');
-                const message = btn.dataset.message;
-                const waUrl   = btn.dataset.wa;
-                const feedback = card.querySelector('[data-send-feedback]');
+        async function copyText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                return true;
+            }
+        }
 
-                try {
-                    await navigator.clipboard.writeText(message);
-                } catch (e) {
-                    const ta = document.createElement('textarea');
-                    ta.value = message;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                }
+        document.querySelectorAll('[data-copy-action]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const card = btn.closest('[data-send-card]');
+                const message = btn.dataset.message;
+                const phone = btn.dataset.phone;
+                const statusEl = card.querySelector('[data-send-status]');
+
+                await copyText(message);
 
                 try {
                     await fetch(btn.dataset.storeUrl, {
@@ -139,14 +133,22 @@
                     console.error('No se pudo registrar el envío', e);
                 }
 
-                feedback.style.display = 'inline-block';
-                btn.textContent = '✓ Copiado — re-copiar';
-                btn.classList.remove('btn');
-                btn.classList.add('btn', 'secondary');
+                statusEl.style.display = 'inline';
 
-                if (waUrl) {
-                    window.open(waUrl, '_blank');
+                if (phone) {
+                    // WhatsApp Web con el mensaje precargado
+                    const url = 'https://web.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(message);
+                    window.open(url, '_blank');
                 }
+            });
+        });
+
+        document.querySelectorAll('[data-recopy]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                await copyText(btn.dataset.message);
+                const original = btn.textContent;
+                btn.textContent = '✓ Copiado';
+                setTimeout(() => { btn.textContent = original; }, 1500);
             });
         });
     </script>

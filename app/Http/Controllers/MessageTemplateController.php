@@ -70,7 +70,7 @@ class MessageTemplateController extends Controller
             'content'     => ['required', 'string'],
         ]);
 
-        $data['includes_link'] = $request->boolean('includes_link');
+        $data['includes_link'] = str_contains($data['content'], '{link}');
 
         return $data;
     }
