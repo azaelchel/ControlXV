@@ -80,6 +80,11 @@ class Guest extends Model
         return $this->hasOne(PublicGuestLink::class)->where('is_current', true)->latestOfMany('generated_at');
     }
 
+    public function messageSends(): HasMany
+    {
+        return $this->hasMany(MessageSend::class)->latest();
+    }
+
     public function publicLinkIsActive(): bool
     {
         return $this->public_link_token !== null

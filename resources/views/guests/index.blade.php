@@ -316,61 +316,14 @@
                                         <br>{{ $currentLink->responded_at->format('d/m/Y H:i') }}
                                     @endif
                                 </div>
-                                <div class="inline" style="margin-bottom: 8px;">
-                                    @if ($guest->canGeneratePublicLink())
-                                        <form method="post" action="{{ route('guests.public-link', $guest) }}" data-preserve-table="guests-table">
-                                            @csrf
-                                            <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
-                                            <button class="btn success icon-btn" type="submit" title="{{ $currentLink && $currentLink->is_current && ! $currentLink->responded_at && ! $currentLink->isExpired() ? 'Regenerar link público' : 'Generar link público' }}" aria-label="{{ $currentLink && $currentLink->is_current && ! $currentLink->responded_at && ! $currentLink->isExpired() ? 'Regenerar link público' : 'Generar link público' }}">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M15 3h6v6"/>
-                                                    <path d="M10 14 21 3"/>
-                                                    <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    @endif
-                                    @if ($currentLink)
-                                        <a class="btn secondary icon-btn" href="{{ route('guest-review.show', ['guest' => $guest, 'token' => $currentLink->token], absolute: true) }}" target="_blank" rel="noopener" title="Abrir link actual" aria-label="Abrir link actual">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M14 3h7v7"/>
-                                                <path d="M10 14 21 3"/>
-                                                <path d="M5 5v14h14"/>
-                                            </svg>
-                                        </a>
-                                        <button class="btn secondary icon-btn" type="button" data-copy-text="{{ route('guest-review.show', ['guest' => $guest, 'token' => $currentLink->token], absolute: true) }}" title="Copiar link actual" aria-label="Copiar link actual">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                            </svg>
-                                        </button>
-                                        @if ($currentLink->is_current && ! $currentLink->responded_at && ! $currentLink->isExpired())
-                                            <form method="post" action="{{ route('guests.public-link.cancel', $guest) }}" data-preserve-table="guests-table"
-                                                data-confirm-title="¿Cancelar este link?"
-                                                data-confirm-text="Para el invitado se verá como vencido y ya no podrá capturar ni guardar cambios."
-                                                data-confirm-button="Sí, cancelar link"
-                                                data-confirm-color="#d8527f"
-                                                data-confirm-icon="warning">
-                                                @csrf
-                                                <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
-                                                <button class="btn danger icon-btn" type="submit" title="Cancelar link actual" aria-label="Cancelar link actual">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M18 6 6 18"/>
-                                                        <path d="m6 6 12 12"/>
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        @endif
-                                    @endif
-                                    <button
-                                        class="btn secondary small"
-                                        type="button"
-                                        data-history-open
-                                        data-history-title="{{ $guest->display_name }}"
-                                        data-history-items='@json($historyItems)'>
-                                        Histórico
-                                    </button>
-                                </div>
+                                <button
+                                    class="btn secondary small"
+                                    type="button"
+                                    data-history-open
+                                    data-history-title="{{ $guest->display_name }}"
+                                    data-history-items='@json($historyItems)'>
+                                    Histórico
+                                </button>
                             </td>
                             <td>
                                 <form id="{{ $quickFormId }}" method="post" action="{{ route('guests.quick-update', $guest) }}" data-ajax-submit data-autosave-form>

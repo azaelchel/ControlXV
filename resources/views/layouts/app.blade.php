@@ -589,6 +589,12 @@
                     @if (Auth::user()->canAccessModule('tables'))
                         <a class="nav-tab {{ request()->routeIs('tables.*') ? 'active' : '' }}" href="{{ route('tables.index') }}">Mesas confirmadas</a>
                     @endif
+                    @if (Auth::user()->canAccessModule('message_sends'))
+                        <a class="nav-tab {{ request()->routeIs('message-sends.*') ? 'active' : '' }}" href="{{ route('message-sends.index') }}">Envíos</a>
+                    @endif
+                    @if (Auth::user()->canAccessModule('message_templates'))
+                        <a class="nav-tab {{ request()->routeIs('message-templates.*') ? 'active' : '' }}" href="{{ route('message-templates.index') }}">Plantillas</a>
+                    @endif
                     @if (Auth::user()->canAccessModule('catalogs'))
                         <a class="nav-tab {{ request()->routeIs('catalogs.*') ? 'active' : '' }}" href="{{ route('catalogs.index') }}">Catálogos</a>
                     @endif

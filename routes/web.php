@@ -5,6 +5,8 @@ use App\Http\Controllers\CompanionController;
 use App\Http\Controllers\ConfirmedTableController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\MessageSendController;
+use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\PublicGuestReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemTransferController;
@@ -58,6 +60,22 @@ Route::middleware('auth')->group(function () {
         Route::post('/catalogs', [CatalogController::class, 'store'])->name('catalogs.store');
         Route::put('/catalogs/{catalog}', [CatalogController::class, 'update'])->name('catalogs.update');
         Route::delete('/catalogs/{catalog}', [CatalogController::class, 'destroy'])->name('catalogs.destroy');
+    });
+
+    Route::middleware('module:message_templates')->group(function () {
+        Route::get('/message-templates', [MessageTemplateController::class, 'index'])->name('message-templates.index');
+        Route::post('/message-templates', [MessageTemplateController::class, 'store'])->name('message-templates.store');
+        Route::put('/message-templates/{template}', [MessageTemplateController::class, 'update'])->name('message-templates.update');
+        Route::patch('/message-templates/{template}/toggle', [MessageTemplateController::class, 'toggle'])->name('message-templates.toggle');
+        Route::delete('/message-templates/{template}', [MessageTemplateController::class, 'destroy'])->name('message-templates.destroy');
+    });
+
+    Route::middleware('module:message_sends')->group(function () {
+        Route::get('/message-sends', [MessageSendController::class, 'index'])->name('message-sends.index');
+        Route::get('/message-sends/new', [MessageSendController::class, 'create'])->name('message-sends.create');
+        Route::post('/message-sends/prepare', [MessageSendController::class, 'prepare'])->name('message-sends.prepare');
+        Route::post('/message-sends', [MessageSendController::class, 'store'])->name('message-sends.store');
+        Route::delete('/message-sends/{messageSend}', [MessageSendController::class, 'destroy'])->name('message-sends.destroy');
     });
 
     Route::middleware('module:system_transfer')->group(function () {
