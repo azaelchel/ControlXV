@@ -382,13 +382,14 @@ class GuestController extends Controller
         if ($request->filled('search')) {
             $search = trim((string) $request->input('search'));
 
-            $query->where(function ($builder) use ($search) {
+            $needle = '%' . strtolower($search) . '%';
+            $query->where(function ($builder) use ($needle) {
                 $builder
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('prefix', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('group_name', 'like', "%{$search}%")
-                    ->orWhere('sponsor', 'like', "%{$search}%");
+                    ->whereRaw('LOWER(name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(prefix) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(group_name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(sponsor) LIKE ?', [$needle]);
             });
         }
     }

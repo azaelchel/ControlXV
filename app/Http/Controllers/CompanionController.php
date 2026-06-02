@@ -32,12 +32,12 @@ class CompanionController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = trim((string) $request->input('search'));
-            $query->where(function ($builder) use ($search) {
+            $needle = '%' . strtolower(trim((string) $request->input('search'))) . '%';
+            $query->where(function ($builder) use ($needle) {
                 $builder
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('invited_group', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
+                    ->whereRaw('LOWER(name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(invited_group) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(notes) LIKE ?', [$needle]);
             });
         }
 
@@ -244,12 +244,12 @@ class CompanionController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = trim((string) $request->input('search'));
-            $query->where(function ($builder) use ($search) {
+            $needle = '%' . strtolower(trim((string) $request->input('search'))) . '%';
+            $query->where(function ($builder) use ($needle) {
                 $builder
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('invited_group', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
+                    ->whereRaw('LOWER(name) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(invited_group) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(notes) LIKE ?', [$needle]);
             });
         }
 

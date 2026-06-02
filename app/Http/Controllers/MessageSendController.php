@@ -32,7 +32,7 @@ class MessageSendController extends Controller
             ->with(['currentPublicLink', 'messageSends' => fn ($q) => $q->latest()->with('template')])
             ->when($statusFilter, fn ($q) => $q->where('status', $statusFilter))
             ->when($groupFilter, fn ($q) => $q->where('group_name', $groupFilter))
-            ->when($nameQuery, fn ($q) => $q->where('name', 'like', '%' . $nameQuery . '%'))
+            ->when($nameQuery, fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($nameQuery) . '%']))
             ->orderBy('name')
             ->get();
 
@@ -95,7 +95,7 @@ class MessageSendController extends Controller
             ->with(['guest', 'template', 'publicLink', 'user'])
             ->when($templateFilter, fn ($q) => $q->where('message_template_id', $templateFilter))
             ->when($statusFilter, fn ($q) => $q->whereHas('guest', fn ($g) => $g->where('status', $statusFilter)))
-            ->when($nameQuery, fn ($q) => $q->whereHas('guest', fn ($g) => $g->where('name', 'like', '%' . $nameQuery . '%')))
+            ->when($nameQuery, fn ($q) => $q->whereHas('guest', fn ($g) => $g->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($nameQuery) . '%'])))
             ->when($dateFrom, fn ($q) => $q->whereDate('sent_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('sent_at', '<=', $dateTo))
             ->latest('sent_at')

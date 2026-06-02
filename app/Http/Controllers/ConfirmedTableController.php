@@ -17,12 +17,12 @@ class ConfirmedTableController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = trim((string) $request->input('search'));
-            $query->where(function ($builder) use ($search) {
+            $needle = '%' . strtolower(trim((string) $request->input('search'))) . '%';
+            $query->where(function ($builder) use ($needle) {
                 $builder
-                    ->where('guest_group', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%");
+                    ->whereRaw('LOWER(guest_group) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(phone) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(notes) LIKE ?', [$needle]);
             });
         }
 
