@@ -23,17 +23,12 @@
 
     <div>
         <label for="type">Tipo</label>
-        @if ($companion->exists)
-            <input type="hidden" name="type" value="{{ old('type', $companion->type) }}">
-            <input id="type" type="text" value="{{ old('type', $companion->type) ?: 'Sin definir' }}" readonly style="background:#f7f2fb;color:#6a4f81;">
-        @else
-            <select id="type" name="type">
-                <option value="">Sin definir</option>
-                @foreach ($types as $value)
-                    <option value="{{ $value }}" @selected(old('type', $companion->type) === $value)>{{ $value }}</option>
-                @endforeach
-            </select>
-        @endif
+        <select id="type" name="type">
+            <option value="">Sin definir</option>
+            @foreach ($types as $value)
+                <option value="{{ $value }}" @selected(old('type', $companion->type) === $value)>{{ $value }}</option>
+            @endforeach
+        </select>
         @error('type') <div class="error">{{ $message }}</div> @enderror
     </div>
 
