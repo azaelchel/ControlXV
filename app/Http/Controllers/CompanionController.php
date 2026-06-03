@@ -176,6 +176,7 @@ class CompanionController extends Controller
                 'type' => $entry['type'],
                 'sex' => $entry['sex'],
                 'notes' => $entry['notes'],
+                'source' => 'manual',
             ]);
         });
 

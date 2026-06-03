@@ -128,6 +128,7 @@ class PublicGuestReviewController extends Controller
                     'type' => $row['type'],
                     'sex' => $row['sex'] ?: null,
                     'active' => true,
+                    'source' => 'link',
                 ];
 
                 $rowId = isset($row['id']) ? (int) $row['id'] : null;

@@ -297,6 +297,7 @@
                             <th>Nombre</th>
                             <th>Tipo</th>
                             <th>Género</th>
+                            <th>Origen</th>
                             <th>Registrado</th>
                         </tr>
                     </thead>
@@ -421,20 +422,27 @@
                         adolExp.textContent = fmtExpected(data.counts.adolescents, data.expected.adolescents);
                         childExp.textContent = fmtExpected(data.counts.children, data.expected.children);
 
+                        const sourceBadge = (src) => {
+                            if (src === 'link') return '<span class="pill status-confirmado" style="font-size:10px;padding:2px 8px;">🔗 Link</span>';
+                            if (src === 'manual') return '<span class="pill status-default" style="font-size:10px;padding:2px 8px;">✋ Manual</span>';
+                            return '<span class="pill" style="font-size:10px;padding:2px 8px;background:#f0e9fa;color:var(--muted);">— Histórico</span>';
+                        };
+
                         if (data.companions.length === 0) {
-                            list.innerHTML = '<tr><td colspan="4" class="empty">Aún no hay invitados registrados para esta familia.</td></tr>';
+                            list.innerHTML = '<tr><td colspan="5" class="empty">Aún no hay invitados registrados para esta familia.</td></tr>';
                         } else {
                             list.innerHTML = data.companions.map(c => `
                                 <tr>
                                     <td><strong>${c.name}</strong>${c.notes ? `<div class="small">${c.notes}</div>` : ''}</td>
                                     <td>${c.type}</td>
                                     <td>${c.sex || '—'}</td>
+                                    <td>${sourceBadge(c.source)}</td>
                                     <td class="small">${c.created_at || '—'}</td>
                                 </tr>
                             `).join('');
                         }
                     } catch (e) {
-                        list.innerHTML = '<tr><td colspan="4" class="empty">No se pudieron cargar los invitados.</td></tr>';
+                        list.innerHTML = '<tr><td colspan="5" class="empty">No se pudieron cargar los invitados.</td></tr>';
                     } finally {
                         loading.style.display = 'none';
                     }

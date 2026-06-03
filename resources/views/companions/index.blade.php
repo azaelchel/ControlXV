@@ -267,7 +267,16 @@
                         @endphp
                         <tr>
                             <td>{{ $companion->invited_group }}</td>
-                            <td>{{ $companion->name }}</td>
+                            <td>
+                                {{ $companion->name }}
+                                @if ($companion->source === 'link')
+                                    <span class="pill status-confirmado" style="font-size: 10px; padding: 2px 8px; margin-left: 4px;" title="Capturado por el invitado desde el link">🔗 Link</span>
+                                @elseif ($companion->source === 'manual')
+                                    <span class="pill status-default" style="font-size: 10px; padding: 2px 8px; margin-left: 4px;" title="Capturado manualmente desde admin">✋ Manual</span>
+                                @else
+                                    <span class="pill" style="font-size: 10px; padding: 2px 8px; margin-left: 4px; background: #f0e9fa; color: var(--muted);" title="Origen no registrado (anterior a este cambio)">— Histórico</span>
+                                @endif
+                            </td>
                             <td data-order="{{ $companion->created_at?->timestamp ?? 0 }}">
                                 {{ $companion->created_at?->format('d/m/Y H:i') ?? '—' }}
                             </td>

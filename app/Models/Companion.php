@@ -15,6 +15,7 @@ class Companion extends Model
         'type',
         'sex',
         'notes',
+        'source',
         'active',
     ];
 

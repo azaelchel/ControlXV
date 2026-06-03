@@ -158,6 +158,7 @@ class MessageSendController extends Controller
                 'type'  => $c->type ?? '—',
                 'sex'   => $c->sex ?? '',
                 'notes' => $c->notes ?? '',
+                'source' => $c->source,
                 'created_at' => $c->created_at?->format('d/m/Y H:i'),
             ]);
 
