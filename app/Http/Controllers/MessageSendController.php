@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Companion;
 use App\Models\Guest;
 use App\Models\MessageSend;
 use App\Models\MessageTemplate;
@@ -36,7 +37,15 @@ class MessageSendController extends Controller
             ->orderBy('name')
             ->get();
 
-        $rows = $guests->map(fn (Guest $g) => $this->buildRow($g));
+        // Conteo de invitados registrados por familia (para mostrar boton si hay)
+        $companionCounts = Companion::query()
+            ->select('invited_group')
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('invited_group')
+            ->pluck('total', 'invited_group')
+            ->all();
+
+        $rows = $guests->map(fn (Guest $g) => $this->buildRow($g, $companionCounts));
 
         if ($linkStateFilter) {
             $rows = $rows->filter(fn ($r) => $r['state']['key'] === $linkStateFilter)->values();
@@ -136,6 +145,43 @@ class MessageSendController extends Controller
         return view('message-sends.prepare', ['template' => $template, 'rows' => $rows]);
     }
 
+    public function companions(Guest $guest): JsonResponse
+    {
+        $companions = Companion::query()
+            ->where('invited_group', $guest->name)
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Companion $c) => [
+                'id'    => $c->id,
+                'name'  => $c->name,
+                'type'  => $c->type ?? '—',
+                'sex'   => $c->sex ?? '',
+                'notes' => $c->notes ?? '',
+                'created_at' => $c->created_at?->format('d/m/Y H:i'),
+            ]);
+
+        $byType = $companions->groupBy('type')->map->count();
+
+        return response()->json([
+            'guest_name' => $guest->name,
+            'status'     => $guest->status,
+            'companions' => $companions,
+            'counts'     => [
+                'total'        => $companions->count(),
+                'adults'       => $byType['Adulto'] ?? 0,
+                'adolescents'  => $byType['Adolescente'] ?? 0,
+                'children'     => $byType['Niño'] ?? 0,
+            ],
+            'expected' => [
+                'adults'      => (int) $guest->adults,
+                'adolescents' => (int) $guest->adolescents,
+                'children'    => (int) $guest->children,
+                'total'       => (int) ($guest->adults + $guest->adolescents + $guest->children),
+            ],
+        ]);
+    }
+
     public function renderOne(Request $request, Guest $guest): JsonResponse
     {
         $data = $request->validate([
@@ -220,18 +266,19 @@ class MessageSendController extends Controller
         ];
     }
 
-    private function buildRow(Guest $guest): array
+    private function buildRow(Guest $guest, array $companionCounts = []): array
     {
         $link = $guest->currentPublicLink;
         $lastSend = $guest->messageSends->first();
 
         return [
-            'guest'      => $guest,
-            'link'       => $link,
-            'state'      => $this->describeLinkState($link),
-            'last_send'  => $lastSend,
-            'sends_count'=> $guest->messageSends->count(),
-            'phone_intl' => $this->phoneIntl($guest),
+            'guest'           => $guest,
+            'link'            => $link,
+            'state'           => $this->describeLinkState($link),
+            'last_send'       => $lastSend,
+            'sends_count'     => $guest->messageSends->count(),
+            'phone_intl'      => $this->phoneIntl($guest),
+            'companion_count' => $companionCounts[$guest->name] ?? 0,
         ];
     }
 

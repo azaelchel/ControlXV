@@ -253,6 +253,7 @@
                     <tr>
                         <th>Familia o grupo</th>
                         <th>Nombre del invitado</th>
+                        <th>Fecha de registro</th>
                         <th>Tipo</th>
                         <th>Género</th>
                         <th>Observaciones</th>
@@ -267,6 +268,9 @@
                         <tr>
                             <td>{{ $companion->invited_group }}</td>
                             <td>{{ $companion->name }}</td>
+                            <td data-order="{{ $companion->created_at?->timestamp ?? 0 }}">
+                                {{ $companion->created_at?->format('d/m/Y H:i') ?? '—' }}
+                            </td>
                             <td>{{ $companion->type ?: '—' }}</td>
                             <td>{{ $companion->sex ?: '—' }}</td>
                             <td>{{ $companion->notes ?: '—' }}</td>
@@ -301,7 +305,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="empty">No hay invitados cargados.</td></tr>
+                        <tr><td colspan="7" class="empty">No hay invitados cargados.</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/message-sends/new', [MessageSendController::class, 'create'])->name('message-sends.create');
         Route::post('/message-sends/prepare', [MessageSendController::class, 'prepare'])->name('message-sends.prepare');
         Route::post('/message-sends/render/{guest}', [MessageSendController::class, 'renderOne'])->name('message-sends.render');
+        Route::get('/message-sends/companions/{guest}', [MessageSendController::class, 'companions'])->name('message-sends.companions');
         Route::post('/message-sends', [MessageSendController::class, 'store'])->name('message-sends.store');
         Route::delete('/message-sends/{messageSend}', [MessageSendController::class, 'destroy'])->name('message-sends.destroy');
     });

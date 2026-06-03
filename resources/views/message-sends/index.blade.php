@@ -221,6 +221,14 @@
                                             title="Copiar el último mensaje enviado">📋</button>
                                     @endif
 
+                                    {{-- Ver invitados registrados --}}
+                                    @if ($row['companion_count'] > 0)
+                                        <button type="button" class="btn secondary icon-btn" data-view-companions
+                                            data-guest-id="{{ $guest->id }}"
+                                            data-count="{{ $row['companion_count'] }}"
+                                            title="Ver los {{ $row['companion_count'] }} invitados registrados">👥</button>
+                                    @endif
+
                                     {{-- Abrir WhatsApp Web (con el último mensaje si existe) --}}
                                     @if ($phoneIntl)
                                         <button type="button" class="btn secondary icon-btn" data-open-whatsapp
@@ -246,6 +254,62 @@
                 {{ $rows->links() }}
             </div>
         @endif
+    </div>
+
+    {{-- Modal: Invitados registrados de la familia --}}
+    <div class="modal-bg" id="companions-modal">
+        <div class="modal-box" style="max-width: 760px;">
+            <div class="inline" style="justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                <div>
+                    <div class="section-kicker">Invitados registrados</div>
+                    <h3 class="section-title" style="margin: 0;" id="cmp-guest-name">—</h3>
+                </div>
+                <button type="button" class="btn ghost" id="cmp-close">✕</button>
+            </div>
+
+            <div id="cmp-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Total</div>
+                    <div style="font-size: 22px; font-weight: 800; color: var(--primary-dark);" id="cmp-total">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmp-total-expected"></div>
+                </div>
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Adultos</div>
+                    <div style="font-size: 22px; font-weight: 800;" id="cmp-adults">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmp-adults-expected"></div>
+                </div>
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Adolescentes</div>
+                    <div style="font-size: 22px; font-weight: 800;" id="cmp-adolescents">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmp-adolescents-expected"></div>
+                </div>
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Niños</div>
+                    <div style="font-size: 22px; font-weight: 800;" id="cmp-children">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmp-children-expected"></div>
+                </div>
+            </div>
+
+            <div class="table-wrap" style="max-height: 50vh; overflow: auto;">
+                <table style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Género</th>
+                            <th>Registrado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cmp-list"></tbody>
+                </table>
+            </div>
+
+            <div id="cmp-loading" class="small" style="margin-top: 12px; display: none;">Cargando…</div>
+
+            <div class="inline" style="margin-top: 14px; justify-content: flex-end;">
+                <a href="{{ route('companions.index') }}" class="btn secondary">Ir al módulo Invitados →</a>
+            </div>
+        </div>
     </div>
 
     {{-- Modal de envío rápido --}}
@@ -305,6 +369,78 @@
                 setTimeout(() => { btn.textContent = orig; }, 1500);
             });
         });
+
+        // Modal de invitados registrados
+        (function () {
+            const modal = document.getElementById('companions-modal');
+            const guestNameEl = document.getElementById('cmp-guest-name');
+            const list = document.getElementById('cmp-list');
+            const loading = document.getElementById('cmp-loading');
+            const closeBtn = document.getElementById('cmp-close');
+
+            const totalEl = document.getElementById('cmp-total');
+            const adultsEl = document.getElementById('cmp-adults');
+            const adolEl = document.getElementById('cmp-adolescents');
+            const childEl = document.getElementById('cmp-children');
+            const totalExp = document.getElementById('cmp-total-expected');
+            const adultsExp = document.getElementById('cmp-adults-expected');
+            const adolExp = document.getElementById('cmp-adolescents-expected');
+            const childExp = document.getElementById('cmp-children-expected');
+
+            const close = () => modal.classList.remove('open');
+            closeBtn.addEventListener('click', close);
+            modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+            const fmtExpected = (got, exp) => {
+                if (exp === 0 && got === 0) return '';
+                if (got === exp) return `✓ de ${exp} esperados`;
+                if (got < exp) return `de ${exp} esperados (faltan ${exp - got})`;
+                return `de ${exp} esperados (${got - exp} extra)`;
+            };
+
+            document.querySelectorAll('[data-view-companions]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const guestId = btn.dataset.guestId;
+                    list.innerHTML = '';
+                    loading.style.display = 'block';
+                    modal.classList.add('open');
+
+                    try {
+                        const res = await fetch(`/message-sends/companions/${guestId}`, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        const data = await res.json();
+
+                        guestNameEl.textContent = data.guest_name + ' · ' + data.status;
+                        totalEl.textContent = data.counts.total;
+                        adultsEl.textContent = data.counts.adults;
+                        adolEl.textContent = data.counts.adolescents;
+                        childEl.textContent = data.counts.children;
+                        totalExp.textContent = fmtExpected(data.counts.total, data.expected.total);
+                        adultsExp.textContent = fmtExpected(data.counts.adults, data.expected.adults);
+                        adolExp.textContent = fmtExpected(data.counts.adolescents, data.expected.adolescents);
+                        childExp.textContent = fmtExpected(data.counts.children, data.expected.children);
+
+                        if (data.companions.length === 0) {
+                            list.innerHTML = '<tr><td colspan="4" class="empty">Aún no hay invitados registrados para esta familia.</td></tr>';
+                        } else {
+                            list.innerHTML = data.companions.map(c => `
+                                <tr>
+                                    <td><strong>${c.name}</strong>${c.notes ? `<div class="small">${c.notes}</div>` : ''}</td>
+                                    <td>${c.type}</td>
+                                    <td>${c.sex || '—'}</td>
+                                    <td class="small">${c.created_at || '—'}</td>
+                                </tr>
+                            `).join('');
+                        }
+                    } catch (e) {
+                        list.innerHTML = '<tr><td colspan="4" class="empty">No se pudieron cargar los invitados.</td></tr>';
+                    } finally {
+                        loading.style.display = 'none';
+                    }
+                });
+            });
+        })();
 
         // Abrir WhatsApp Web (con último mensaje si existe)
         document.querySelectorAll('[data-open-whatsapp]').forEach(btn => {
