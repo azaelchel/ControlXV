@@ -197,6 +197,12 @@
                             <button type="button" class="btn secondary icon-btn" data-copy-msg
                                 data-message="{{ $send->rendered_message }}"
                                 title="Copiar mensaje">📋</button>
+                            @if ($link && $link->responded_at && $send->guest)
+                                <button type="button" class="btn secondary icon-btn" data-view-companions
+                                    data-guest-id="{{ $send->guest->id }}"
+                                    style="background: #ecf7e9; color: #256141; border-color: #c6e4be;"
+                                    title="Ver los invitados que registraron al confirmar">👥</button>
+                            @endif
                             @if ($link)
                                 <a class="btn secondary icon-btn"
                                     href="{{ route('guest-review.show', ['guest' => $send->guest, 'token' => $link->token]) }}"
@@ -223,6 +229,53 @@
         @if ($sends->hasPages())
             <div style="margin-top: 14px;">{{ $sends->links() }}</div>
         @endif
+    </div>
+
+    {{-- Modal: Invitados registrados --}}
+    <div class="preview-modal" id="companions-modal-history">
+        <div class="preview-box" style="max-width: 760px;">
+            <div class="inline" style="justify-content: space-between; align-items: start; margin-bottom: 14px;">
+                <div>
+                    <div class="section-kicker">Invitados registrados</div>
+                    <h3 class="section-title" style="margin: 0;" id="cmph-guest-name">—</h3>
+                </div>
+                <button type="button" class="btn ghost" id="cmph-close">✕</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Total</div>
+                    <div style="font-size: 22px; font-weight: 800; color: var(--primary-dark);" id="cmph-total">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmph-total-expected"></div>
+                </div>
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Adultos</div>
+                    <div style="font-size: 22px; font-weight: 800;" id="cmph-adults">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmph-adults-expected"></div>
+                </div>
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Adolescentes</div>
+                    <div style="font-size: 22px; font-weight: 800;" id="cmph-adolescents">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmph-adolescents-expected"></div>
+                </div>
+                <div style="padding: 12px; background: #faf6ff; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Niños</div>
+                    <div style="font-size: 22px; font-weight: 800;" id="cmph-children">0</div>
+                    <div style="font-size: 11px; color: var(--muted);" id="cmph-children-expected"></div>
+                </div>
+            </div>
+
+            <div class="table-wrap" style="max-height: 50vh; overflow: auto;">
+                <table style="min-width: 100%;">
+                    <thead>
+                        <tr><th>Nombre</th><th>Tipo</th><th>Género</th><th>Origen</th><th>Registrado</th></tr>
+                    </thead>
+                    <tbody id="cmph-list"></tbody>
+                </table>
+            </div>
+
+            <div id="cmph-loading" class="small" style="margin-top: 12px; display: none;">Cargando…</div>
+        </div>
     </div>
 
     {{-- Modal preview --}}
@@ -287,6 +340,82 @@
                 await copyToClipboard(txt.value);
                 copyBtn.textContent = '✓ Copiado';
                 setTimeout(() => { copyBtn.textContent = 'Copiar mensaje'; }, 1500);
+            });
+        })();
+
+        // Modal de invitados registrados
+        (function () {
+            const modal = document.getElementById('companions-modal-history');
+            const nameEl = document.getElementById('cmph-guest-name');
+            const list = document.getElementById('cmph-list');
+            const loading = document.getElementById('cmph-loading');
+            const closeBtn = document.getElementById('cmph-close');
+            const tot = document.getElementById('cmph-total');
+            const ad = document.getElementById('cmph-adults');
+            const adol = document.getElementById('cmph-adolescents');
+            const ni = document.getElementById('cmph-children');
+            const totExp = document.getElementById('cmph-total-expected');
+            const adExp = document.getElementById('cmph-adults-expected');
+            const adolExp = document.getElementById('cmph-adolescents-expected');
+            const niExp = document.getElementById('cmph-children-expected');
+
+            const close = () => modal.classList.remove('open');
+            closeBtn.addEventListener('click', close);
+            modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+            const fmtExpected = (got, exp) => {
+                if (exp === 0 && got === 0) return '';
+                if (got === exp) return `✓ de ${exp}`;
+                if (got < exp) return `de ${exp} (faltan ${exp - got})`;
+                return `de ${exp} (${got - exp} extra)`;
+            };
+
+            const sourceBadge = (src) => {
+                if (src === 'link') return '<span class="pill status-confirmado" style="font-size:10px;padding:2px 8px;">🔗 Link</span>';
+                if (src === 'manual') return '<span class="pill status-default" style="font-size:10px;padding:2px 8px;">✋ Manual</span>';
+                return '<span class="pill" style="font-size:10px;padding:2px 8px;background:#f0e9fa;color:var(--muted);">— Histórico</span>';
+            };
+
+            document.querySelectorAll('[data-view-companions]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const guestId = btn.dataset.guestId;
+                    list.innerHTML = '';
+                    loading.style.display = 'block';
+                    modal.classList.add('open');
+
+                    try {
+                        const res = await fetch(`/message-sends/companions/${guestId}`, { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+
+                        nameEl.textContent = data.guest_name + ' · ' + data.status;
+                        tot.textContent = data.counts.total;
+                        ad.textContent = data.counts.adults;
+                        adol.textContent = data.counts.adolescents;
+                        ni.textContent = data.counts.children;
+                        totExp.textContent = fmtExpected(data.counts.total, data.expected.total);
+                        adExp.textContent = fmtExpected(data.counts.adults, data.expected.adults);
+                        adolExp.textContent = fmtExpected(data.counts.adolescents, data.expected.adolescents);
+                        niExp.textContent = fmtExpected(data.counts.children, data.expected.children);
+
+                        if (data.companions.length === 0) {
+                            list.innerHTML = '<tr><td colspan="5" class="empty">Aún no hay invitados registrados.</td></tr>';
+                        } else {
+                            list.innerHTML = data.companions.map(c => `
+                                <tr>
+                                    <td><strong>${c.name}</strong>${c.notes ? `<div class="small">${c.notes}</div>` : ''}</td>
+                                    <td>${c.type}</td>
+                                    <td>${c.sex || '—'}</td>
+                                    <td>${sourceBadge(c.source)}</td>
+                                    <td class="small">${c.created_at || '—'}</td>
+                                </tr>
+                            `).join('');
+                        }
+                    } catch (e) {
+                        list.innerHTML = '<tr><td colspan="5" class="empty">Error cargando invitados.</td></tr>';
+                    } finally {
+                        loading.style.display = 'none';
+                    }
+                });
             });
         })();
     </script>
