@@ -84,21 +84,66 @@
             <p>Si todavía necesitan hacer algún cambio, por favor comuníquense con quien les compartió este enlace.</p>
         </div>
     @elseif ($publicLink->responded_at)
+        @php
+            $eventName = \App\Models\Setting::get('event_name', 'XV de Zugeily');
+            $eventDate = \App\Models\Setting::get('event_date', '');
+            $eventTime = \App\Models\Setting::get('event_time', '');
+            $accessInfo = \App\Models\Setting::get('access_info_text', '');
+            $isAttending = in_array($publicLink->response, ['confirmed', 'validated'], true);
+        @endphp
+
         <div class="card" style="margin-bottom: 22px; border-color:#cde6d5; background:#f3fbf6;">
             @if ($publicLink->response === 'confirmed')
-                <h2>¡Gracias por confirmar!</h2>
-                <p>Hemos registrado la asistencia de tu familia a los XV de Zugeily.</p>
-                <div class="small">Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.</div>
+                <h2>¡Gracias por confirmar! 💜</h2>
+                <p>Hemos registrado la asistencia de tu familia a los <strong>{{ $eventName }}</strong>.</p>
             @elseif ($publicLink->response === 'validated')
-                <h2>¡Gracias por revisar la información!</h2>
-                <p>Hemos registrado la validación de los invitados de tu familia para los XV de Zugeily.</p>
-                <div class="small">Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.</div>
+                <h2>¡Gracias por revisar la información! 💜</h2>
+                <p>Hemos validado los datos de los invitados de tu familia para los <strong>{{ $eventName }}</strong>.</p>
             @elseif ($publicLink->response === 'declined')
                 <h2>Gracias por avisarnos</h2>
-                <p>Hemos registrado que tu familia no podrá asistir a los XV de Zugeily.</p>
-                <div class="small">Si necesitas cambiar tu respuesta, comunícate con quien te compartió este enlace.</div>
+                <p>Hemos registrado que tu familia no podrá asistir a los <strong>{{ $eventName }}</strong>.</p>
+                <div class="small" style="margin-top: 8px;">Si necesitas cambiar tu respuesta, comunícate con quien te compartió este enlace.</div>
             @endif
         </div>
+
+        @if ($isAttending && ($eventDate || $eventTime || $accessInfo))
+            {{-- Tarjeta de recordatorio: día, hora, accesos --}}
+            <div class="card" style="margin-bottom: 22px; border-color: #f0c4d2; background: #fff7fa;">
+                <div style="display: flex; gap: 14px; align-items: start;">
+                    <div style="font-size: 30px; line-height: 1;">📅</div>
+                    <div style="flex: 1; line-height: 1.6;">
+                        @if ($eventDate || $eventTime)
+                            <div style="font-weight: 700; color: #6b1f3f; font-size: 16px; margin-bottom: 4px;">
+                                Recuerda
+                            </div>
+                            @if ($eventDate)
+                                <div style="margin-bottom: 2px;">📆 <strong>{{ $eventDate }}</strong></div>
+                            @endif
+                            @if ($eventTime)
+                                <div style="margin-bottom: 8px;">⏰ Reservación a las <strong>{{ $eventTime }}</strong></div>
+                            @endif
+                            <p style="margin: 8px 0 0 0;">
+                                Te pedimos por favor llegar con <strong>puntualidad</strong>
+                                para que puedas disfrutar de todas las sorpresas que tenemos preparadas. ✨
+                            </p>
+                        @endif
+
+                        @if ($accessInfo)
+                            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0c4d2;">
+                                <div style="font-weight: 700; color: #6b1f3f; margin-bottom: 4px;">
+                                    🎟 Sobre tus accesos
+                                </div>
+                                <p style="margin: 0;">{{ $accessInfo }}</p>
+                            </div>
+                        @endif
+
+                        <div class="small" style="margin-top: 14px; opacity: 0.85;">
+                            Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     @endif
 
     @if (! $isLocked)

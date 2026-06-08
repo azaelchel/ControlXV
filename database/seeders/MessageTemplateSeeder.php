@@ -30,22 +30,24 @@ TXT,
             ],
             [
                 'name'          => 'Recordatorio faltando 1 mes',
-                'description'   => 'Para confirmados. Pedir que corroboren información.',
-                'kicker'        => 'Corroborar información',
+                'description'   => 'Para confirmados. Reconfirmación cálida + aviso de accesos QR.',
+                'kicker'        => 'Reconfirmación + accesos',
                 'includes_link' => true,
                 'position'      => 2,
                 'content'       => <<<TXT
-Estimada/o {prefijo} {nombre}, ¡buenas tardes!
+{prefijo} {nombre}, ¡qué gusto saludarte! 🎊
 
-Te escribimos del equipo de *{equipo}* de los *{evento}*. ¡Ya falta poco más de un mes para el *{fecha_evento}* y la emoción está al máximo! 🎊
+Ya tenemos tu registro para los *{evento}* del *{fecha_evento}* y estamos a pocos días de vivir esta celebración juntos. 💜
 
-Para que todo esté perfecto ese día, te pedimos que revises y, si es necesario, actualices la información de tu grupo en tu enlace:
+Antes de cerrar la lista final, queremos confirmar contigo tus datos y asistencia para empezar a trabajar en tus *accesos personalizados*, que te enviaremos por este medio una semana antes del evento con tu *código QR* de entrada.
+
+Solo necesitamos que revises tu enlace y validemos que todo esté correcto:
 
 {link}
 
-El enlace estará disponible por *{dias_vigencia} días*. Te agradecemos mucho tu respuesta a la brevedad para que podamos tenerlo todo coordinado a tiempo.
+Tu enlace estará activo por *{dias_vigencia} días*. Te pedimos confirmarlo lo antes posible para asegurar tu lugar y el de tus acompañantes.
 
-¡Nos vemos el *{fecha_evento}*! ✨
+¡Gracias por ser parte de este momento tan especial! ✨
 TXT,
             ],
             [

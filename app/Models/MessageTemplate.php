@@ -45,8 +45,10 @@ class MessageTemplate extends Model
             '{link}'          => 'URL del link de revisión / confirmación',
             '{evento}'        => 'Nombre del evento (desde Configuración)',
             '{fecha_evento}'  => 'Fecha del evento (desde Configuración)',
+            '{hora_evento}'   => 'Hora de la reservación (desde Configuración)',
             '{equipo}'        => 'Nombre del equipo o planner (desde Configuración)',
             '{dias_vigencia}' => 'Días de vigencia del link (desde Configuración)',
+            '{accesos}'       => 'Nota sobre accesos / QR (desde Configuración)',
         ];
     }
 
@@ -65,8 +67,10 @@ class MessageTemplate extends Model
             '{link}'          => $linkUrl ?? '',
             '{evento}'        => Setting::get('event_name', 'XV años de Zugeily'),
             '{fecha_evento}'  => Setting::get('event_date', '1 de agosto de 2026'),
+            '{hora_evento}'   => Setting::get('event_time', '3:30 PM'),
             '{equipo}'        => Setting::get('team_name', 'Event Planner'),
             '{dias_vigencia}' => Setting::get('link_validity_days', '7'),
+            '{accesos}'       => Setting::get('access_info_text', ''),
         ]);
 
         return preg_replace('/[ ]{2,}/', ' ', $rendered);
