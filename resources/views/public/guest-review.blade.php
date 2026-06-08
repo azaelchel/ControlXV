@@ -109,37 +109,38 @@
         @if ($isAttending && ($eventDate || $eventTime || $accessInfo))
             {{-- Tarjeta de recordatorio: día, hora, accesos --}}
             <div class="card" style="margin-bottom: 22px; border-color: #f0c4d2; background: #fff7fa;">
-                <div style="display: flex; gap: 14px; align-items: start;">
-                    <div style="font-size: 30px; line-height: 1;">📅</div>
-                    <div style="flex: 1; line-height: 1.6;">
-                        @if ($eventDate || $eventTime)
-                            <div style="font-weight: 700; color: #6b1f3f; font-size: 16px; margin-bottom: 4px;">
-                                Recuerda
-                            </div>
-                            @if ($eventDate)
-                                <div style="margin-bottom: 2px;">📆 <strong>{{ $eventDate }}</strong></div>
-                            @endif
-                            @if ($eventTime)
-                                <div style="margin-bottom: 8px;">⏰ Reservación a las <strong>{{ $eventTime }}</strong></div>
-                            @endif
-                            <p style="margin: 8px 0 0 0;">
-                                Te pedimos por favor llegar con <strong>puntualidad</strong>
-                                para que puedas disfrutar de todas las sorpresas que tenemos preparadas. ✨
-                            </p>
-                        @endif
-
-                        @if ($accessInfo)
-                            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0c4d2;">
-                                <div style="font-weight: 700; color: #6b1f3f; margin-bottom: 4px;">
-                                    🎟 Sobre tus accesos
-                                </div>
-                                <p style="margin: 0;">{{ $accessInfo }}</p>
-                            </div>
-                        @endif
-
-                        <div class="small" style="margin-top: 14px; opacity: 0.85;">
-                            Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.
+                <div style="line-height: 1.6;">
+                    @if ($eventDate || $eventTime)
+                        <div style="font-weight: 700; color: #6b1f3f; font-size: 18px; margin-bottom: 10px;">
+                            Recuerda
                         </div>
+                        @if ($eventDate)
+                            <div style="margin-bottom: 4px;">
+                                <span style="color: #6b1f3f; font-weight: 600;">Fecha:</span> <strong>{{ $eventDate }}</strong>
+                            </div>
+                        @endif
+                        @if ($eventTime)
+                            <div style="margin-bottom: 10px;">
+                                <span style="color: #6b1f3f; font-weight: 600;">Hora de reservación:</span> <strong>{{ $eventTime }}</strong>
+                            </div>
+                        @endif
+                        <p style="margin: 8px 0 0 0;">
+                            Te pedimos por favor llegar con <strong>puntualidad</strong>
+                            para que puedas disfrutar de todas las sorpresas que tenemos preparadas. ✨
+                        </p>
+                    @endif
+
+                    @if ($accessInfo)
+                        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0c4d2;">
+                            <div style="font-weight: 700; color: #6b1f3f; margin-bottom: 6px; font-size: 15px;">
+                                Sobre tus accesos
+                            </div>
+                            <p style="margin: 0;">{{ $accessInfo }}</p>
+                        </div>
+                    @endif
+
+                    <div class="small" style="margin-top: 16px; opacity: 0.85;">
+                        Si necesitas corregir algún dato, comunícate con quien te compartió este enlace.
                     </div>
                 </div>
             </div>
