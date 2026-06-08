@@ -141,6 +141,16 @@
             'Por definir' => '#a163c4',
         ];
 
+        $statusIcons = [
+            'Confirmado' => '✓',
+            'No asistirá' => '✕',
+            'Considerado' => '🤔',
+            'Invitacion Enviada' => '📤',
+            'Pendiente' => '⏳',
+            'No contesto' => '🔕',
+            'Por definir' => '❓',
+        ];
+
         $totalForStatus = max(1, $byStatus->sum('total_people'));
         $topGroups = $byGroup->sortByDesc('total_people')->take(8);
         $realData = $byCategory->firstWhere('category', 'Real');
@@ -176,20 +186,29 @@
                             </div>
                         </div>
                     </div>
-                    <div style="line-height: 1.4;">
+                    <div style="line-height: 1.4; min-width: 0;">
                         <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600;">Categoría Real</div>
                         <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
                             {{ number_format($summary['real_confirmed_total_people']) }}<span style="opacity: 0.6; font-weight: 600;"> / {{ number_format($summary['real_total_people']) }}</span>
                         </div>
-                        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(255, 213, 74, 0.25); border-radius: 8px; border-left: 3px solid #ffd54a; font-size: 12px; font-weight: 600;">
-                            📋 Para planeación: <strong style="font-size: 14px;">{{ number_format($consideredReal) }}</strong>
-                            <div style="font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px;">Total menos los que no asistirán</div>
+                        <div style="margin-top: 8px; padding: 8px 10px; background: rgba(255, 213, 74, 0.25); border-radius: 8px; border-left: 3px solid #ffd54a; font-size: 12px; font-weight: 600;">
+                            📋 Para planeación: <strong style="font-size: 16px;">{{ number_format($summary['real_confirmed_total_people']) }}</strong>
+                            <div style="font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px;">Personas con estatus Confirmado</div>
                         </div>
-                        <div style="font-size: 12px; opacity: 0.85; margin-top: 6px;">
-                            ✓ {{ number_format($summary['real_confirmed_records']) }} familias confirmadas<br>
-                            ⏳ {{ number_format($realPendingTotal) }} personas pendientes<br>
-                            ✕ {{ number_format($summary['real_rejected_total_people']) }} no asistirán
-                        </div>
+
+                        @php
+                            $realOtherStatuses = $realByStatus->filter(fn ($r) => $r->status !== 'Confirmado' && (int) $r->total_people > 0);
+                        @endphp
+                        @if ($realOtherStatuses->isNotEmpty())
+                            <div style="font-size: 12px; opacity: 0.9; margin-top: 8px;">
+                                @foreach ($realOtherStatuses as $r)
+                                    <div style="display: flex; justify-content: space-between; gap: 8px; padding: 2px 0;">
+                                        <span>{{ $statusIcons[$r->status] ?? '•' }} {{ $r->status }}</span>
+                                        <strong>{{ number_format($r->total_people) }}</strong>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -210,19 +229,29 @@
                             </div>
                         </div>
                     </div>
-                    <div style="line-height: 1.4;">
+                    <div style="line-height: 1.4; min-width: 0;">
                         <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600;">Reales + Probables</div>
                         <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
                             {{ number_format($summary['confirmed_total_people']) }}<span style="opacity: 0.6; font-weight: 600;"> / {{ number_format($summary['total_people']) }}</span>
                         </div>
-                        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(255, 255, 255, 0.15); border-radius: 8px; border-left: 3px solid white; font-size: 12px; font-weight: 600;">
-                            📋 Para planeación: <strong style="font-size: 14px;">{{ number_format($consideredTotal) }}</strong>
-                            <div style="font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px;">Total menos los que no asistirán</div>
+                        <div style="margin-top: 8px; padding: 8px 10px; background: rgba(255, 255, 255, 0.15); border-radius: 8px; border-left: 3px solid white; font-size: 12px; font-weight: 600;">
+                            📋 Para planeación: <strong style="font-size: 16px;">{{ number_format($summary['confirmed_total_people']) }}</strong>
+                            <div style="font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px;">Personas con estatus Confirmado</div>
                         </div>
-                        <div style="font-size: 12px; opacity: 0.85; margin-top: 6px;">
-                            ⏳ {{ number_format($pendingTotal) }} pendientes<br>
-                            ✕ {{ number_format($rejectedTotal) }} no asistirán
-                        </div>
+
+                        @php
+                            $totalOtherStatuses = $byStatus->filter(fn ($r) => $r->status !== 'Confirmado' && (int) $r->total_people > 0);
+                        @endphp
+                        @if ($totalOtherStatuses->isNotEmpty())
+                            <div style="font-size: 12px; opacity: 0.9; margin-top: 8px;">
+                                @foreach ($totalOtherStatuses as $r)
+                                    <div style="display: flex; justify-content: space-between; gap: 8px; padding: 2px 0;">
+                                        <span>{{ $statusIcons[$r->status] ?? '•' }} {{ $r->status }}</span>
+                                        <strong>{{ number_format($r->total_people) }}</strong>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

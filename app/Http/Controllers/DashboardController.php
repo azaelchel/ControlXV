@@ -63,6 +63,27 @@ class DashboardController extends Controller
             ->orderBy('category')
             ->get();
 
+        // Desglose por estatus de la categoría Real
+        $realByStatus = Guest::query()
+            ->where('category', 'Real')
+            ->select('status')
+            ->selectRaw('COUNT(*) as records')
+            ->selectRaw('SUM(adults + adolescents + children) as total_people')
+            ->groupBy('status')
+            ->orderByRaw("
+                CASE status
+                    WHEN 'Considerado' THEN 1
+                    WHEN 'Invitacion Enviada' THEN 2
+                    WHEN 'Pendiente' THEN 3
+                    WHEN 'Confirmado' THEN 4
+                    WHEN 'No asistirá' THEN 5
+                    WHEN 'No contesto' THEN 6
+                    WHEN 'Por definir' THEN 7
+                    ELSE 99
+                END
+            ")
+            ->get();
+
         $byStatus = Guest::query()
             ->select('status')
             ->selectRaw('COUNT(*) as records')
@@ -114,6 +135,7 @@ class DashboardController extends Controller
             'byGroup' => $byGroup,
             'byCategory' => $byCategory,
             'byStatus' => $byStatus,
+            'realByStatus' => $realByStatus,
             'whatsappSummary' => $whatsappSummary,
             'companionsSummary' => $companionsSummary,
         ]);
