@@ -63,12 +63,14 @@ class DashboardController extends Controller
             ->orderBy('category')
             ->get();
 
-        // Desglose por estatus de la categoría Real
+        // Desglose por estatus de la categoría Real.
+        // Nota: usamos 'people_sum' como alias porque 'total_people' colisiona con el
+        // accessor del modelo Guest y devolveria siempre 0.
         $realByStatus = Guest::query()
             ->where('category', 'Real')
             ->select('status')
             ->selectRaw('COUNT(*) as records')
-            ->selectRaw('SUM(adults + adolescents + children) as total_people')
+            ->selectRaw('SUM(adults + adolescents + children) as people_sum')
             ->groupBy('status')
             ->orderByRaw("
                 CASE status

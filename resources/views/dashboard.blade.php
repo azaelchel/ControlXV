@@ -197,14 +197,14 @@
                         </div>
 
                         @php
-                            $realOtherStatuses = $realByStatus->filter(fn ($r) => $r->status !== 'Confirmado' && (int) $r->total_people > 0);
+                            $realOtherStatuses = $realByStatus->filter(fn ($r) => $r->status !== 'Confirmado' && (int) $r->people_sum > 0);
                         @endphp
                         @if ($realOtherStatuses->isNotEmpty())
                             <div style="font-size: 12px; opacity: 0.9; margin-top: 8px;">
                                 @foreach ($realOtherStatuses as $r)
                                     <div style="display: flex; justify-content: space-between; gap: 8px; padding: 2px 0;">
                                         <span>{{ $statusIcons[$r->status] ?? '•' }} {{ $r->status }}</span>
-                                        <strong>{{ number_format($r->total_people) }}</strong>
+                                        <strong>{{ number_format($r->people_sum) }}</strong>
                                     </div>
                                 @endforeach
                             </div>
