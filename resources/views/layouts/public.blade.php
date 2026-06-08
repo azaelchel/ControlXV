@@ -7,7 +7,10 @@
         @php
             $metaTitle = trim($__env->yieldContent('meta_title', $__env->yieldContent('title', 'Revisión de asistencia | XV de Zugeily')));
             $metaDescription = trim($__env->yieldContent('meta_description', 'Confirma o valida la asistencia de tu familia a los XV de Zugeily. Revisa que la información de las personas que asistirán sea correcta.'));
-            $metaImage = trim($__env->yieldContent('meta_image', asset('images/og/xv-zugeily-revision-og.jpg')));
+            // Cache-busting con filemtime para que WhatsApp/Facebook re-fetcheen si la imagen cambia
+            $ogImagePath = public_path('images/og/xv-zugeily-revision-og.jpg');
+            $ogImageVersion = file_exists($ogImagePath) ? filemtime($ogImagePath) : time();
+            $metaImage = trim($__env->yieldContent('meta_image', asset('images/og/xv-zugeily-revision-og.jpg') . '?v=' . $ogImageVersion));
             $metaUrl = url()->current();
         @endphp
         <title>{{ $metaTitle }}</title>
