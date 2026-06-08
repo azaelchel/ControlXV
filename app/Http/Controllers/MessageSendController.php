@@ -245,17 +245,39 @@ class MessageSendController extends Controller
     {
         $linkUrl = null;
         $linkInfo = null;
+        $linkModel = null;
 
         if ($template->hasLinkPlaceholder()) {
             $link = $this->linkService->ensureLinkFor($guest);
             if ($link) {
-                $linkUrl  = $this->linkService->linkUrl($guest, $link);
-                $linkInfo = [
+                $linkModel = $link;
+                $linkUrl   = $this->linkService->linkUrl($guest, $link);
+                $linkInfo  = [
                     'id'         => $link->id,
                     'expires_at' => $link->expires_at,
                     'reused'     => $link->wasRecentlyCreated === false,
                 ];
             }
+        }
+
+        $message = $template->render($guest, $linkUrl);
+
+        // Auto-registrar el envio para plantillas con link: apenas se genera/reusa el
+        // link, queda como envio en el historial. firstOrCreate evita duplicados si
+        // vuelven a preparar el mismo link. Para plantillas SIN link el send se crea
+        // solo al hacer click en Copiar (via store endpoint), evitando duplicados.
+        if ($linkModel) {
+            MessageSend::firstOrCreate(
+                ['public_guest_link_id' => $linkModel->id],
+                [
+                    'guest_id'             => $guest->id,
+                    'message_template_id'  => $template->id,
+                    'user_id'              => request()->user()?->id,
+                    'rendered_message'     => $message,
+                    'phone'                => $guest->phone,
+                    'sent_at'              => now(),
+                ]
+            );
         }
 
         return [
