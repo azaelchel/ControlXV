@@ -32,7 +32,10 @@ class PublicGuestReviewController extends Controller
             ->orderBy('id')
             ->get();
 
-        $rows = $this->buildRows($guest, $companions);
+        $isFamilyGroup = $this->prefixIsFamilyGroup($guest->prefix);
+        $totalExpected = (int) ($guest->adults + $guest->adolescents + $guest->children);
+
+        $rows = $this->buildRows($guest, $companions, $isFamilyGroup);
 
         return view('public.guest-review', [
             'guest' => $guest,
@@ -47,7 +50,16 @@ class PublicGuestReviewController extends Controller
             'isExpired' => $publicLink->isExpired(),
             'isLocked' => $publicLink->isLocked(),
             'publicLink' => $publicLink,
+            'isFamilyGroup' => $isFamilyGroup,
+            'totalExpected' => $totalExpected,
         ]);
+    }
+
+    private function prefixIsFamilyGroup(?string $prefix): bool
+    {
+        if (! $prefix) return false;
+        $p = mb_strtolower(trim($prefix));
+        return str_contains($p, 'fam') || str_contains($p, 'grupo');
     }
 
     public function update(Request $request, Guest $guest, string $token): RedirectResponse
@@ -216,7 +228,7 @@ class PublicGuestReviewController extends Controller
             ->with('status', 'Gracias por avisarnos.');
     }
 
-    private function buildRows(Guest $guest, $companions): array
+    private function buildRows(Guest $guest, $companions, bool $isFamilyGroup = false): array
     {
         $registeredAdults = (int) $companions->where('type', 'Adulto')->count();
         $registeredAdolescents = (int) $companions->where('type', 'Adolescente')->count();
@@ -235,14 +247,23 @@ class PublicGuestReviewController extends Controller
                 'label' => 'Registrado',
             ])->values();
 
+        // Si es invitación individual (no familia/grupo) y NO hay companions registrados,
+        // pre-rellenar la primera casilla con el nombre del destinatario para que entienda
+        // que él/ella debe estar en la lista.
+        $shouldPrefillSelf = ! $isFamilyGroup
+            && $companions->isEmpty()
+            && ($missingAdults + $missingAdolescents + $missingChildren) >= 1
+            && $missingAdults >= 1;
+
         $pendingRows = collect()
             ->merge($missingAdults > 0 ? collect(range(1, $missingAdults))->map(fn (int $index) => [
                 'id' => null,
-                'name' => '',
+                'name' => ($shouldPrefillSelf && $index === 1) ? $guest->name : '',
                 'type' => 'Adulto',
-                'sex' => '',
+                'sex' => ($shouldPrefillSelf && $index === 1) ? $this->guessSexFromPrefix($guest->prefix) : '',
                 'existing' => false,
                 'label' => 'Pendiente adulto '.$index,
+                'is_self_suggestion' => ($shouldPrefillSelf && $index === 1),
             ]) : collect())
             ->merge($missingAdolescents > 0 ? collect(range(1, $missingAdolescents))->map(fn (int $index) => [
                 'id' => null,
@@ -263,6 +284,19 @@ class PublicGuestReviewController extends Controller
             ->values();
 
         return $rows->concat($pendingRows)->values()->all();
+    }
+
+    private function guessSexFromPrefix(?string $prefix): string
+    {
+        if (! $prefix) return '';
+        $p = mb_strtolower(trim($prefix));
+        if (str_starts_with($p, 'sra') || str_starts_with($p, 'srita') || str_starts_with($p, 'señor') || str_starts_with($p, 'miss') || str_starts_with($p, 'mtra') || str_starts_with($p, 'profra')) {
+            return 'Mujer';
+        }
+        if (str_starts_with($p, 'sr') || str_starts_with($p, 'joven') || str_starts_with($p, 'mtro') || str_starts_with($p, 'profr') || str_starts_with($p, 'lic')) {
+            return 'Hombre';
+        }
+        return '';
     }
 
     private function resolveLink(Guest $guest, string $token): PublicGuestLink

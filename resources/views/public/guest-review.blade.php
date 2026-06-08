@@ -124,17 +124,46 @@
             </form>
         @endif
 
+        {{-- Banner instructivo personalizado --}}
+        <div style="margin-bottom: 18px; padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, #fff7e0 0%, #ffeec4 100%); border-left: 4px solid #d4a017;">
+            <div style="font-weight: 700; font-size: 15px; color: #6b4a00; margin-bottom: 6px;">
+                @if ($isFamilyGroup)
+                    👨‍👩‍👧 Esta invitación es para tu familia / grupo
+                @else
+                    👋 Hola {{ trim(($guest->prefix ?? '') . ' ' . $guest->name) }}, esta invitación es para ti
+                @endif
+            </div>
+            <div style="font-size: 14px; color: #5a3e00; line-height: 1.6;">
+                @if ($isFamilyGroup)
+                    Tu invitación es para <strong>{{ $totalExpected }} persona{{ $totalExpected === 1 ? '' : 's' }}</strong>.
+                    Por favor anota los nombres de <strong>TODOS</strong> los integrantes que asistirán, incluyéndote a ti.
+                @else
+                    @if ($totalExpected === 1)
+                        Tu invitación es para <strong>1 persona</strong>. Te incluimos ya en la lista para que solo confirmes tu información.
+                    @else
+                        Tu invitación es para <strong>{{ $totalExpected }} personas</strong>, contándote a ti.
+                        Asegúrate de anotarte como el primer invitado y luego agregar a las demás personas que te acompañarán.
+                    @endif
+                @endif
+            </div>
+        </div>
+
         <form method="post" action="{{ $updateUrl }}" id="public-guest-review-form">
             @csrf
             @method('put')
 
             <div style="display:grid; gap: 14px;">
                 @forelse ($rows as $index => $row)
-                    <div data-review-row class="card {{ old("rows.$index.delete") ? 'row-card-removed' : '' }}" style="padding:18px; border-radius:20px; background:#fcf9ff;">
+                    <div data-review-row class="card {{ old("rows.$index.delete") ? 'row-card-removed' : '' }}" style="padding:18px; border-radius:20px; background:{{ ($row['is_self_suggestion'] ?? false) ? '#fff7e0' : '#fcf9ff' }};">
                         <div class="inline" style="justify-content: space-between; align-items: center; margin-bottom: 14px;">
                             <div>
-                                <strong style="display:block; color:#4a2f60;">Invitado {{ $index + 1 }}</strong>
-                                <span class="row-note">{{ $row['existing'] ? 'Información completa' : 'Falta completar información' }}</span>
+                                <strong style="display:block; color:#4a2f60;">
+                                    Invitado {{ $index + 1 }}
+                                    @if ($row['is_self_suggestion'] ?? false)
+                                        <span style="background:#d4a017;color:white;font-size:11px;padding:2px 8px;border-radius:999px;margin-left:6px;">👤 Eres tú</span>
+                                    @endif
+                                </strong>
+                                <span class="row-note">{{ ($row['is_self_suggestion'] ?? false) ? 'Verifica que tu nombre esté bien escrito' : ($row['existing'] ? 'Información completa' : 'Falta completar información') }}</span>
                             </div>
                             @unless ($isLocked)
                                 <div>
