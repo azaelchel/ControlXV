@@ -4,7 +4,7 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
-    "preDeployCommand": "php artisan migrate --force",
+    "preDeployCommand": "php artisan migrate --force && php artisan view:clear && php artisan config:clear && php artisan route:clear",
     "healthcheckPath": "/up",
     "healthcheckTimeout": 120,
     "numReplicas": 1,
