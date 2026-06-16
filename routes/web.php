@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/message-sends/companions/{guest}', [MessageSendController::class, 'companions'])->name('message-sends.companions');
         Route::post('/message-sends', [MessageSendController::class, 'store'])->name('message-sends.store');
         Route::delete('/message-sends/{messageSend}', [MessageSendController::class, 'destroy'])->name('message-sends.destroy');
+        Route::post('/message-sends/reset-opened/{publicGuestLink}', [MessageSendController::class, 'resetOpened'])->name('message-sends.reset-opened');
     });
 
     Route::middleware('module:system_transfer')->group(function () {

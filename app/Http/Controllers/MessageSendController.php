@@ -241,6 +241,17 @@ class MessageSendController extends Controller
             ->with('status', "Envío de {$name} eliminado del histórico.");
     }
 
+    public function resetOpened(PublicGuestLink $publicGuestLink): RedirectResponse
+    {
+        $publicGuestLink->forceFill(['opened_at' => null])->save();
+
+        if ($publicGuestLink->guest) {
+            $publicGuestLink->guest->forceFill(['public_link_opened_at' => null])->save();
+        }
+
+        return back()->with('status', 'Apertura desmarcada.');
+    }
+
     private function renderForSend(Guest $guest, MessageTemplate $template): array
     {
         $linkUrl = null;

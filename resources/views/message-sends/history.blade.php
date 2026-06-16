@@ -185,8 +185,15 @@
                                 @endif
                             </div>
                         </div>
-                        <div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                             <span class="pill {{ $stateClass }}">{{ $stateIcon }} {{ $stateLabel }}</span>
+                            @if ($link && $link->opened_at && !$link->responded_at && !$link->isExpired() && $link->closed_reason !== 'cancelled')
+                                <form method="post" action="{{ route('message-sends.reset-opened', $link) }}" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn ghost" style="padding: 3px 9px; font-size: 11px; border-radius: 8px;"
+                                        title="Desmarcar como abierto (si lo abriste tú por error)">↩ Sin abrir</button>
+                                </form>
+                            @endif
                         </div>
                         <div class="actions">
                             <button type="button" class="btn secondary icon-btn" data-preview-message
@@ -197,6 +204,12 @@
                             <button type="button" class="btn secondary icon-btn" data-copy-msg
                                 data-message="{{ $send->rendered_message }}"
                                 title="Copiar mensaje">📋</button>
+                            @if ($send->phone)
+                                <button type="button" class="btn secondary icon-btn" data-wa-send
+                                    data-phone="{{ $send->phone }}"
+                                    data-message="{{ $send->rendered_message }}"
+                                    title="Enviar por WhatsApp">💬</button>
+                            @endif
                             @if ($link && $link->responded_at && $send->guest)
                                 <button type="button" class="btn secondary icon-btn" data-view-companions
                                     data-guest-id="{{ $send->guest->id }}"
@@ -418,5 +431,11 @@
                 });
             });
         })();
+
+        document.querySelectorAll('[data-wa-send]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                window.open(`https://wa.me/${btn.dataset.phone}?text=${encodeURIComponent(btn.dataset.message)}`, '_blank');
+            });
+        });
     </script>
 @endsection
