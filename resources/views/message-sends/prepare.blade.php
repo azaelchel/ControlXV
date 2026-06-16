@@ -24,8 +24,8 @@
     <div class="card" style="margin-bottom: 18px; background: #faf6ff; border-color: #e6dff1;">
         <p class="small" style="line-height: 1.7; margin: 0;">
             <strong>Cómo funciona:</strong> Cada tarjeta trae el mensaje ya armado.
-            Al hacer clic en <strong>Copiar y abrir WhatsApp Web</strong> se copia al portapapeles,
-            se registra el envío y se abre <strong>WhatsApp Web</strong> con el número del destinatario.
+            Al hacer clic en <strong>Copiar y abrir WhatsApp</strong> se copia al portapapeles,
+            se registra el envío y se abre <strong>WhatsApp</strong> con el número del destinatario.
             Puedes <strong>volver a copiar las veces que quieras</strong>.
         </p>
     </div>
@@ -69,7 +69,7 @@
                                 data-guest-id="{{ $guest->id }}"
                                 data-template-id="{{ $template->id }}"
                                 data-link-id="{{ $link['id'] ?? '' }}">
-                                {{ $phoneIntl ? 'Copiar y abrir WhatsApp Web' : 'Solo copiar mensaje' }}
+                                {{ $phoneIntl ? 'Copiar y abrir WhatsApp' : 'Solo copiar mensaje' }}
                             </button>
                             <button type="button" class="btn secondary" data-recopy
                                 data-message="{{ $message }}"
@@ -136,8 +136,7 @@
                 statusEl.style.display = 'inline';
 
                 if (phone) {
-                    // WhatsApp Web con el mensaje precargado
-                    const url = 'https://web.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(message);
+                    const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
                     window.open(url, '_blank');
                 }
             });

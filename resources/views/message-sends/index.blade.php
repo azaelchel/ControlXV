@@ -229,12 +229,12 @@
                                             title="Ver los {{ $row['companion_count'] }} invitados registrados">👥</button>
                                     @endif
 
-                                    {{-- Abrir WhatsApp Web (con el último mensaje si existe) --}}
+                                    {{-- Abrir WhatsApp (con el último mensaje si existe) --}}
                                     @if ($phoneIntl)
                                         <button type="button" class="btn secondary icon-btn" data-open-whatsapp
                                             data-phone="{{ $phoneIntl }}"
                                             data-message="{{ $lastSend?->rendered_message ?? '' }}"
-                                            title="{{ $lastSend ? 'Abrir WhatsApp Web con el último mensaje precargado' : 'Abrir WhatsApp Web con este número' }}">💬</button>
+                                            title="{{ $lastSend ? 'Abrir WhatsApp con el último mensaje precargado' : 'Abrir WhatsApp con este número' }}">💬</button>
                                     @endif
                                 </div>
                             </td>
@@ -346,7 +346,7 @@
             <div class="inline" style="margin-top: 18px; gap: 8px; justify-content: flex-end;">
                 <button type="button" class="btn ghost" id="qs-cancel">Cancelar</button>
                 <button type="button" class="btn secondary" id="qs-copy-only" disabled>Solo copiar</button>
-                <button type="button" class="btn" id="qs-copy-send" disabled>Copiar + WhatsApp Web</button>
+                <button type="button" class="btn" id="qs-copy-send" disabled>Copiar + WhatsApp</button>
             </div>
         </div>
     </div>
@@ -450,19 +450,17 @@
             });
         })();
 
-        // Abrir WhatsApp Web (con último mensaje si existe)
+        // Abrir WhatsApp (con último mensaje si existe)
         document.querySelectorAll('[data-open-whatsapp]').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const phone = btn.dataset.phone;
                 const message = btn.dataset.message;
                 if (message) {
                     await copyToClipboard(message);
-                    // Algunos navegadores ignoran ?text= en WhatsApp Web si ya hay sesión.
-                    // Por seguridad: copiamos al portapapeles antes de abrir.
-                    const url = `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                     window.open(url, '_blank');
                 } else {
-                    window.open(`https://web.whatsapp.com/send?phone=${phone}`, '_blank');
+                    window.open(`https://wa.me/${phone}`, '_blank');
                 }
             });
         });
@@ -565,7 +563,7 @@
                 await copyToClipboard(currentState.message);
                 await registerSend();
                 if (currentState.phone) {
-                    const url = `https://web.whatsapp.com/send?phone=${currentState.phone}&text=${encodeURIComponent(currentState.message)}`;
+                    const url = `https://wa.me/${currentState.phone}?text=${encodeURIComponent(currentState.message)}`;
                     window.open(url, '_blank');
                 }
                 close();
