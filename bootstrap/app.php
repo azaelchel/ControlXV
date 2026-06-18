@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'module' => \App\Http\Middleware\EnsureUserHasModuleAccess::class,
         ]);
 
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureUserIsActive::class);
+
         $middleware->trustProxies(
             at: '*',
             headers: Request::HEADER_X_FORWARDED_FOR

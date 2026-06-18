@@ -15,11 +15,18 @@ class MessageSend extends Model
         'rendered_message',
         'phone',
         'sent_at',
+        'active',
     ];
 
     protected $casts = [
         'sent_at' => 'datetime',
+        'active'  => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', fn ($q) => $q->where('message_sends.active', true));
+    }
 
     public function guest(): BelongsTo
     {

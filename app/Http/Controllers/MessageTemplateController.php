@@ -54,7 +54,7 @@ class MessageTemplateController extends Controller
 
     public function destroy(MessageTemplate $template): RedirectResponse
     {
-        $template->delete();
+        $template->update(['active' => false]);
 
         return redirect()
             ->route('message-templates.index')

@@ -234,7 +234,7 @@ class MessageSendController extends Controller
     public function destroy(MessageSend $messageSend): RedirectResponse
     {
         $name = $messageSend->guest?->name ?? '—';
-        $messageSend->delete();
+        $messageSend->update(['active' => false]);
 
         return redirect()
             ->route('message-sends.history')
