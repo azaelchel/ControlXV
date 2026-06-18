@@ -1,52 +1,89 @@
 @extends('layouts.app')
 
-@section('title', 'Mesas confirmadas')
-@section('heading', 'Mesas confirmadas')
-@section('subheading', 'Configura las mesas y acomoda a los invitados confirmados. La unidad para sentar es la persona; puedes sentar un grupo completo o dividirlo entre mesas.')
+@section('title', 'Mesas — Consulta')
+@section('heading', 'Mesas · Consulta')
+@section('subheading', 'Cómo va quedando el acomodo. Busca a una persona o grupo para ver en qué mesa quedó.')
 
 @section('content')
-    @if ($errors->any())
-        <div class="card" style="margin-bottom: 16px; border-color: #f3c8d7; background: #ffe7ef; color: #8a3354;">
-            {{ $errors->first() }}
-        </div>
-    @endif
+<style>
+    .planner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+    .tviz { border: 1px solid #e7dcf3; border-radius: 18px; padding: 16px; background: #fff; box-shadow: 0 10px 30px rgba(122,79,168,.06); }
+    .tviz.principal { border-color: #c693ea; background: linear-gradient(180deg,#fbf4ff, #fff); }
+    .tviz-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; margin-bottom: 12px; }
+    .tviz-name { font-weight: 800; color: #43275b; font-size: 16px; }
+    .tviz-sub { font-size: 11px; color: #8a72a4; text-transform: uppercase; letter-spacing: .06em; }
+    .tviz-top {
+        margin: 6px auto 14px; display: grid; place-items: center; text-align: center;
+        width: 130px; height: 84px; color: #fff; font-weight: 800;
+        background: linear-gradient(135deg, #b07fd8, #8a55be);
+        border-radius: 16px;
+    }
+    .tviz-top.round { width: 110px; height: 110px; border-radius: 50%; }
+    .tviz-top.square { width: 100px; height: 100px; border-radius: 14px; }
+    .tviz-top small { display: block; font-weight: 600; font-size: 11px; opacity: .9; }
+    .seats { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 12px; }
+    .seat { width: 14px; height: 14px; border-radius: 50%; }
+    .seat.filled { background: #8a55be; }
+    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; }
+    .fill-ok .tviz-top { background: linear-gradient(135deg,#7bc59a,#3f9e6b); }
+    .fill-mid .tviz-top { background: linear-gradient(135deg,#e6b364,#cf8f3f); }
+    .fill-full .tviz-top { background: linear-gradient(135deg,#b07fd8,#8a55be); }
+    .names { font-size: 12px; color: #5f4c70; }
+    .names .grp { color: #9b8ab0; }
+    .pbar { height: 12px; border-radius: 999px; background: #efe5f7; overflow: hidden; }
+    .pbar > span { display: block; height: 100%; background: linear-gradient(90deg,#b07fd8,#8a55be); }
+</style>
 
-    <div class="grid cols-4" style="margin-bottom: 18px;">
-        <div class="card metric"><div class="label">Mesas</div><div class="value">{{ $summary['tables'] }}</div></div>
-        <div class="card metric"><div class="label">Capacidad total</div><div class="value">{{ $summary['capacity'] }}</div></div>
-        <div class="card metric"><div class="label">Sentados</div><div class="value">{{ $summary['seated'] }}</div></div>
-        <div class="card metric"><div class="label">Sin mesa</div><div class="value">{{ $summary['unassigned'] }}</div></div>
+    {{-- Resumen + progreso --}}
+    <div class="card" style="margin-bottom: 18px;">
+        <div class="inline" style="justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <div class="kicker" style="color:#9b67c8; font-weight:800; font-size:12px; letter-spacing:.12em;">PROGRESO DEL ACOMODO</div>
+                <div style="font-size: 26px; font-weight: 800; color:#43275b;">
+                    {{ $progress['seated'] }} / {{ $progress['eligible'] }}
+                    <span style="font-size:15px; color:#8a72a4;">personas sentadas ({{ $progress['percent'] }}%)</span>
+                </div>
+            </div>
+            <div class="inline" style="gap: 8px;">
+                <a class="btn" href="{{ route('tables.manage') }}">🪑 Ir a asignaciones</a>
+                <a class="btn secondary" href="{{ route('tables.print') }}" target="_blank">📄 Descargar PDF</a>
+            </div>
+        </div>
+        <div class="pbar" style="margin-top: 14px;"><span style="width: {{ $progress['percent'] }}%;"></span></div>
+        <div class="grid cols-4" style="margin-top: 16px;">
+            <div class="metric"><div class="label">Mesas</div><div class="value">{{ $summary['tables'] }}</div></div>
+            <div class="metric"><div class="label">Capacidad total</div><div class="value">{{ $summary['capacity'] }}</div></div>
+            <div class="metric"><div class="label">Sentados</div><div class="value">{{ $summary['seated'] }}</div></div>
+            <div class="metric"><div class="label">Sin mesa</div><div class="value">{{ $summary['unassigned'] }}</div></div>
+        </div>
     </div>
 
-    <div class="inline" style="justify-content: space-between; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
+    {{-- Buscador --}}
+    <div class="card" style="margin-bottom: 18px;">
         <form method="get" class="inline" style="gap: 8px;">
-            <input name="search" value="{{ $search }}" placeholder="Buscar persona o grupo para ver su mesa" style="min-width: 280px;">
-            <button class="btn" type="submit">Buscar</button>
+            <input name="search" value="{{ $search }}" placeholder="Buscar persona, familia o grupo…" style="min-width: 300px;" autofocus>
+            <button class="btn" type="submit">🔍 Buscar</button>
             @if ($search !== '')
                 <a class="btn secondary" href="{{ route('tables.index') }}">Limpiar</a>
             @endif
         </form>
-        <a class="btn secondary" href="{{ route('tables.print') }}" target="_blank">🖨️ Vista imprimible</a>
+        @if ($search !== '')
+            <div style="margin-top: 14px;">
+                @forelse ($searchResults as $r)
+                    <div class="inline" style="justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #efe5f7;">
+                        <span><strong>{{ $r['name'] }}</strong> <span class="small">· {{ $r['group'] }} · {{ $r['type'] }}</span></span>
+                        @if ($r['table'])
+                            <span class="pill status-confirmado">🍽️ {{ $r['table'] }}</span>
+                        @else
+                            <span class="pill status-no-contesto">Sin mesa</span>
+                        @endif
+                    </div>
+                @empty
+                    <p class="small" style="margin: 0;">No se encontró ninguna persona o grupo confirmado con ese texto.</p>
+                @endforelse
+            </div>
+        @endif
     </div>
-
-    {{-- Resultados de búsqueda --}}
-    @if ($search !== '')
-        <div class="card" style="margin-bottom: 18px;">
-            <h3 style="margin: 0 0 10px;">Resultados de "{{ $search }}"</h3>
-            @forelse ($searchResults as $r)
-                <div class="inline" style="justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #efe5f7;">
-                    <span><strong>{{ $r['name'] }}</strong> <span class="small">· {{ $r['group'] }} · {{ $r['type'] }}</span></span>
-                    @if ($r['table'])
-                        <span class="pill status-confirmado">🍽️ {{ $r['table'] }}</span>
-                    @else
-                        <span class="pill status-no-contesto">Sin mesa</span>
-                    @endif
-                </div>
-            @empty
-                <p class="small" style="margin: 0;">No se encontró ninguna persona o grupo confirmado con ese texto.</p>
-            @endforelse
-        </div>
-    @endif
 
     {{-- Aviso de grupos divididos --}}
     @if ($dividedGroups->isNotEmpty())
@@ -60,151 +97,52 @@
         </div>
     @endif
 
-    {{-- Crear mesa --}}
-    <details class="card" style="margin-bottom: 18px;">
-        <summary style="cursor: pointer; font-weight: 700;">➕ Crear nueva mesa</summary>
-        <form method="post" action="{{ route('tables.store') }}" style="margin-top: 14px;">
-            @csrf
-            @include('tables._form', ['table' => null, 'types' => $types, 'shapes' => $shapes])
-            <button class="btn" type="submit" style="margin-top: 10px;">Crear mesa</button>
-        </form>
-    </details>
-
-    {{-- Invitados sin mesa --}}
-    <div class="card" style="margin-bottom: 18px;">
-        <h3 style="margin: 0 0 12px;">Invitados sin mesa ({{ $summary['unassigned'] }})</h3>
-        @if ($tables->isEmpty())
-            <p class="small" style="margin: 0;">Primero crea al menos una mesa para poder acomodar a los invitados.</p>
-        @elseif ($unassigned->isEmpty())
-            <p class="small" style="margin: 0;">🎉 Todos los invitados confirmados ya tienen mesa.</p>
-        @else
-            <div class="grid cols-2" style="gap: 12px;">
-                @foreach ($unassigned as $group => $people)
-                    <div style="border: 1px solid #efe5f7; border-radius: 12px; padding: 12px;">
-                        <div class="inline" style="justify-content: space-between; align-items: start; gap: 8px;">
-                            <strong>{{ $group }} <span class="small">({{ $people->count() }})</span></strong>
-                            <form method="post" action="#" class="inline" style="gap: 6px;"
-                                onsubmit="this.action='{{ url('confirmed-tables') }}/'+this.table_id.value+'/assign-group';">
-                                @csrf
-                                <input type="hidden" name="group" value="{{ $group }}">
-                                <select name="table_id" required style="font-size: 12px; padding: 4px 8px;">
-                                    <option value="">Mesa…</option>
-                                    @foreach ($tables as $t)
-                                        <option value="{{ $t->id }}">{{ $t->name }} ({{ $t->availableSeats() }} libres)</option>
-                                    @endforeach
-                                </select>
-                                <button class="btn small" type="submit">Sentar grupo</button>
-                            </form>
-                        </div>
-                        <ul style="margin: 8px 0 0; padding-left: 0; list-style: none;">
-                            @foreach ($people as $person)
-                                <li class="inline" style="justify-content: space-between; padding: 4px 0; gap: 8px;">
-                                    <span class="small">{{ $person->name }} · {{ $person->type }}</span>
-                                    <form method="post" action="#" class="inline" style="gap: 4px;"
-                                        onsubmit="this.action='{{ url('confirmed-tables') }}/'+this.table_id.value+'/assign';">
-                                        @csrf
-                                        <input type="hidden" name="companion_id" value="{{ $person->id }}">
-                                        <select name="table_id" required style="font-size: 11px; padding: 3px 6px;">
-                                            <option value="">Mesa…</option>
-                                            @foreach ($tables as $t)
-                                                <option value="{{ $t->id }}">{{ $t->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <button class="btn small secondary" type="submit">Sentar</button>
-                                    </form>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-    </div>
-
-    {{-- Mesas --}}
-    @if ($tables->isNotEmpty())
-        <div class="grid cols-2" style="gap: 16px;">
+    {{-- Representación gráfica --}}
+    @if ($tables->isEmpty())
+        <div class="card">
+            <p class="small" style="margin: 0;">Aún no hay mesas. Ve a <a href="{{ route('tables.manage') }}">asignaciones</a> para crear las primeras y empezar a acomodar.</p>
+        </div>
+    @else
+        <div class="planner-grid">
             @foreach ($tables as $table)
-                @php $occupied = $table->occupiedSeats(); @endphp
-                <div class="card" style="{{ $table->is_principal ? 'border-color: #c693ea;' : '' }}">
-                    <div class="inline" style="justify-content: space-between; align-items: start;">
+                @php
+                    $occupied = $table->occupiedSeats();
+                    $ratio = $table->capacity > 0 ? $occupied / $table->capacity : 0;
+                    $fill = $ratio >= 1 ? 'fill-full' : ($ratio >= 0.7 ? 'fill-mid' : 'fill-ok');
+                    $shapeClass = match ($table->shape) {
+                        'Redonda' => 'round',
+                        'Cuadrada' => 'square',
+                        default => '',
+                    };
+                @endphp
+                <div class="tviz {{ $table->is_principal ? 'principal' : '' }} {{ $fill }}">
+                    <div class="tviz-head">
                         <div>
-                            <h3 style="margin: 0;">
-                                {{ $table->is_principal ? '⭐ ' : '' }}{{ $table->name }}
-                            </h3>
-                            <div class="small">
-                                {{ $table->table_type ?: 'Sin tipo' }} · {{ $table->shape ?: 'Sin forma' }}
-                            </div>
+                            <div class="tviz-name">{{ $table->is_principal ? '⭐ ' : '' }}{{ $table->name }}</div>
+                            <div class="tviz-sub">{{ $table->table_type ?: 'Sin tipo' }} · {{ $table->shape ?: 'Sin forma' }}</div>
                         </div>
-                        <span class="pill {{ $occupied >= $table->capacity ? 'status-no-asistira' : 'status-confirmado' }}">
-                            {{ $occupied }}/{{ $table->capacity }}
-                        </span>
+                        <span class="pill {{ $occupied >= $table->capacity ? 'status-no-asistira' : 'status-confirmado' }}">{{ $occupied }}/{{ $table->capacity }}</span>
                     </div>
 
-                    @if ($table->notes)
-                        <p class="small" style="margin: 8px 0 0;">📝 {{ $table->notes }}</p>
-                    @endif
+                    <div class="tviz-top {{ $shapeClass }}">
+                        <span>{{ $table->name }}<small>{{ $occupied }}/{{ $table->capacity }}</small></span>
+                    </div>
 
-                    {{-- Personas sentadas --}}
-                    <div style="margin-top: 12px;">
-                        @forelse ($table->assignments->sortBy(fn ($a) => $a->companion?->invited_group) as $assignment)
-                            @continue(! $assignment->companion)
-                            <div class="inline" style="justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f3eefa; gap: 8px;">
-                                <span class="small">{{ $assignment->companion->name }}
-                                    <span style="color: #9b8ab0;">· {{ $assignment->companion->invited_group }}</span>
-                                </span>
-                                <div class="inline" style="gap: 4px;">
-                                    {{-- Mover --}}
-                                    @if ($tables->count() > 1)
-                                        <form method="post" action="#" class="inline" style="gap: 3px;"
-                                            onsubmit="this.action='{{ url('confirmed-tables') }}/'+this.table_id.value+'/assign';">
-                                            @csrf
-                                            <input type="hidden" name="companion_id" value="{{ $assignment->companion_id }}">
-                                            <select name="table_id" required style="font-size: 11px; padding: 2px 5px;">
-                                                <option value="">Mover a…</option>
-                                                @foreach ($tables as $t)
-                                                    @if ($t->id !== $table->id)
-                                                        <option value="{{ $t->id }}">{{ $t->name }}</option>
-                                                    @endif
-                                                @endforeach
-                                            </select>
-                                            <button class="btn small secondary" type="submit">↪</button>
-                                        </form>
-                                    @endif
-                                    {{-- Quitar --}}
-                                    <form method="post" action="{{ route('tables.unassign', $table) }}">
-                                        @csrf
-                                        <input type="hidden" name="companion_id" value="{{ $assignment->companion_id }}">
-                                        <button class="btn small danger" type="submit" title="Quitar de la mesa">✕</button>
-                                    </form>
-                                </div>
-                            </div>
+                    {{-- sillas --}}
+                    <div class="seats">
+                        @for ($i = 0; $i < $table->capacity; $i++)
+                            <span class="seat {{ $i < $occupied ? 'filled' : 'empty' }}"></span>
+                        @endfor
+                    </div>
+
+                    {{-- nombres sentados --}}
+                    <div class="names">
+                        @php $seated = $table->assignments->filter(fn ($a) => $a->companion)->sortBy(fn ($a) => $a->companion->invited_group); @endphp
+                        @forelse ($seated as $a)
+                            <div>{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
                         @empty
-                            <p class="small" style="margin: 0; color: #9b8ab0;">Mesa vacía.</p>
+                            <span class="grp">Mesa vacía</span>
                         @endforelse
-                    </div>
-
-                    {{-- Acciones de mesa --}}
-                    <div class="inline" style="margin-top: 12px; gap: 8px;">
-                        <details style="flex: 1;">
-                            <summary class="btn secondary small" style="display: inline-block;">Editar</summary>
-                            <form method="post" action="{{ route('tables.update', $table) }}" style="margin-top: 10px;">
-                                @csrf
-                                @method('put')
-                                @include('tables._form', ['table' => $table, 'types' => $types, 'shapes' => $shapes])
-                                <button class="btn small" type="submit" style="margin-top: 8px;">Guardar</button>
-                            </form>
-                        </details>
-                        <form method="post" action="{{ route('tables.destroy', $table) }}"
-                            data-confirm-title="¿Eliminar la mesa {{ $table->name }}?"
-                            data-confirm-text="Sus invitados quedarán sin mesa. No se borra ninguna persona."
-                            data-confirm-button="Sí, eliminar"
-                            data-confirm-color="#d8527f"
-                            data-confirm-icon="warning">
-                            @csrf
-                            @method('delete')
-                            <button class="btn small danger" type="submit">Eliminar mesa</button>
-                        </form>
                     </div>
                 </div>
             @endforeach

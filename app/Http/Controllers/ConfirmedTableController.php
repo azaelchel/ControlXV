@@ -28,22 +28,55 @@ class ConfirmedTableController extends Controller
         return CatalogOptions::values('table_shapes') ?: self::SHAPES;
     }
 
+    /**
+     * Vista de CONSULTA: representación gráfica de cómo va el acomodo + buscador de
+     * persona/grupo para ver en qué mesa quedó. Solo lectura.
+     */
     public function index(Request $request): View
     {
-        $data = $this->buildPlannerData($request->string('search')->toString());
+        $search = $request->string('search')->toString();
+        $data = $this->buildPlannerData();
+        $searchResults = $this->searchPeople($search, $data['eligible'], $data['companionTable']);
 
-        return view('tables.index', array_merge($data, [
+        return view('tables.index', [
+            'tables' => $data['tables'],
+            'summary' => $data['summary'],
+            'progress' => $data['progress'],
+            'dividedGroups' => $data['dividedGroups'],
+            'search' => $search,
+            'searchResults' => $searchResults,
+        ]);
+    }
+
+    /**
+     * Vista de ASIGNACIONES: crear/editar/eliminar mesas, panel de invitados sin mesa
+     * (con filtro) y acciones de sentar/mover/quitar.
+     */
+    public function manage(Request $request): View
+    {
+        $q = $request->string('q')->toString();
+        $data = $this->buildPlannerData($q);
+
+        return view('tables.manage', [
+            'tables' => $data['tables'],
+            'unassigned' => $data['unassigned'],
+            'dividedGroups' => $data['dividedGroups'],
+            'summary' => $data['summary'],
             'types' => $this->tableTypes(),
             'shapes' => $this->tableShapes(),
-            'search' => $request->string('search')->toString(),
-        ]));
+            'q' => $q,
+        ]);
     }
 
     public function print(Request $request): View
     {
-        $data = $this->buildPlannerData('');
+        $data = $this->buildPlannerData();
 
-        return view('tables.print', $data);
+        return view('tables.print', [
+            'tables' => $data['tables'],
+            'unassigned' => $data['unassigned'],
+            'summary' => $data['summary'],
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -52,7 +85,7 @@ class ConfirmedTableController extends Controller
 
         EventTable::create($validated);
 
-        return redirect()->route('tables.index')->with('status', 'Mesa creada correctamente.');
+        return redirect()->route('tables.manage')->with('status', 'Mesa creada correctamente.');
     }
 
     public function update(Request $request, EventTable $eventTable): RedirectResponse
@@ -61,7 +94,7 @@ class ConfirmedTableController extends Controller
 
         $eventTable->update($validated);
 
-        return redirect()->route('tables.index')->with('status', 'Mesa actualizada correctamente.');
+        return redirect()->route('tables.manage')->with('status', 'Mesa actualizada correctamente.');
     }
 
     public function destroy(EventTable $eventTable): RedirectResponse
@@ -70,7 +103,7 @@ class ConfirmedTableController extends Controller
         TableAssignment::where('event_table_id', $eventTable->id)->update(['active' => false]);
         $eventTable->update(['active' => false]);
 
-        return redirect()->route('tables.index')
+        return redirect()->route('tables.manage')
             ->with('status', "Mesa \"{$eventTable->name}\" eliminada. Sus invitados quedaron sin mesa.");
     }
 
@@ -203,11 +236,34 @@ class ConfirmedTableController extends Controller
     }
 
     /**
-     * Arma todos los datos del planificador: mesas con sus invitados, invitados sin
-     * mesa (solo companions activos de guests Confirmados activos), grupos divididos,
-     * resumen de ocupación y resultados de búsqueda.
+     * Busca personas/grupos elegibles y devuelve en qué mesa quedó cada uno.
      */
-    private function buildPlannerData(string $search): array
+    private function searchPeople(string $search, $eligible, array $companionTable)
+    {
+        if ($search === '') {
+            return collect();
+        }
+
+        $needle = mb_strtolower(trim($search));
+
+        return $eligible
+            ->filter(fn (Companion $c) => str_contains(mb_strtolower($c->name), $needle)
+                || str_contains(mb_strtolower($c->invited_group), $needle))
+            ->map(fn (Companion $c) => [
+                'name' => $c->name,
+                'group' => $c->invited_group,
+                'type' => $c->type,
+                'table' => $companionTable[$c->id]->name ?? null,
+            ])
+            ->values();
+    }
+
+    /**
+     * Arma todos los datos del planificador: mesas con sus invitados, invitados sin
+     * mesa (solo companions activos de guests Confirmados activos, opcionalmente
+     * filtrados), grupos divididos, resumen y progreso.
+     */
+    private function buildPlannerData(string $unassignedFilter = ''): array
     {
         $tables = EventTable::query()
             ->with(['assignments.companion'])
@@ -238,10 +294,18 @@ class ConfirmedTableController extends Controller
             }
         }
 
-        // Invitados sin mesa, agrupados por familia/grupo.
-        $unassigned = $eligible
-            ->whereNotIn('id', $assignedIds)
-            ->groupBy('invited_group');
+        // Invitados sin mesa (con filtro opcional por nombre o grupo), agrupados.
+        $unassignedList = $eligible->whereNotIn('id', $assignedIds);
+
+        if ($unassignedFilter !== '') {
+            $needle = mb_strtolower(trim($unassignedFilter));
+            $unassignedList = $unassignedList->filter(
+                fn (Companion $c) => str_contains(mb_strtolower($c->name), $needle)
+                    || str_contains(mb_strtolower($c->invited_group), $needle)
+            );
+        }
+
+        $unassigned = $unassignedList->groupBy('invited_group');
 
         // Detección de grupos divididos: mismo grupo repartido en >1 mesa.
         $groupTables = [];
@@ -258,31 +322,23 @@ class ConfirmedTableController extends Controller
             ->filter(fn (array $tablesForGroup) => count($tablesForGroup) > 1)
             ->map(fn (array $tablesForGroup) => array_values($tablesForGroup));
 
-        // Búsqueda de persona: ¿en qué mesa quedó?
-        $searchResults = collect();
-        if ($search !== '') {
-            $needle = mb_strtolower(trim($search));
-            $searchResults = $eligible
-                ->filter(fn (Companion $c) => str_contains(mb_strtolower($c->name), $needle)
-                    || str_contains(mb_strtolower($c->invited_group), $needle))
-                ->map(fn (Companion $c) => [
-                    'name' => $c->name,
-                    'group' => $c->invited_group,
-                    'type' => $c->type,
-                    'table' => $companionTable[$c->id]->name ?? null,
-                ])
-                ->values();
-        }
-
         $totalCapacity = (int) $tables->sum('capacity');
         $totalSeated = count($assignedIds);
-        $totalUnassigned = $eligible->whereNotIn('id', $assignedIds)->count();
+        $totalEligible = $eligible->count();
+        $totalUnassigned = $totalEligible - $totalSeated;
+        $percent = $totalEligible > 0 ? (int) round(($totalSeated / $totalEligible) * 100) : 0;
 
         return [
             'tables' => $tables,
+            'eligible' => $eligible,
+            'companionTable' => $companionTable,
             'unassigned' => $unassigned,
             'dividedGroups' => $dividedGroups,
-            'searchResults' => $searchResults,
+            'progress' => [
+                'eligible' => $totalEligible,
+                'seated' => $totalSeated,
+                'percent' => $percent,
+            ],
             'summary' => [
                 'tables' => $tables->count(),
                 'capacity' => $totalCapacity,
