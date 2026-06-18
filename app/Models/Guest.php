@@ -80,6 +80,58 @@ class Guest extends Model
         return $this->hasOne(PublicGuestLink::class)->where('is_current', true)->latestOfMany('generated_at');
     }
 
+    /**
+     * Último link público en modo validación (el más reciente por generated_at).
+     * Usa la colección ya cargada si publicLinks viene eager-loaded para evitar N+1.
+     */
+    public function latestValidationLink(): ?PublicGuestLink
+    {
+        if ($this->relationLoaded('publicLinks')) {
+            return $this->publicLinks->firstWhere('mode', 'validation');
+        }
+
+        return $this->publicLinks()->where('mode', 'validation')->first();
+    }
+
+    /**
+     * Estado VISUAL derivado de la validación final para un guest Confirmado.
+     * No es un estatus de catálogo: se deriva del último link mode=validation.
+     * Valores: 'n/a' | 'none' | 'sent' | 'responded' | 'expired'
+     */
+    public function validationState(): string
+    {
+        if ($this->status !== 'Confirmado') {
+            return 'n/a';
+        }
+
+        $link = $this->latestValidationLink();
+
+        if (! $link || in_array($link->closed_reason, ['cancelled', 'replaced'], true)) {
+            return 'none';
+        }
+
+        if ($link->responded_at !== null) {
+            return 'responded';
+        }
+
+        if ($link->isExpired()) {
+            return 'expired';
+        }
+
+        return 'sent';
+    }
+
+    public function validationStateLabel(): string
+    {
+        return match ($this->validationState()) {
+            'none' => 'Sin validación enviada',
+            'sent' => 'Validación enviada',
+            'responded' => 'Validación respondida',
+            'expired' => 'Validación vencida',
+            default => '',
+        };
+    }
+
     public function messageSends(): HasMany
     {
         return $this->hasMany(MessageSend::class)->latest();

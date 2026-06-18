@@ -54,6 +54,13 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('module:tables')->group(function () {
         Route::get('/confirmed-tables', [ConfirmedTableController::class, 'index'])->name('tables.index');
+        Route::get('/confirmed-tables/print', [ConfirmedTableController::class, 'print'])->name('tables.print');
+        Route::post('/confirmed-tables', [ConfirmedTableController::class, 'store'])->name('tables.store');
+        Route::put('/confirmed-tables/{eventTable}', [ConfirmedTableController::class, 'update'])->name('tables.update');
+        Route::delete('/confirmed-tables/{eventTable}', [ConfirmedTableController::class, 'destroy'])->name('tables.destroy');
+        Route::post('/confirmed-tables/{eventTable}/assign', [ConfirmedTableController::class, 'assign'])->name('tables.assign');
+        Route::post('/confirmed-tables/{eventTable}/assign-group', [ConfirmedTableController::class, 'assignGroup'])->name('tables.assign-group');
+        Route::post('/confirmed-tables/{eventTable}/unassign', [ConfirmedTableController::class, 'unassign'])->name('tables.unassign');
     });
 
     Route::middleware('module:catalogs')->group(function () {

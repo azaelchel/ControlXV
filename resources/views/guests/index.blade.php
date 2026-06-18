@@ -287,6 +287,25 @@
                                         <option value="{{ $value }}" @selected($guest->status === $value)>{{ $value }}</option>
                                     @endforeach
                                 </select>
+                                @if ($guest->status === 'Confirmado')
+                                    @php
+                                        $valState = $guest->validationState();
+                                        $valClass = match ($valState) {
+                                            'responded' => 'status-confirmado',
+                                            'sent' => 'status-invitacion-enviada',
+                                            'expired' => 'status-no-contesto',
+                                            default => 'status-default',
+                                        };
+                                        $valIcon = match ($valState) {
+                                            'responded' => '✓',
+                                            'sent' => '📤',
+                                            'expired' => '⏰',
+                                            default => '•',
+                                        };
+                                    @endphp
+                                    <span class="pill {{ $valClass }}" style="font-size: 10px; padding: 2px 8px; margin-top: 6px; display: inline-block;"
+                                        title="Estado de la validación final (derivado del link mode=validation)">{{ $valIcon }} {{ $guest->validationStateLabel() }}</span>
+                                @endif
                             </td>
                             <td>
                                 <input
