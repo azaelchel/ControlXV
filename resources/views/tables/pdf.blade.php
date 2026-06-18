@@ -22,8 +22,11 @@
     <meta charset="utf-8">
     <style>
         @page { margin: 20mm 18mm 20mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
+        /* OJO dompdf: NO usar selector universal (*) ni resetear html{} — eso anula
+           el @page margin y el contenido se pega al borde. Reset por elemento. */
+        body { margin: 0; padding: 0; font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
+        h1, p, div, table, td, ol, ul, li { margin: 0; padding: 0; }
+        div, table, td { box-sizing: border-box; }
         .display { font-family: 'DejaVu Serif', serif; }
 
         /* Portada */
