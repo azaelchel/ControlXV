@@ -3,13 +3,25 @@
     $eventDate = \App\Models\Setting::get('event_date', '');
     $eventTime = \App\Models\Setting::get('event_time', '');
     $rows = $tables->chunk(2);
+    $initials = function ($name) {
+        $parts = preg_split('/\s+/', trim((string) $name));
+        $a = mb_substr($parts[0] ?? '', 0, 1);
+        $b = isset($parts[1]) ? mb_substr($parts[1], 0, 1) : '';
+        return mb_strtoupper($a . $b);
+    };
+    $typeCls = fn ($t) => match ($t) {
+        'Adulto' => 'adulto', 'Adolescente' => 'adolescente', 'Niño' => 'nino', default => 'otro',
+    };
+    $typeHex = fn ($t) => match ($t) {
+        'Adulto' => '#8a55be', 'Adolescente' => '#3f7fc4', 'Niño' => '#e0883f', default => '#a0a0b0',
+    };
 @endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 16mm 15mm 16mm; }
+        @page { margin: 20mm 18mm 20mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
         .display { font-family: 'DejaVu Serif', serif; }
@@ -24,6 +36,9 @@
         .stats span { display: inline-block; padding: 0 14px; }
         .stats .n { font-family: 'DejaVu Serif', serif; font-size: 20px; font-weight: bold; color: #6b4a86; }
         .stats .l { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #9b8ab0; }
+        .legend { text-align: center; margin-top: 12px; font-size: 9px; color: #6b5a7e; }
+        .legend span { display: inline-block; padding: 0 8px; }
+        .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
 
         /* Mesas */
         table.layout { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -38,16 +53,19 @@
         .mesa-meta { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: #9b7fbf; padding: 6px 11px 0; }
         .mesa-notes { font-size: 10px; color: #8a72a4; font-style: italic; padding: 2px 11px 0; }
 
-        /* Sillas (puntos) */
+        /* Sillas con iniciales y color por tipo */
         .seats { padding: 8px 11px 4px; }
-        .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 0 2px 2px 0; }
-        .dot.on { background-color: #8a55be; }
-        .dot.off { background-color: #fff; border: 1px solid #d3bfe8; }
+        .seat { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; font-size: 7px; font-weight: bold; color: #fff; margin: 0 2px 3px 0; }
+        .seat.off { background-color: #fff; border: 1px solid #d3bfe8; }
+        .seat.adulto { background-color: #8a55be; }
+        .seat.adolescente { background-color: #3f7fc4; }
+        .seat.nino { background-color: #e0883f; }
+        .seat.otro { background-color: #a0a0b0; }
 
         /* Lista de sentados */
         .guests { padding: 2px 11px 10px; }
         .guests .g { padding: 2px 0; border-bottom: 1px dotted #ece2f6; }
-        .guests .num { color: #b79bd6; font-size: 9px; }
+        .guests .tdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
         .guests .grp { color: #a594b8; font-size: 9px; font-style: italic; }
         .freeline { padding: 4px 11px 10px; font-size: 9px; font-style: italic; color: #b79bd6; }
         .empty { padding: 8px 11px 12px; color: #b3a3c4; font-style: italic; }
@@ -78,6 +96,11 @@
             <span><span class="n">{{ $summary['capacity'] }}</span><br><span class="l">Lugares</span></span>
             <span><span class="n">{{ $summary['unassigned'] }}</span><br><span class="l">Pendientes</span></span>
         </div>
+        <div class="legend">
+            <span><i style="background:#8a55be;"></i>Adulto</span>
+            <span><i style="background:#3f7fc4;"></i>Adolescente</span>
+            <span><i style="background:#e0883f;"></i>Niño</span>
+        </div>
     </div>
 
     {{-- Mesas como tarjetas --}}
@@ -105,8 +128,11 @@
                                 @endif
 
                                 <div class="seats">
-                                    @for ($i = 0; $i < $table->capacity; $i++)
-                                        <span class="dot {{ $i < $occ ? 'on' : 'off' }}"></span>
+                                    @foreach ($seated as $a)
+                                        <span class="seat {{ $typeCls($a->companion->type) }}">{{ $initials($a->companion->name) }}</span>
+                                    @endforeach
+                                    @for ($i = 0; $i < $free; $i++)
+                                        <span class="seat off"></span>
                                     @endfor
                                 </div>
 
@@ -114,8 +140,8 @@
                                     <div class="empty">Mesa disponible</div>
                                 @else
                                     <div class="guests">
-                                        @foreach ($seated as $i => $a)
-                                            <div class="g"><span class="num">{{ $i + 1 }}.</span> {{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
+                                        @foreach ($seated as $a)
+                                            <div class="g"><span class="tdot" style="background: {{ $typeHex($a->companion->type) }};"></span>{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
                                         @endforeach
                                     </div>
                                     @if ($free > 0)
