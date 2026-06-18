@@ -18,7 +18,7 @@ class PublicGuestLinkService
             return null;
         }
 
-        if ($link->isExpired() || $link->closed_reason === 'cancelled') {
+        if ($link->isExpired() || $link->closed_reason === 'cancelled' || $link->responded_at !== null) {
             return null;
         }
 

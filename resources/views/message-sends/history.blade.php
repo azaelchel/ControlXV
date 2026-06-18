@@ -194,6 +194,13 @@
                                         title="Desmarcar como abierto (si lo abriste tú por error)">↩ Sin abrir</button>
                                 </form>
                             @endif
+                            @if ($link && $link->responded_at && $link->closed_reason === 'responded')
+                                <form method="post" action="{{ route('message-sends.reopen-link', $link) }}" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn ghost" style="padding: 3px 9px; font-size: 11px; border-radius: 8px; border-color: #c6a0e8; color: #7a3fbf;"
+                                        title="Reabrir el link para que el invitado pueda actualizar sus acompañantes">🔓 Reabrir</button>
+                                </form>
+                            @endif
                         </div>
                         <div class="actions">
                             <button type="button" class="btn secondary icon-btn" data-preview-message

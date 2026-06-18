@@ -81,6 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/message-sends', [MessageSendController::class, 'store'])->name('message-sends.store');
         Route::delete('/message-sends/{messageSend}', [MessageSendController::class, 'destroy'])->name('message-sends.destroy');
         Route::post('/message-sends/reset-opened/{publicGuestLink}', [MessageSendController::class, 'resetOpened'])->name('message-sends.reset-opened');
+        Route::post('/message-sends/reopen-link/{publicGuestLink}', [MessageSendController::class, 'reopenLink'])->name('message-sends.reopen-link');
     });
 
     Route::middleware('module:system_transfer')->group(function () {

@@ -252,6 +252,28 @@ class MessageSendController extends Controller
         return back()->with('status', 'Apertura desmarcada.');
     }
 
+    public function reopenLink(PublicGuestLink $publicGuestLink): RedirectResponse
+    {
+        $days = \App\Models\Setting::getInt('link_validity_days', 7);
+
+        $publicGuestLink->forceFill([
+            'responded_at'  => null,
+            'response'      => null,
+            'closed_reason' => null,
+            'expires_at'    => now()->addDays($days),
+        ])->save();
+
+        if ($publicGuestLink->guest) {
+            $publicGuestLink->guest->forceFill([
+                'public_link_responded_at' => null,
+                'public_link_response'     => null,
+                'public_link_expires_at'   => $publicGuestLink->expires_at,
+            ])->save();
+        }
+
+        return back()->with('status', 'Confirmación reabierta. El link vuelve a estar activo por ' . $days . ' días.');
+    }
+
     private function renderForSend(Guest $guest, MessageTemplate $template): array
     {
         $linkUrl = null;

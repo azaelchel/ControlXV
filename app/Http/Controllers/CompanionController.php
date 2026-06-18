@@ -74,10 +74,7 @@ class CompanionController extends Controller
             'types' => Companion::query()->select('type')->distinct()->whereNotNull('type')->where('type', '!=', '')->orderBy('type')->pluck('type'),
             'sexes' => ['Hombre', 'Mujer'],
             'guestProfiles' => $guestProfiles,
-            'guestOptions' => $guestProfiles
-                ->filter(fn (array $profile) => $profile['missing_total'] > 0)
-                ->keys()
-                ->values(),
+            'guestOptions' => $guestProfiles->keys()->values(),
             'filters' => $request->only(['group', 'type', 'search']),
             'editingCompanion' => $editingCompanion,
             'pendingRegistrations' => $pendingRegistrations,
@@ -101,10 +98,7 @@ class CompanionController extends Controller
 
         return view('companions.create', [
             'companion' => new Companion(),
-            'guestOptions' => $guestProfiles
-                ->filter(fn (array $profile) => $profile['missing_total'] > 0)
-                ->keys()
-                ->values(),
+            'guestOptions' => $guestProfiles->keys()->values(),
             'guestProfiles' => $guestProfiles,
             'types' => ['Adulto', 'Adolescente', 'Niño'],
             'sexes' => ['Hombre', 'Mujer'],
