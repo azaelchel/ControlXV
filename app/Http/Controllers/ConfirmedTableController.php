@@ -7,9 +7,11 @@ use App\Models\EventTable;
 use App\Models\Guest;
 use App\Models\TableAssignment;
 use App\Support\CatalogOptions;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class ConfirmedTableController extends Controller
 {
@@ -68,15 +70,18 @@ class ConfirmedTableController extends Controller
         ]);
     }
 
-    public function print(Request $request): View
+    public function print(Request $request): Response
     {
         $data = $this->buildPlannerData();
 
-        return view('tables.print', [
+        $pdf = Pdf::loadView('tables.pdf', [
             'tables' => $data['tables'],
             'unassigned' => $data['unassigned'],
             'summary' => $data['summary'],
-        ]);
+        ])->setPaper('a4', 'portrait');
+
+        // stream = se abre en el navegador (con su botón de descargar); download = baja directo.
+        return $pdf->stream('distribucion-mesas-'.now()->format('Ymd').'.pdf');
     }
 
     public function store(Request $request): RedirectResponse
