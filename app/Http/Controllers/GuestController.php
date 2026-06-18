@@ -398,10 +398,10 @@ class GuestController extends Controller
     {
         $originalName ??= $guest->name;
 
-        if ($guest->status !== 'Confirmado') {
+        if ($guest->status === 'No asistirá') {
             \App\Models\Companion::query()
                 ->whereIn('invited_group', array_values(array_unique([$originalName, $guest->name])))
-                ->delete();
+                ->update(['active' => false]);
 
             return;
         }
