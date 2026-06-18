@@ -6,7 +6,7 @@
             <input id="invited_group" type="text" value="{{ old('invited_group', $companion->invited_group) }}" readonly style="background:#f7f2fb;color:#6a4f81;">
         @else
             <select id="invited_group" name="invited_group" required>
-                <option value="">Selecciona</option>
+                <option value="" disabled hidden @selected(empty(old('invited_group', $companion->invited_group)))>Selecciona una opción</option>
                 @foreach ($guestOptions as $value)
                     <option value="{{ $value }}" @selected(old('invited_group', $companion->invited_group) === $value)>{{ $value }}</option>
                 @endforeach

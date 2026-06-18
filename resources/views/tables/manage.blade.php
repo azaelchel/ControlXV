@@ -75,7 +75,7 @@
                                 @csrf
                                 <input type="hidden" name="group" value="{{ $group }}">
                                 <select name="table_id" required style="font-size: 12px; padding: 4px 8px;">
-                                    <option value="">Mesa…</option>
+                                    <option value="" disabled selected hidden>Elegir mesa…</option>
                                     @foreach ($tables as $t)
                                         <option value="{{ $t->id }}">{{ $t->name }} ({{ $t->availableSeats() }} libres)</option>
                                     @endforeach
@@ -92,7 +92,7 @@
                                         @csrf
                                         <input type="hidden" name="companion_id" value="{{ $person->id }}">
                                         <select name="table_id" required style="font-size: 11px; padding: 3px 6px;">
-                                            <option value="">Mesa…</option>
+                                            <option value="" disabled selected hidden>Elegir mesa…</option>
                                             @foreach ($tables as $t)
                                                 <option value="{{ $t->id }}">{{ $t->name }}</option>
                                             @endforeach
@@ -140,7 +140,7 @@
                                             @csrf
                                             <input type="hidden" name="companion_id" value="{{ $assignment->companion_id }}">
                                             <select name="table_id" required style="font-size: 11px; padding: 2px 5px;">
-                                                <option value="">Mover a…</option>
+                                                <option value="" disabled selected hidden>Mover a…</option>
                                                 @foreach ($tables as $t)
                                                     @if ($t->id !== $table->id)
                                                         <option value="{{ $t->id }}">{{ $t->name }}</option>

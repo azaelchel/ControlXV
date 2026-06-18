@@ -6,7 +6,7 @@
     <div class="full">
         <label for="invited_group_batch">Familia o grupo</label>
         <select id="invited_group_batch" name="invited_group" required data-companion-group-select>
-            <option value="">Selecciona</option>
+            <option value="" disabled hidden @selected(empty($selectedGroup))>Selecciona una opción</option>
             @foreach ($guestOptions as $value)
                 <option value="{{ $value }}" @selected($selectedGroup === $value)>{{ $value }}</option>
             @endforeach

@@ -2,7 +2,7 @@
     <div>
         <label for="group_name">Grupo</label>
         <select id="group_name" name="group_name" required>
-            <option value="">Selecciona</option>
+            <option value="" disabled hidden @selected(empty(old('group_name', $guest->group_name)))>Selecciona una opción</option>
             @foreach ($options['groups'] as $value)
                 <option value="{{ $value }}" @selected(old('group_name', $guest->group_name) === $value)>{{ $value }}</option>
             @endforeach
@@ -30,7 +30,7 @@
     <div>
         <label for="category">Categoria</label>
         <select id="category" name="category" required>
-            <option value="">Selecciona</option>
+            <option value="" disabled hidden @selected(empty(old('category', $guest->category)))>Selecciona una opción</option>
             @foreach ($options['categories'] as $value)
                 <option value="{{ $value }}" @selected(old('category', $guest->category) === $value)>{{ $value }}</option>
             @endforeach
@@ -41,7 +41,7 @@
     <div>
         <label for="status">Estatus</label>
         <select id="status" name="status" required>
-            <option value="">Selecciona</option>
+            <option value="" disabled hidden @selected(empty(old('status', $guest->status)))>Selecciona una opción</option>
             @foreach ($options['statuses'] as $value)
                 <option value="{{ $value }}" @selected(old('status', $guest->status) === $value)>{{ $value }}</option>
             @endforeach
