@@ -48,6 +48,13 @@ class ImportSystemData extends Command
             }
         }
 
+        // Secciones opcionales (respaldos anteriores no las traen): se normalizan a [].
+        foreach (['event_tables', 'table_assignments'] as $optional) {
+            if (! array_key_exists($optional, $payload) || ! is_array($payload[$optional])) {
+                $payload[$optional] = [];
+            }
+        }
+
         DB::transaction(function () use ($payload) {
             $this->truncateDomainTables($this->option('with-users') && isset($payload['users']));
 
@@ -55,6 +62,9 @@ class ImportSystemData extends Command
             $this->bulkInsert('guests', $payload['guests']);
             $this->bulkInsert('companions', $payload['companions']);
             $this->bulkInsert('confirmed_tables', $payload['confirmed_tables']);
+            // event_tables antes que table_assignments por la llave foránea.
+            $this->bulkInsert('event_tables', $payload['event_tables']);
+            $this->bulkInsert('table_assignments', $payload['table_assignments']);
 
             if ($this->option('with-users') && isset($payload['users']) && is_array($payload['users'])) {
                 $this->bulkInsert('users', $payload['users']);
@@ -64,6 +74,8 @@ class ImportSystemData extends Command
             $this->resetAutoIncrement('guests');
             $this->resetAutoIncrement('companions');
             $this->resetAutoIncrement('confirmed_tables');
+            $this->resetAutoIncrement('event_tables');
+            $this->resetAutoIncrement('table_assignments');
 
             if ($this->option('with-users') && isset($payload['users']) && is_array($payload['users'])) {
                 $this->resetAutoIncrement('users');
@@ -77,7 +89,9 @@ class ImportSystemData extends Command
                 ['Catálogos', count($payload['catalog_items'])],
                 ['Familias o grupos', count($payload['guests'])],
                 ['Invitados', count($payload['companions'])],
-                ['Mesas confirmadas', count($payload['confirmed_tables'])],
+                ['Mesas confirmadas (legacy)', count($payload['confirmed_tables'])],
+                ['Mesas del evento', count($payload['event_tables'])],
+                ['Asignaciones de mesa', count($payload['table_assignments'])],
                 ['Usuarios', $this->option('with-users') ? count($payload['users'] ?? []) : 'omitidos'],
             ]
         );
@@ -91,9 +105,9 @@ class ImportSystemData extends Command
 
         if ($driver === 'pgsql') {
             if ($withUsers) {
-                DB::statement('TRUNCATE TABLE companions, confirmed_tables, guests, catalog_items, users RESTART IDENTITY CASCADE');
+                DB::statement('TRUNCATE TABLE table_assignments, event_tables, companions, confirmed_tables, guests, catalog_items, users RESTART IDENTITY CASCADE');
             } else {
-                DB::statement('TRUNCATE TABLE companions, confirmed_tables, guests, catalog_items RESTART IDENTITY CASCADE');
+                DB::statement('TRUNCATE TABLE table_assignments, event_tables, companions, confirmed_tables, guests, catalog_items RESTART IDENTITY CASCADE');
             }
 
             return;
@@ -101,6 +115,8 @@ class ImportSystemData extends Command
 
         if ($driver === 'sqlite') {
             DB::statement('PRAGMA foreign_keys = OFF');
+            DB::table('table_assignments')->delete();
+            DB::table('event_tables')->delete();
             DB::table('companions')->delete();
             DB::table('confirmed_tables')->delete();
             DB::table('guests')->delete();
@@ -110,7 +126,7 @@ class ImportSystemData extends Command
                 DB::table('users')->delete();
             }
 
-            DB::statement('DELETE FROM sqlite_sequence WHERE name IN (\'companions\', \'confirmed_tables\', \'guests\', \'catalog_items\''.($withUsers ? ', \'users\'' : '').')');
+            DB::statement('DELETE FROM sqlite_sequence WHERE name IN (\'table_assignments\', \'event_tables\', \'companions\', \'confirmed_tables\', \'guests\', \'catalog_items\''.($withUsers ? ', \'users\'' : '').')');
             DB::statement('PRAGMA foreign_keys = ON');
 
             return;

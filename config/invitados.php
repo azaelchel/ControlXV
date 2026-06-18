@@ -59,4 +59,19 @@ return [
         'Velacion',
         'Salon y Foto',
     ],
+    'table_types' => [
+        'Principal',
+        'Familiar',
+        'General',
+        'Niños',
+        'Jóvenes',
+        'Staff',
+        'Reservada',
+    ],
+    'table_shapes' => [
+        'Redonda',
+        'Rectangular',
+        'Cuadrada',
+        'Imperial',
+    ],
 ];

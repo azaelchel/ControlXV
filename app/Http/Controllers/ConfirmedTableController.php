@@ -6,24 +6,35 @@ use App\Models\Companion;
 use App\Models\EventTable;
 use App\Models\Guest;
 use App\Models\TableAssignment;
+use App\Support\CatalogOptions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class ConfirmedTableController extends Controller
 {
+    /** Defaults usados para sembrar los catálogos y como respaldo si el catálogo está vacío. */
     public const TYPES = ['Principal', 'Familiar', 'General', 'Niños', 'Jóvenes', 'Staff', 'Reservada'];
 
     public const SHAPES = ['Redonda', 'Rectangular', 'Cuadrada', 'Imperial'];
+
+    private function tableTypes(): array
+    {
+        return CatalogOptions::values('table_types') ?: self::TYPES;
+    }
+
+    private function tableShapes(): array
+    {
+        return CatalogOptions::values('table_shapes') ?: self::SHAPES;
+    }
 
     public function index(Request $request): View
     {
         $data = $this->buildPlannerData($request->string('search')->toString());
 
         return view('tables.index', array_merge($data, [
-            'types' => self::TYPES,
-            'shapes' => self::SHAPES,
+            'types' => $this->tableTypes(),
+            'shapes' => $this->tableShapes(),
             'search' => $request->string('search')->toString(),
         ]));
     }
@@ -177,8 +188,8 @@ class ConfirmedTableController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'capacity' => ['required', 'integer', 'min:1', 'max:50'],
-            'table_type' => ['nullable', 'string', 'in:' . implode(',', self::TYPES)],
-            'shape' => ['nullable', 'string', 'in:' . implode(',', self::SHAPES)],
+            'table_type' => ['nullable', 'string', 'in:' . implode(',', $this->tableTypes())],
+            'shape' => ['nullable', 'string', 'in:' . implode(',', $this->tableShapes())],
             'is_principal' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);

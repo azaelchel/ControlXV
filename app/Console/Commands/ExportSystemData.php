@@ -5,7 +5,9 @@ namespace App\Console\Commands;
 use App\Models\CatalogItem;
 use App\Models\Companion;
 use App\Models\ConfirmedTable;
+use App\Models\EventTable;
 use App\Models\Guest;
+use App\Models\TableAssignment;
 use App\Models\User;
 use Illuminate\Console\Command;
 
@@ -57,6 +59,16 @@ class ExportSystemData extends Command
                 ->get()
                 ->map(fn (ConfirmedTable $table) => $table->getAttributes())
                 ->values(),
+            'event_tables' => EventTable::withoutGlobalScope('active')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (EventTable $table) => $table->getAttributes())
+                ->values(),
+            'table_assignments' => TableAssignment::withoutGlobalScope('active')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (TableAssignment $assignment) => $assignment->getAttributes())
+                ->values(),
         ];
 
         if ($this->option('with-users')) {
@@ -80,7 +92,9 @@ class ExportSystemData extends Command
                 ['Catálogos', count($payload['catalog_items'])],
                 ['Familias o grupos', count($payload['guests'])],
                 ['Invitados', count($payload['companions'])],
-                ['Mesas confirmadas', count($payload['confirmed_tables'])],
+                ['Mesas confirmadas (legacy)', count($payload['confirmed_tables'])],
+                ['Mesas del evento', count($payload['event_tables'])],
+                ['Asignaciones de mesa', count($payload['table_assignments'])],
                 ['Usuarios', count($payload['users'] ?? [])],
             ]
         );

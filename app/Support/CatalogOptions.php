@@ -16,6 +16,8 @@ class CatalogOptions
         'sponsors' => 'sponsors',
         'followups' => 'followups',
         'companion_groups' => 'companion_groups',
+        'table_types' => 'table_types',
+        'table_shapes' => 'table_shapes',
     ];
 
     public static function all(): array
@@ -28,6 +30,8 @@ class CatalogOptions
             'sponsors' => self::values('sponsors'),
             'followups' => self::values('followups'),
             'companion_groups' => self::values('companion_groups'),
+            'table_types' => self::values('table_types'),
+            'table_shapes' => self::values('table_shapes'),
         ];
     }
 
@@ -80,6 +84,8 @@ class CatalogOptions
             'sponsors' => 'Padrinos',
             'followups' => 'Seguimiento',
             'companion_groups' => 'Familias o grupos vinculados',
+            'table_types' => 'Tipos de mesa',
+            'table_shapes' => 'Formas de mesa',
         ];
     }
 }
