@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 30px 32px 40px; }
+        @page { margin: 16mm 15mm 16mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
         .display { font-family: 'DejaVu Serif', serif; }

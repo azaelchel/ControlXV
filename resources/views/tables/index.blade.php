@@ -21,18 +21,48 @@
     .tviz-top.round { width: 110px; height: 110px; border-radius: 50%; }
     .tviz-top.square { width: 100px; height: 100px; border-radius: 14px; }
     .tviz-top small { display: block; font-weight: 600; font-size: 11px; opacity: .9; }
-    .seats { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 12px; }
-    .seat { width: 14px; height: 14px; border-radius: 50%; }
-    .seat.filled { background: #8a55be; }
-    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; }
+    .seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 10px; }
+    .seat { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; }
+    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; color: transparent; }
+    .seat.t-adulto { background: #8a55be; }
+    .seat.t-adolescente { background: #3f7fc4; }
+    .seat.t-nino { background: #e0883f; }
+    .seat.t-otro { background: #a0a0b0; }
+    .faltan { text-align: center; font-size: 12px; color: #b0843f; font-weight: 700; margin-bottom: 10px; }
+    .faltan.lleno { color: #3f9e6b; }
     .fill-ok .tviz-top { background: linear-gradient(135deg,#7bc59a,#3f9e6b); }
     .fill-mid .tviz-top { background: linear-gradient(135deg,#e6b364,#cf8f3f); }
     .fill-full .tviz-top { background: linear-gradient(135deg,#b07fd8,#8a55be); }
     .names { font-size: 12px; color: #5f4c70; }
+    .names div { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
     .names .grp { color: #9b8ab0; }
+    .tdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
     .pbar { height: 12px; border-radius: 999px; background: #efe5f7; overflow: hidden; }
     .pbar > span { display: block; height: 100%; background: linear-gradient(90deg,#b07fd8,#8a55be); }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 12px; color: #6b5a7e; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 </style>
+@php
+    $initials = function ($name) {
+        $parts = preg_split('/\s+/', trim((string) $name));
+        $a = mb_substr($parts[0] ?? '', 0, 1);
+        $b = isset($parts[1]) ? mb_substr($parts[1], 0, 1) : '';
+        return mb_strtoupper($a . $b);
+    };
+    $typeClass = fn ($t) => match ($t) {
+        'Adulto' => 't-adulto',
+        'Adolescente' => 't-adolescente',
+        'Niño' => 't-nino',
+        default => 't-otro',
+    };
+    $typeHex = fn ($t) => match ($t) {
+        'Adulto' => '#8a55be',
+        'Adolescente' => '#3f7fc4',
+        'Niño' => '#e0883f',
+        default => '#a0a0b0',
+    };
+@endphp
 
     {{-- Resumen + progreso --}}
     <div class="card" style="margin-bottom: 18px;">
@@ -97,6 +127,19 @@
         </div>
     @endif
 
+    {{-- Leyenda de tipos --}}
+    @if ($tables->isNotEmpty())
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="legend">
+                <strong style="color:#43275b;">Tipo de invitado:</strong>
+                <span><i style="background:#8a55be;"></i> Adulto</span>
+                <span><i style="background:#3f7fc4;"></i> Adolescente</span>
+                <span><i style="background:#e0883f;"></i> Niño</span>
+                <span><i style="background:#fff; border:1.5px dashed #d3bfe8;"></i> Lugar libre</span>
+            </div>
+        </div>
+    @endif
+
     {{-- Representación gráfica --}}
     @if ($tables->isEmpty())
         <div class="card">
@@ -128,18 +171,30 @@
                         <span>{{ $table->name }}<small>{{ $occupied }}/{{ $table->capacity }}</small></span>
                     </div>
 
-                    {{-- sillas --}}
+                    @php
+                        $seated = $table->assignments->filter(fn ($a) => $a->companion)->sortBy(fn ($a) => $a->companion->invited_group)->values();
+                        $free = max(0, $table->capacity - $occupied);
+                    @endphp
+
+                    {{-- sillas con iniciales y color por tipo --}}
                     <div class="seats">
-                        @for ($i = 0; $i < $table->capacity; $i++)
-                            <span class="seat {{ $i < $occupied ? 'filled' : 'empty' }}"></span>
+                        @foreach ($seated as $a)
+                            <span class="seat {{ $typeClass($a->companion->type) }}" title="{{ $a->companion->name }} ({{ $a->companion->type ?: 'Sin tipo' }})">{{ $initials($a->companion->name) }}</span>
+                        @endforeach
+                        @for ($i = 0; $i < $free; $i++)
+                            <span class="seat empty">·</span>
                         @endfor
+                    </div>
+
+                    {{-- cuántos faltan --}}
+                    <div class="faltan {{ $free === 0 ? 'lleno' : '' }}">
+                        {{ $free === 0 ? '✓ Mesa completa' : 'Faltan '.$free.' por sentar' }}
                     </div>
 
                     {{-- nombres sentados --}}
                     <div class="names">
-                        @php $seated = $table->assignments->filter(fn ($a) => $a->companion)->sortBy(fn ($a) => $a->companion->invited_group); @endphp
                         @forelse ($seated as $a)
-                            <div>{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
+                            <div><span class="tdot" style="background: {{ $typeHex($a->companion->type) }};"></span> {{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
                         @empty
                             <span class="grp">Mesa vacía</span>
                         @endforelse
