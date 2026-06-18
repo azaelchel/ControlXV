@@ -13,7 +13,7 @@
         'Adulto' => 'adulto', 'Adolescente' => 'adolescente', 'Niño' => 'nino', default => 'otro',
     };
     $typeHex = fn ($t) => match ($t) {
-        'Adulto' => '#8a55be', 'Adolescente' => '#3f7fc4', 'Niño' => '#e0883f', default => '#a0a0b0',
+        'Adulto' => '#6d28b8', 'Adolescente' => '#1f9e6a', 'Niño' => '#d6453f', default => '#8a8a96',
     };
 @endphp
 <!DOCTYPE html>
@@ -57,19 +57,18 @@
         .mesa-notes { font-size: 10px; color: #8a72a4; font-style: italic; padding: 2px 11px 0; }
 
         /* Sillas con iniciales y color por tipo */
-        .seats { padding: 8px 11px 4px; }
-        .seat { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; font-size: 7px; font-weight: bold; color: #fff; margin: 0 2px 3px 0; }
-        .seat.off { background-color: #fff; border: 1px solid #d3bfe8; }
-        .seat.adulto { background-color: #8a55be; }
-        .seat.adolescente { background-color: #3f7fc4; }
-        .seat.nino { background-color: #e0883f; }
-        .seat.otro { background-color: #a0a0b0; }
+        .seats { padding: 9px 11px 5px; }
+        .seat { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; font-size: 9.5px; font-weight: bold; color: #fff; margin: 0 3px 4px 0; }
+        .seat.off { background-color: #fff; border: 1px dashed #d3bfe8; }
+        .seat.adulto { background-color: #6d28b8; }
+        .seat.adolescente { background-color: #1f9e6a; }
+        .seat.nino { background-color: #d6453f; }
+        .seat.otro { background-color: #8a8a96; }
 
-        /* Lista de sentados */
+        /* Lista de sentados (nombre coloreado por tipo) */
         .guests { padding: 2px 11px 10px; }
-        .guests .g { padding: 2px 0; border-bottom: 1px dotted #ece2f6; }
-        .guests .tdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
-        .guests .grp { color: #a594b8; font-size: 9px; font-style: italic; }
+        .guests .g { padding: 2px 0; border-bottom: 1px dotted #ece2f6; font-weight: bold; }
+        .guests .grp { color: #a594b8; font-size: 9px; font-style: italic; font-weight: normal; }
         .freeline { padding: 4px 11px 10px; font-size: 9px; font-style: italic; color: #b79bd6; }
         .empty { padding: 8px 11px 12px; color: #b3a3c4; font-style: italic; }
 
@@ -80,6 +79,7 @@
         .fam { font-weight: bold; color: #5f4c70; font-size: 10px; margin-bottom: 1px; }
         .fam .c { color: #a594b8; font-weight: normal; }
         .pers { font-size: 9.5px; color: #4a3a5c; padding-left: 6px; }
+        .pers .pnum { color: #b79bd6; font-size: 8px; }
 
         .foot { text-align: center; font-size: 8px; color: #b3a3c4; letter-spacing: 1px; margin-top: 18px; }
     </style>
@@ -100,9 +100,9 @@
             <span><span class="n">{{ $summary['unassigned'] }}</span><br><span class="l">Pendientes</span></span>
         </div>
         <div class="legend">
-            <span><i style="background:#8a55be;"></i>Adulto</span>
-            <span><i style="background:#3f7fc4;"></i>Adolescente</span>
-            <span><i style="background:#e0883f;"></i>Niño</span>
+            <span><i style="background:#6d28b8;"></i>Adulto</span>
+            <span><i style="background:#1f9e6a;"></i>Adolescente</span>
+            <span><i style="background:#d6453f;"></i>Niño</span>
         </div>
     </div>
 
@@ -144,7 +144,7 @@
                                 @else
                                     <div class="guests">
                                         @foreach ($seated as $a)
-                                            <div class="g"><span class="tdot" style="background: {{ $typeHex($a->companion->type) }};"></span>{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
+                                            <div class="g" style="color: {{ $typeHex($a->companion->type) }};">{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
                                         @endforeach
                                     </div>
                                     @if ($free > 0)
@@ -160,8 +160,9 @@
         </table>
     @endif
 
-    {{-- Apéndice: pendientes por familia, en 3 columnas --}}
+    {{-- Apéndice: pendientes por familia, en 3 columnas, numerados --}}
     @if ($unassigned->isNotEmpty())
+        @php $pn = 0; @endphp
         <div class="appendix-title">Pendientes por acomodar ({{ $summary['unassigned'] }})</div>
         <table class="pend">
             @foreach ($unassigned->chunk(3) as $rowGroups)
@@ -170,7 +171,7 @@
                         <td>
                             <div class="fam">{{ $group }} <span class="c">({{ $people->count() }})</span></div>
                             @foreach ($people as $person)
-                                <div class="pers">{{ $person->name }}</div>
+                                <div class="pers"><span class="pnum">{{ ++$pn }}.</span> {{ $person->name }}</div>
                             @endforeach
                         </td>
                     @endforeach

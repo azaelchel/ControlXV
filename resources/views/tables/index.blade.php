@@ -24,10 +24,10 @@
     .seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 10px; }
     .seat { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; }
     .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; color: transparent; }
-    .seat.t-adulto { background: #8a55be; }
-    .seat.t-adolescente { background: #3f7fc4; }
-    .seat.t-nino { background: #e0883f; }
-    .seat.t-otro { background: #a0a0b0; }
+    .seat.t-adulto { background: #6d28b8; }
+    .seat.t-adolescente { background: #1f9e6a; }
+    .seat.t-nino { background: #d6453f; }
+    .seat.t-otro { background: #8a8a96; }
     .faltan { text-align: center; font-size: 12px; color: #b0843f; font-weight: 700; margin-bottom: 10px; }
     .faltan.lleno { color: #3f9e6b; }
     .fill-ok .tviz-top { background: linear-gradient(135deg,#7bc59a,#3f9e6b); }
@@ -57,10 +57,10 @@
         default => 't-otro',
     };
     $typeHex = fn ($t) => match ($t) {
-        'Adulto' => '#8a55be',
-        'Adolescente' => '#3f7fc4',
-        'Niño' => '#e0883f',
-        default => '#a0a0b0',
+        'Adulto' => '#6d28b8',
+        'Adolescente' => '#1f9e6a',
+        'Niño' => '#d6453f',
+        default => '#8a8a96',
     };
 @endphp
 
@@ -132,9 +132,9 @@
         <div class="card" style="margin-bottom: 14px;">
             <div class="legend">
                 <strong style="color:#43275b;">Tipo de invitado:</strong>
-                <span><i style="background:#8a55be;"></i> Adulto</span>
-                <span><i style="background:#3f7fc4;"></i> Adolescente</span>
-                <span><i style="background:#e0883f;"></i> Niño</span>
+                <span><i style="background:#6d28b8;"></i> Adulto</span>
+                <span><i style="background:#1f9e6a;"></i> Adolescente</span>
+                <span><i style="background:#d6453f;"></i> Niño</span>
                 <span><i style="background:#fff; border:1.5px dashed #d3bfe8;"></i> Lugar libre</span>
             </div>
         </div>
@@ -194,7 +194,7 @@
                     {{-- nombres sentados --}}
                     <div class="names">
                         @forelse ($seated as $a)
-                            <div><span class="tdot" style="background: {{ $typeHex($a->companion->type) }};"></span> {{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
+                            <div><span class="tdot" style="background: {{ $typeHex($a->companion->type) }};"></span> <span style="color: {{ $typeHex($a->companion->type) }}; font-weight: 600;">{{ $a->companion->name }}</span> <span class="grp">· {{ $a->companion->invited_group }}</span></div>
                         @empty
                             <span class="grp">Mesa vacía</span>
                         @endforelse
