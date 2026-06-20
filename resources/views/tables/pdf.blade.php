@@ -171,7 +171,7 @@
                         <td>
                             <div class="fam">{{ $group }} <span class="c">({{ $people->count() }})</span></div>
                             @foreach ($people as $person)
-                                <div class="pers"><span class="pnum">{{ ++$pn }}.</span> {{ $person->name }}</div>
+                                <div class="pers" style="color: {{ $typeHex($person->type) }};"><span class="pnum">{{ ++$pn }}.</span> {{ $person->name }}</div>
                             @endforeach
                         </td>
                     @endforeach

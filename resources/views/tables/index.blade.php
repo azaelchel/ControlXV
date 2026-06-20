@@ -22,8 +22,8 @@
     .tviz-top.square { width: 100px; height: 100px; border-radius: 14px; }
     .tviz-top small { display: block; font-weight: 600; font-size: 11px; opacity: .9; }
     .seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 10px; }
-    .seat { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; }
-    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; color: transparent; }
+    .seat { width: 30px; height: 30px; border-radius: 50%; display: inline-block; text-align: center; line-height: 30px; font-size: 11px; font-weight: 800; color: #fff; }
+    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; color: transparent; line-height: 27px; }
     .seat.t-adulto { background: #6d28b8; }
     .seat.t-adolescente { background: #1f9e6a; }
     .seat.t-nino { background: #d6453f; }
