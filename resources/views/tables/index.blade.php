@@ -180,7 +180,7 @@
                     {{-- sillas con iniciales y color por tipo --}}
                     <div class="seats">
                         @foreach ($seated as $a)
-                            <span class="seat {{ $typeClass($a->companion->type) }}" title="{{ $a->companion->name }} ({{ $a->companion->type ?: 'Sin tipo' }})"><span class="ini">{{ $initials($a->companion->name) }}</span></span>
+                            <span class="seat {{ $typeClass($a->companion->type) }}" title="{{ $a->companion->name }} ({{ $a->companion->type ?: 'Sin tipo' }})"><span style="position:absolute;top:0;left:0;width:100%;height:30px;line-height:30px;text-align:center;font-size:11px;font-weight:800;color:#fff;">{{ $initials($a->companion->name) }}</span></span>
                         @endforeach
                         @for ($i = 0; $i < $free; $i++)
                             <span class="seat empty"></span>
