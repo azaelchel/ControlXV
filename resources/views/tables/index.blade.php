@@ -22,8 +22,9 @@
     .tviz-top.square { width: 100px; height: 100px; border-radius: 14px; }
     .tviz-top small { display: block; font-weight: 600; font-size: 11px; opacity: .9; }
     .seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 10px; }
-    .seat { width: 30px; height: 30px; border-radius: 50%; display: inline-block; text-align: center; line-height: 30px; font-size: 11px; font-weight: 800; color: #fff; }
-    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; color: transparent; line-height: 27px; }
+    .seat { position: relative; width: 30px; height: 30px; border-radius: 50%; display: inline-block; vertical-align: middle; }
+    .seat .ini { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 800; color: #fff; line-height: 1; letter-spacing: .3px; }
+    .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; }
     .seat.t-adulto { background: #6d28b8; }
     .seat.t-adolescente { background: #1f9e6a; }
     .seat.t-nino { background: #d6453f; }
@@ -179,10 +180,10 @@
                     {{-- sillas con iniciales y color por tipo --}}
                     <div class="seats">
                         @foreach ($seated as $a)
-                            <span class="seat {{ $typeClass($a->companion->type) }}" title="{{ $a->companion->name }} ({{ $a->companion->type ?: 'Sin tipo' }})">{{ $initials($a->companion->name) }}</span>
+                            <span class="seat {{ $typeClass($a->companion->type) }}" title="{{ $a->companion->name }} ({{ $a->companion->type ?: 'Sin tipo' }})"><span class="ini">{{ $initials($a->companion->name) }}</span></span>
                         @endforeach
                         @for ($i = 0; $i < $free; $i++)
-                            <span class="seat empty">·</span>
+                            <span class="seat empty"></span>
                         @endfor
                     </div>
 
