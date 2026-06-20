@@ -56,14 +56,18 @@
         .mesa-meta { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: #9b7fbf; padding: 6px 11px 0; }
         .mesa-notes { font-size: 10px; color: #8a72a4; font-style: italic; padding: 2px 11px 0; }
 
-        /* Sillas con iniciales y color por tipo */
+        /* Sillas con iniciales y color por tipo.
+           dompdf no centra texto con line-height en inline-block; se usa una
+           celda de tabla con vertical-align:middle (sí confiable en dompdf). */
         .seats { padding: 9px 11px 5px; }
-        .seat { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; font-size: 9.5px; font-weight: bold; color: #fff; margin: 0 3px 4px 0; }
+        .seat { display: inline-block; width: 24px; height: 24px; border-radius: 50%; margin: 0 3px 4px 0; }
         .seat.off { background-color: #fff; border: 1px dashed #d3bfe8; }
         .seat.adulto { background-color: #6d28b8; }
         .seat.adolescente { background-color: #1f9e6a; }
         .seat.nino { background-color: #d6453f; }
         .seat.otro { background-color: #8a8a96; }
+        table.seatc { width: 24px; height: 24px; border-spacing: 0; border-collapse: collapse; }
+        table.seatc td { width: 24px; height: 24px; text-align: center; vertical-align: middle; color: #fff; font-size: 9.5px; font-weight: bold; line-height: 1; padding: 0; }
 
         /* Lista de sentados (nombre coloreado por tipo) */
         .guests { padding: 2px 11px 10px; }
@@ -132,7 +136,7 @@
 
                                 <div class="seats">
                                     @foreach ($seated as $a)
-                                        <span class="seat {{ $typeCls($a->companion->type) }}">{{ $initials($a->companion->name) }}</span>
+                                        <span class="seat {{ $typeCls($a->companion->type) }}"><table class="seatc"><tr><td>{{ $initials($a->companion->name) }}</td></tr></table></span>
                                     @endforeach
                                     @for ($i = 0; $i < $free; $i++)
                                         <span class="seat off"></span>
