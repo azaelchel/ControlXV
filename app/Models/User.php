@@ -59,6 +59,7 @@ class User extends Authenticatable
             'guests' => 'Familias o grupos',
             'companions' => 'Invitados',
             'tables' => 'Mesas confirmadas',
+            'finances' => 'Finanzas',
             'message_sends' => 'Mensajes',
             'message_templates' => 'Plantillas',
             'catalogs' => 'Catálogos',

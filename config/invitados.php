@@ -74,4 +74,18 @@ return [
         'Cuadrada',
         'Imperial',
     ],
+    'expense_categories' => [
+        'Salón',
+        'Banquete',
+        'Foto y video',
+        'Mesas y sillas',
+        'Decoración',
+        'DJ / Música',
+        'Pastel',
+        'Vestido',
+        'Invitaciones',
+        'Recuerdos',
+        'Bebidas',
+        'Otros',
+    ],
 ];

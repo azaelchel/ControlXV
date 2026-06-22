@@ -18,6 +18,7 @@ class CatalogOptions
         'companion_groups' => 'companion_groups',
         'table_types' => 'table_types',
         'table_shapes' => 'table_shapes',
+        'expense_categories' => 'expense_categories',
     ];
 
     public static function all(): array
@@ -32,6 +33,7 @@ class CatalogOptions
             'companion_groups' => self::values('companion_groups'),
             'table_types' => self::values('table_types'),
             'table_shapes' => self::values('table_shapes'),
+            'expense_categories' => self::values('expense_categories'),
         ];
     }
 
@@ -86,6 +88,7 @@ class CatalogOptions
             'companion_groups' => 'Familias o grupos vinculados',
             'table_types' => 'Tipos de mesa',
             'table_shapes' => 'Formas de mesa',
+            'expense_categories' => 'Categorías de gasto',
         ];
     }
 }

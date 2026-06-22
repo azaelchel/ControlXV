@@ -4,6 +4,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CompanionController;
 use App\Http\Controllers\ConfirmedTableController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MessageSendController;
 use App\Http\Controllers\MessageTemplateController;
@@ -62,6 +63,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/confirmed-tables/{eventTable}/assign', [ConfirmedTableController::class, 'assign'])->name('tables.assign');
         Route::post('/confirmed-tables/{eventTable}/assign-group', [ConfirmedTableController::class, 'assignGroup'])->name('tables.assign-group');
         Route::post('/confirmed-tables/{eventTable}/unassign', [ConfirmedTableController::class, 'unassign'])->name('tables.unassign');
+    });
+
+    Route::middleware('module:finances')->group(function () {
+        Route::get('/finanzas', [FinanceController::class, 'index'])->name('finances.index');
+        Route::post('/finanzas/gastos', [FinanceController::class, 'storeExpense'])->name('finances.expenses.store');
+        Route::put('/finanzas/gastos/{expense}', [FinanceController::class, 'updateExpense'])->name('finances.expenses.update');
+        Route::delete('/finanzas/gastos/{expense}', [FinanceController::class, 'destroyExpense'])->name('finances.expenses.destroy');
+        Route::post('/finanzas/gastos/{expense}/abonos', [FinanceController::class, 'storePayment'])->name('finances.payments.store');
+        Route::delete('/finanzas/abonos/{expensePayment}', [FinanceController::class, 'destroyPayment'])->name('finances.payments.destroy');
+        Route::post('/finanzas/apoyos', [FinanceController::class, 'storeSupport'])->name('finances.supports.store');
+        Route::put('/finanzas/apoyos/{sponsorSupport}', [FinanceController::class, 'updateSupport'])->name('finances.supports.update');
+        Route::delete('/finanzas/apoyos/{sponsorSupport}', [FinanceController::class, 'destroySupport'])->name('finances.supports.destroy');
+        Route::post('/finanzas/apoyos/{sponsorSupport}/aportaciones', [FinanceController::class, 'storeContribution'])->name('finances.contributions.store');
+        Route::delete('/finanzas/aportaciones/{sponsorContribution}', [FinanceController::class, 'destroyContribution'])->name('finances.contributions.destroy');
     });
 
     Route::middleware('module:catalogs')->group(function () {

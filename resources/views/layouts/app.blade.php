@@ -640,6 +640,15 @@
                         @endif
                     </div>
 
+                    @if (Auth::user()->canAccessModule('finances'))
+                        <div class="nav-section">
+                            <div class="nav-section-label">Dinero</div>
+                            <a class="nav-item {{ request()->routeIs('finances.*') ? 'active' : '' }}" href="{{ route('finances.index') }}">
+                                <span class="ico">💰</span><span>Finanzas</span>
+                            </a>
+                        </div>
+                    @endif
+
                     <div class="nav-section">
                         <div class="nav-section-label">Comunicación</div>
                         @if (Auth::user()->canAccessModule('message_sends'))
