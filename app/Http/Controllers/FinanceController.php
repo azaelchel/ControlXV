@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\Guest;
+use App\Models\OwnContribution;
 use App\Models\SponsorContribution;
 use App\Models\SponsorSupport;
 use App\Support\CatalogOptions;
@@ -14,53 +15,90 @@ use Illuminate\Http\Request;
 
 class FinanceController extends Controller
 {
+    /** Totales del panorama (sumas directas; el global scope ya filtra activos). */
+    private function totals(): array
+    {
+        $cost = (float) Expense::sum('total_amount');
+        $paid = (float) ExpensePayment::sum('amount');
+        $own = (float) OwnContribution::sum('amount');
+        $pledged = (float) SponsorSupport::sum('pledged_amount');
+        $given = (float) SponsorContribution::sum('amount');
+
+        $gathered = $own + $given; // dinero realmente reunido (propio + recibido de padrinos)
+
+        return [
+            'cost' => $cost,
+            'paid' => $paid,
+            'to_pay' => max(0, $cost - $paid),
+            'paid_percent' => $cost > 0 ? (int) round(($paid / $cost) * 100) : 0,
+
+            'own' => $own,
+            'pledged' => $pledged,
+            'given' => $given,
+            'pledge_remaining' => max(0, $pledged - $given),
+            'given_percent' => $pledged > 0 ? (int) round(($given / $pledged) * 100) : 0,
+
+            'gathered' => $gathered,
+            'gathered_percent' => $cost > 0 ? (int) round(($gathered / $cost) * 100) : 0,
+            'to_gather' => max(0, $cost - $gathered),
+            'balance' => $gathered - $paid, // saldo en mano (reunido menos pagado)
+        ];
+    }
+
+    // ---------- Vistas ----------
+
     public function index(): View
+    {
+        return view('finances.index', ['totals' => $this->totals()]);
+    }
+
+    public function expenses(): View
     {
         $expenses = Expense::query()
             ->with('payments')
-            ->orderByRaw('due_date is null') // las que tienen fecha primero
+            ->orderByRaw('due_date is null')
             ->orderBy('due_date')
             ->orderBy('name')
             ->get();
 
+        return view('finances.expenses', [
+            'expenses' => $expenses,
+            'categories' => CatalogOptions::values('expense_categories'),
+            'totals' => $this->totals(),
+        ]);
+    }
+
+    public function sponsors(): View
+    {
         $supports = SponsorSupport::query()
             ->with(['guest', 'contributions'])
             ->get()
             ->sortBy(fn (SponsorSupport $s) => $s->guest?->name ?? '')
             ->values();
 
-        // Padrinos disponibles: invitados activos con padrino asignado.
         $padrinoOptions = Guest::query()
             ->whereNotNull('sponsor')
             ->where('sponsor', '!=', '')
             ->orderBy('name')
             ->get(['id', 'name', 'sponsor']);
 
-        $totalCost = (float) $expenses->sum('total_amount');
-        $totalPaid = (float) $expenses->sum(fn (Expense $e) => $e->paidAmount());
-        $totalRemaining = max(0, $totalCost - $totalPaid);
-
-        $pledged = (float) $supports->sum('pledged_amount');
-        $given = (float) $supports->sum(fn (SponsorSupport $s) => $s->givenAmount());
-        $pledgeRemaining = max(0, $pledged - $given);
-
-        return view('finances.index', [
-            'expenses' => $expenses,
+        return view('finances.sponsors', [
             'supports' => $supports,
             'padrinoOptions' => $padrinoOptions,
-            'categories' => CatalogOptions::values('expense_categories'),
-            'totals' => [
-                'cost' => $totalCost,
-                'paid' => $totalPaid,
-                'remaining' => $totalRemaining,
-                'paid_percent' => $totalCost > 0 ? (int) round(($totalPaid / $totalCost) * 100) : 0,
-                'pledged' => $pledged,
-                'given' => $given,
-                'pledge_remaining' => $pledgeRemaining,
-                'given_percent' => $pledged > 0 ? (int) round(($given / $pledged) * 100) : 0,
-                // Lo que la familia debe cubrir aparte de lo que aportan los padrinos.
-                'own_estimate' => max(0, $totalCost - $pledged),
-            ],
+            'totals' => $this->totals(),
+        ]);
+    }
+
+    public function own(): View
+    {
+        $contributions = OwnContribution::query()
+            ->orderByDesc('contributed_on')
+            ->orderByDesc('id')
+            ->get();
+
+        return view('finances.own', [
+            'contributions' => $contributions,
+            'totals' => $this->totals(),
         ]);
     }
 
@@ -164,6 +202,35 @@ class FinanceController extends Controller
     public function destroyContribution(SponsorContribution $sponsorContribution): RedirectResponse
     {
         $sponsorContribution->update(['active' => false]);
+
+        return back()->with('status', 'Aportación eliminada.');
+    }
+
+    // ---------- Mis aportaciones (dinero propio) ----------
+
+    public function storeOwn(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'contributed_on' => ['nullable', 'date'],
+            'concept' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        OwnContribution::create([
+            'amount' => $data['amount'],
+            'contributed_on' => $data['contributed_on'] ?? now()->toDateString(),
+            'concept' => $data['concept'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'active' => true,
+        ]);
+
+        return back()->with('status', 'Aportación registrada.');
+    }
+
+    public function destroyOwn(OwnContribution $ownContribution): RedirectResponse
+    {
+        $ownContribution->update(['active' => false]);
 
         return back()->with('status', 'Aportación eliminada.');
     }

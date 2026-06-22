@@ -643,8 +643,17 @@
                     @if (Auth::user()->canAccessModule('finances'))
                         <div class="nav-section">
                             <div class="nav-section-label">Dinero</div>
-                            <a class="nav-item {{ request()->routeIs('finances.*') ? 'active' : '' }}" href="{{ route('finances.index') }}">
-                                <span class="ico">💰</span><span>Finanzas</span>
+                            <a class="nav-item {{ request()->routeIs('finances.index') ? 'active' : '' }}" href="{{ route('finances.index') }}">
+                                <span class="ico">📊</span><span>Resumen finanzas</span>
+                            </a>
+                            <a class="nav-item {{ request()->routeIs('finances.expenses') || request()->routeIs('finances.expenses.*') || request()->routeIs('finances.payments.*') ? 'active' : '' }}" href="{{ route('finances.expenses') }}">
+                                <span class="ico">💰</span><span>Gastos</span>
+                            </a>
+                            <a class="nav-item {{ request()->routeIs('finances.sponsors') || request()->routeIs('finances.supports.*') || request()->routeIs('finances.contributions.*') ? 'active' : '' }}" href="{{ route('finances.sponsors') }}">
+                                <span class="ico">🎁</span><span>Padrinos</span>
+                            </a>
+                            <a class="nav-item {{ request()->routeIs('finances.own') || request()->routeIs('finances.own.*') ? 'active' : '' }}" href="{{ route('finances.own') }}">
+                                <span class="ico">🙋</span><span>Mis aportaciones</span>
                             </a>
                         </div>
                     @endif
