@@ -19,6 +19,7 @@ class CatalogOptions
         'table_types' => 'table_types',
         'table_shapes' => 'table_shapes',
         'expense_categories' => 'expense_categories',
+        'payment_methods' => 'payment_methods',
     ];
 
     public static function all(): array
@@ -34,6 +35,7 @@ class CatalogOptions
             'table_types' => self::values('table_types'),
             'table_shapes' => self::values('table_shapes'),
             'expense_categories' => self::values('expense_categories'),
+            'payment_methods' => self::values('payment_methods'),
         ];
     }
 
@@ -89,6 +91,7 @@ class CatalogOptions
             'table_types' => 'Tipos de mesa',
             'table_shapes' => 'Formas de mesa',
             'expense_categories' => 'Categorías de gasto',
+            'payment_methods' => 'Métodos de pago',
         ];
     }
 }

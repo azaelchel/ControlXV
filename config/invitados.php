@@ -88,4 +88,12 @@ return [
         'Bebidas',
         'Otros',
     ],
+    'payment_methods' => [
+        'Efectivo',
+        'Transferencia',
+        'Depósito',
+        'Tarjeta',
+        'Cheque',
+        'Otro',
+    ],
 ];

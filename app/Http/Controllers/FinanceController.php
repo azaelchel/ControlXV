@@ -9,9 +9,16 @@ use App\Models\OwnContribution;
 use App\Models\SponsorContribution;
 use App\Models\SponsorSupport;
 use App\Support\CatalogOptions;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class FinanceController extends Controller
 {
@@ -64,6 +71,7 @@ class FinanceController extends Controller
         return view('finances.expenses', [
             'expenses' => $expenses,
             'categories' => CatalogOptions::values('expense_categories'),
+            'paymentMethods' => CatalogOptions::values('payment_methods'),
             'totals' => $this->totals(),
         ]);
     }
@@ -100,6 +108,151 @@ class FinanceController extends Controller
             'contributions' => $contributions,
             'totals' => $this->totals(),
         ]);
+    }
+
+    // ---------- Exportaciones ----------
+
+    /** Reúne todo el estado financiero para PDF/Excel. */
+    private function gather(): array
+    {
+        return [
+            'expenses' => Expense::with('payments')->orderBy('name')->get(),
+            'supports' => SponsorSupport::with(['guest', 'contributions'])
+                ->get()->sortBy(fn (SponsorSupport $s) => $s->guest?->name ?? '')->values(),
+            'own' => OwnContribution::orderByDesc('contributed_on')->get(),
+            'totals' => $this->totals(),
+        ];
+    }
+
+    public function pdf(): Response
+    {
+        $data = $this->gather();
+
+        $pdf = Pdf::loadView('finances.pdf', $data)->setPaper('a4', 'portrait');
+
+        return $pdf->stream('estado-financiero-' . now()->format('Ymd') . '.pdf');
+    }
+
+    public function excel(): BinaryFileResponse
+    {
+        $data = $this->gather();
+        $t = $data['totals'];
+
+        $book = new Spreadsheet();
+        $headFill = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8F55BE']];
+        $headFont = ['bold' => true, 'color' => ['rgb' => 'FFFFFF']];
+        $titleStyle = [
+            'font' => ['bold' => true, 'size' => 15, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => $headFill,
+        ];
+
+        // ----- Hoja Resumen -----
+        $r = $book->getActiveSheet();
+        $r->setTitle('Resumen');
+        $r->mergeCells('A1:B1');
+        $r->setCellValue('A1', 'Estado financiero · XV');
+        $r->getStyle('A1:B1')->applyFromArray($titleStyle);
+        $rows = [
+            ['Costo total', $t['cost']],
+            ['Pagado a proveedores', $t['paid']],
+            ['Falta pagar', $t['to_pay']],
+            ['', ''],
+            ['Mis aportaciones', $t['own']],
+            ['Padrinos comprometido', $t['pledged']],
+            ['Padrinos recibido', $t['given']],
+            ['Padrinos por recibir', $t['pledge_remaining']],
+            ['', ''],
+            ['Reunido (mío + padrinos)', $t['gathered']],
+            ['Falta por reunir', $t['to_gather']],
+            ['Saldo en mano', $t['balance']],
+        ];
+        $row = 3;
+        foreach ($rows as [$label, $val]) {
+            $r->setCellValue("A{$row}", $label);
+            if ($label !== '') {
+                $r->setCellValue("B{$row}", (float) $val);
+                $r->getStyle("B{$row}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
+            }
+            $row++;
+        }
+        $r->getColumnDimension('A')->setWidth(32);
+        $r->getColumnDimension('B')->setWidth(18);
+
+        // ----- Hoja Gastos -----
+        $g = $book->createSheet();
+        $g->setTitle('Gastos');
+        $gh = ['Concepto', 'Categoría', 'Proveedor', 'Total', 'Pagado', 'Resta', 'Estado', 'Vence'];
+        foreach ($gh as $i => $h) {
+            $g->setCellValue(chr(65 + $i) . '1', $h);
+        }
+        $g->getStyle('A1:H1')->applyFromArray(['font' => $headFont, 'fill' => $headFill]);
+        $gr = 2;
+        foreach ($data['expenses'] as $e) {
+            $g->setCellValue("A{$gr}", $e->name);
+            $g->setCellValue("B{$gr}", $e->category);
+            $g->setCellValue("C{$gr}", $e->provider);
+            $g->setCellValue("D{$gr}", (float) $e->total_amount);
+            $g->setCellValue("E{$gr}", $e->paidAmount());
+            $g->setCellValue("F{$gr}", $e->remaining());
+            $g->setCellValue("G{$gr}", $e->status());
+            $g->setCellValue("H{$gr}", $e->due_date?->format('d/m/Y') ?? '');
+            $gr++;
+        }
+        $g->getStyle("D2:F{$gr}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
+        foreach (range('A', 'H') as $c) {
+            $g->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        // ----- Hoja Padrinos -----
+        $p = $book->createSheet();
+        $p->setTitle('Padrinos');
+        $ph = ['Padrino', 'Concepto', 'Comprometido', 'Dado', 'Falta', 'Estado'];
+        foreach ($ph as $i => $h) {
+            $p->setCellValue(chr(65 + $i) . '1', $h);
+        }
+        $p->getStyle('A1:F1')->applyFromArray(['font' => $headFont, 'fill' => $headFill]);
+        $pr = 2;
+        foreach ($data['supports'] as $s) {
+            $p->setCellValue("A{$pr}", $s->guest?->name ?? '');
+            $p->setCellValue("B{$pr}", $s->concept ?: ($s->guest?->sponsor ?? ''));
+            $p->setCellValue("C{$pr}", (float) $s->pledged_amount);
+            $p->setCellValue("D{$pr}", $s->givenAmount());
+            $p->setCellValue("E{$pr}", $s->remaining());
+            $p->setCellValue("F{$pr}", $s->status());
+            $pr++;
+        }
+        $p->getStyle("C2:E{$pr}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
+        foreach (range('A', 'F') as $c) {
+            $p->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        // ----- Hoja Mis aportaciones -----
+        $o = $book->createSheet();
+        $o->setTitle('Mis aportaciones');
+        foreach (['Fecha', 'Monto', 'Concepto'] as $i => $h) {
+            $o->setCellValue(chr(65 + $i) . '1', $h);
+        }
+        $o->getStyle('A1:C1')->applyFromArray(['font' => $headFont, 'fill' => $headFill]);
+        $orow = 2;
+        foreach ($data['own'] as $c) {
+            $o->setCellValue("A{$orow}", $c->contributed_on?->format('d/m/Y') ?? '');
+            $o->setCellValue("B{$orow}", (float) $c->amount);
+            $o->setCellValue("C{$orow}", $c->concept);
+            $orow++;
+        }
+        $o->getStyle("B2:B{$orow}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
+        foreach (range('A', 'C') as $c) {
+            $o->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        $book->setActiveSheetIndex(0);
+        $path = storage_path('app/estado-financiero-xv.xlsx');
+        (new Xlsx($book))->save($path);
+
+        return response()->download($path, 'estado-financiero-' . now()->format('Ymd') . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     // ---------- Gastos ----------

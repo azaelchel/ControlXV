@@ -8,6 +8,11 @@
 @php $m = fn ($v) => '$' . number_format((float) $v, 2); @endphp
 @include('finances._assets')
 
+    <div class="inline" style="justify-content:flex-end; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+        <a class="btn secondary" href="{{ route('finances.pdf') }}" target="_blank">📄 Descargar PDF</a>
+        <a class="btn secondary" href="{{ route('finances.excel') }}">📊 Descargar Excel</a>
+    </div>
+
     {{-- Dinero reunido vs costo --}}
     <div class="card" style="margin-bottom:14px;">
         <div class="kicker" style="color:#9b67c8; font-weight:800; font-size:12px; letter-spacing:.12em; margin-bottom:8px;">¿CUÁNTO HEMOS REUNIDO?</div>

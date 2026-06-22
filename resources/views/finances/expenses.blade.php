@@ -135,7 +135,14 @@
                     <div class="grid2">
                         <div class="field"><label>Monto del abono</label><input name="amount" type="number" step="0.01" min="0.01" required></div>
                         <div class="field"><label>Fecha</label><input name="paid_on" type="date" value="{{ now()->toDateString() }}"></div>
-                        <div class="field"><label>Método (opcional)</label><input name="method" placeholder="Efectivo, transferencia…"></div>
+                        <div class="field"><label>Método de pago</label>
+                            <select name="method">
+                                <option value="">Sin especificar</option>
+                                @foreach ($paymentMethods as $pm)
+                                    <option value="{{ $pm }}">{{ $pm }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="field" style="display:flex; align-items:end;"><button class="btn" type="submit" style="width:100%;">Registrar abono</button></div>
                     </div>
                 </form>

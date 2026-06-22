@@ -67,6 +67,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('module:finances')->group(function () {
         Route::get('/finanzas', [FinanceController::class, 'index'])->name('finances.index');
+        Route::get('/finanzas/pdf', [FinanceController::class, 'pdf'])->name('finances.pdf');
+        Route::get('/finanzas/excel', [FinanceController::class, 'excel'])->name('finances.excel');
 
         // Gastos
         Route::get('/finanzas/gastos', [FinanceController::class, 'expenses'])->name('finances.expenses');
