@@ -6,47 +6,70 @@
 
 @section('content')
 @php $m = fn ($v) => '$' . number_format((float) $v, 2); @endphp
-@include('finances._styles')
-
-    <div class="finance-nav">
-        <a class="btn secondary" href="{{ route('finances.index') }}">📊 Resumen</a>
-        <a class="btn secondary" href="{{ route('finances.expenses') }}">💰 Gastos</a>
-        <a class="btn secondary" href="{{ route('finances.sponsors') }}">🎁 Padrinos</a>
-    </div>
+@include('finances._assets')
 
     <div class="card ministrip" style="margin-bottom:16px;">
         <div class="it">Total aportado por mí <b class="money" style="color:#3f9e6b;">{{ $m($totals['own']) }}</b></div>
-        <div class="it">Reunido en total <b class="money">{{ $m($totals['gathered']) }}</b><span class="fmini">mío + padrinos</span></div>
+        <div class="it">Reunido en total <b class="money">{{ $m($totals['gathered']) }}</b></div>
         <div class="it">Falta por reunir <b class="money" style="color:#c0392b;">{{ $m($totals['to_gather']) }}</b></div>
     </div>
 
-    <details class="card" style="margin-bottom: 16px;" open>
-        <summary style="cursor:pointer; font-weight:700;">➕ Registrar aportación mía</summary>
-        <form method="post" action="{{ route('finances.own.store') }}" class="inline" style="margin-top:12px; gap:10px; flex-wrap:wrap; align-items:end;">
-            @csrf
-            <div><label class="small">Monto</label><input name="amount" type="number" step="0.01" min="0.01" required style="width:150px;"></div>
-            <div><label class="small">Fecha</label><input name="contributed_on" type="date" value="{{ now()->toDateString() }}" style="width:160px;"></div>
-            <div><label class="small">Concepto (opcional)</label><input name="concept" placeholder="Ej. Anticipo salón" style="width:220px;"></div>
-            <button class="btn" type="submit">Registrar</button>
-        </form>
-    </details>
+    <div class="ftoolbar">
+        <div class="filters">
+            <input type="search" class="search" placeholder="🔍 Buscar concepto…" data-table-filter="own-table">
+        </div>
+        <button class="btn" type="button" data-modal-open="new-own">＋ Nueva aportación</button>
+    </div>
 
-    <div class="card">
-        <h3 style="margin:0 0 10px;">Historial de mis aportaciones</h3>
-        @forelse ($contributions as $c)
-            <div class="inline" style="justify-content:space-between; padding:10px 0; border-bottom:1px solid #f3eefa; gap:8px;">
-                <div>
-                    <strong class="money" style="color:#3f9e6b;">{{ $m($c->amount) }}</strong>
-                    <span class="fmini">· {{ $c->contributed_on?->format('d/m/Y') ?? '—' }}@if ($c->concept) · {{ $c->concept }}@endif</span>
+    <div class="ftable-wrap">
+        <table class="ftable" id="own-table">
+            <thead>
+                <tr>
+                    <th data-sort="num">Fecha</th>
+                    <th data-sort="num" class="num">Monto</th>
+                    <th data-sort="text">Concepto</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($contributions as $c)
+                    <tr>
+                        <td data-val="{{ $c->contributed_on?->format('Y-m-d') ?? '' }}">{{ $c->contributed_on?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="num money" data-val="{{ $c->amount }}" style="color:#3f9e6b;">{{ $m($c->amount) }}</td>
+                        <td>{{ $c->concept ?: '—' }}</td>
+                        <td>
+                            <div class="rowact">
+                                <form method="post" action="{{ route('finances.own.destroy', $c) }}"
+                                    data-confirm-title="¿Eliminar esta aportación?" data-confirm-text="Se descontará del total aportado." data-confirm-button="Sí, eliminar" data-confirm-color="#d8527f">
+                                    @csrf @method('delete')
+                                    <button class="btn small danger" type="submit">✕</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="ftable-empty">Aún no has registrado aportaciones. Agrega la primera con “＋ Nueva aportación”.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Modal nueva aportación --}}
+    <div class="modal" id="new-own">
+        <div class="modal-box">
+            <div class="modal-head"><h3>Nueva aportación mía</h3><button class="modal-x" type="button" data-modal-close>&times;</button></div>
+            <form method="post" action="{{ route('finances.own.store') }}">
+                @csrf
+                <div class="grid2">
+                    <div class="field"><label>Monto</label><input name="amount" type="number" step="0.01" min="0.01" required></div>
+                    <div class="field"><label>Fecha</label><input name="contributed_on" type="date" value="{{ now()->toDateString() }}"></div>
                 </div>
-                <form method="post" action="{{ route('finances.own.destroy', $c) }}"
-                    data-confirm-title="¿Eliminar esta aportación?" data-confirm-text="Se descontará del total aportado." data-confirm-button="Sí, eliminar" data-confirm-color="#d8527f">
-                    @csrf @method('delete')
-                    <button class="btn small danger" type="submit">✕</button>
-                </form>
-            </div>
-        @empty
-            <p class="small" style="margin:0;">Aún no has registrado aportaciones. Agrega la primera arriba.</p>
-        @endforelse
+                <div class="field"><label>Concepto (opcional)</label><input name="concept" placeholder="Ej. Anticipo salón, ahorro…"></div>
+                <div class="modal-actions">
+                    <button class="btn secondary" type="button" data-modal-close>Cancelar</button>
+                    <button class="btn" type="submit">Registrar</button>
+                </div>
+            </form>
+        </div>
     </div>
 @endsection

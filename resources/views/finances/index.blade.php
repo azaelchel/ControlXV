@@ -6,13 +6,7 @@
 
 @section('content')
 @php $m = fn ($v) => '$' . number_format((float) $v, 2); @endphp
-@include('finances._styles')
-
-    <div class="finance-nav">
-        <a class="btn" href="{{ route('finances.expenses') }}">💰 Ir a Gastos</a>
-        <a class="btn secondary" href="{{ route('finances.sponsors') }}">🎁 Ir a Padrinos</a>
-        <a class="btn secondary" href="{{ route('finances.own') }}">🙋 Ir a Mis aportaciones</a>
-    </div>
+@include('finances._assets')
 
     {{-- Dinero reunido vs costo --}}
     <div class="card" style="margin-bottom:14px;">
