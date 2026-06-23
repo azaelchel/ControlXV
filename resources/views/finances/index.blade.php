@@ -38,6 +38,24 @@
         <a class="btn secondary" href="{{ route('finances.excel') }}">📊 Descargar Excel</a>
     </div>
 
+    {{-- Alerta de vencidos --}}
+    @if ($overdue['count'] > 0)
+        <a href="{{ route('finances.expenses') }}" class="card" style="display:block; margin-bottom:14px; border-color:#f3c8d7; background:#ffe7ef; color:#8a3354; text-decoration:none;">
+            <strong>⚠️ Tienes {{ $m($overdue['amount']) }} vencidos</strong> en {{ $overdue['count'] }} pago{{ $overdue['count']==1?'':'s' }} con fecha pasada. Revísalos en Gastos →
+        </a>
+    @endif
+
+    {{-- Frase resumen --}}
+    <div class="card" style="margin-bottom:16px; background:#faf6ff; border-color:#e6dff1;">
+        <p style="margin:0; line-height:1.7; color:#5f4c70;">
+            El evento cuesta <strong class="money">{{ $m($totals['cost']) }}</strong> en {{ $expenseCount }} gasto{{ $expenseCount==1?'':'s' }}.
+            Has pagado <strong class="money" style="color:#3f9e6b;">{{ $m($totals['paid']) }}</strong> ({{ $paidPct }}%) y faltan
+            <strong class="money" style="color:#c0392b;">{{ $m($totals['to_pay']) }}</strong> por pagar.
+            Los padrinos prometieron <strong class="money">{{ $m($totals['pledged']) }}</strong> y ya entregaron
+            <strong class="money" style="color:#3f9e6b;">{{ $m($totals['given']) }}</strong>.
+        </p>
+    </div>
+
     {{-- HERO: pagos --}}
     <div class="card" style="margin-bottom:16px;">
         <div class="hero">

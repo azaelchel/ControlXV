@@ -58,6 +58,15 @@ class FinanceController extends Controller
             ->take(8)
             ->values();
 
+        // Vencidos: gastos con saldo y fecha límite ya pasada.
+        $overdueItems = $expenses->filter(
+            fn (Expense $e) => $e->remaining() > 0 && $e->due_date && $e->due_date->isPast()
+        );
+        $overdue = [
+            'amount' => (float) $overdueItems->sum(fn (Expense $e) => $e->remaining()),
+            'count' => $overdueItems->count(),
+        ];
+
         // Gasto por categoría: total y pagado por cada categoría.
         $byCategory = $expenses
             ->groupBy(fn (Expense $e) => $e->category ?: 'Sin categoría')
@@ -73,6 +82,8 @@ class FinanceController extends Controller
             'totals' => $this->totals(),
             'upcoming' => $upcoming,
             'byCategory' => $byCategory,
+            'overdue' => $overdue,
+            'expenseCount' => $expenses->count(),
         ]);
     }
 
