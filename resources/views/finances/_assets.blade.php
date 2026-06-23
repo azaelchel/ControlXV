@@ -47,7 +47,9 @@
 </style>
 
 <script>
-(function () {
+// Se espera al DOM porque este partial se incluye ARRIBA, antes de las tablas:
+// si corriera de inmediato, los listeners de ordenar/filtrar no encontrarían nada.
+document.addEventListener('DOMContentLoaded', function () {
     // ----- Modales -----
     document.addEventListener('click', function (e) {
         const open = e.target.closest('[data-modal-open]');
@@ -110,5 +112,5 @@
 
     // Numeración inicial
     document.querySelectorAll('table.ftable').forEach(t => renumber(t));
-})();
+});
 </script>
