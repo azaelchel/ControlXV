@@ -29,7 +29,7 @@ class Expense extends Model
 
     public function payments(): HasMany
     {
-        return $this->hasMany(ExpensePayment::class)->latest('paid_on');
+        return $this->hasMany(ExpensePayment::class)->orderBy('paid_on')->orderBy('id');
     }
 
     public function paidAmount(): float

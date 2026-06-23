@@ -31,7 +31,7 @@ class SponsorSupport extends Model
 
     public function contributions(): HasMany
     {
-        return $this->hasMany(SponsorContribution::class)->latest('given_on');
+        return $this->hasMany(SponsorContribution::class)->orderBy('given_on')->orderBy('id');
     }
 
     public function givenAmount(): float

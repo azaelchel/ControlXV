@@ -89,12 +89,14 @@ class FinanceController extends Controller
 
     public function expenses(): View
     {
-        $expenses = Expense::query()
-            ->with('payments')
-            ->orderByRaw('due_date is null')
-            ->orderBy('due_date')
-            ->orderBy('name')
-            ->get();
+        // Orden con sentido: primero los que aún deben (por fecha límite más
+        // próxima/vencida, sin fecha al final), y los ya pagados hasta abajo.
+        $expenses = Expense::with('payments')->get()->sortBy(fn (Expense $e) => sprintf(
+            '%d|%s|%s',
+            $e->remaining() > 0 ? 0 : 1,
+            $e->due_date?->format('Y-m-d') ?? '9999-12-31',
+            mb_strtolower($e->name)
+        ))->values();
 
         return view('finances.expenses', [
             'expenses' => $expenses,
@@ -106,11 +108,13 @@ class FinanceController extends Controller
 
     public function sponsors(): View
     {
-        $supports = SponsorSupport::query()
-            ->with(['guest', 'contributions'])
-            ->get()
-            ->sortBy(fn (SponsorSupport $s) => $s->guest?->name ?? '')
-            ->values();
+        // Orden con sentido: primero los que aún deben, completados al final;
+        // a igualdad, por nombre del padrino.
+        $supports = SponsorSupport::with(['guest', 'contributions'])->get()->sortBy(fn (SponsorSupport $s) => sprintf(
+            '%d|%s',
+            $s->remaining() > 0 ? 0 : 1,
+            mb_strtolower($s->guest?->name ?? '')
+        ))->values();
 
         $padrinoOptions = Guest::query()
             ->whereNotNull('sponsor')
