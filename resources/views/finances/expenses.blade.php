@@ -40,6 +40,7 @@
         <table class="ftable" id="expenses-table">
             <thead>
                 <tr>
+                    <th style="width:40px;">#</th>
                     <th data-sort="text">Concepto</th>
                     <th data-sort="num" class="num">Total</th>
                     <th data-sort="num" class="num">Pagado</th>
@@ -58,6 +59,7 @@
                         $st = $expense->status();
                     @endphp
                     <tr data-status="{{ $st }}">
+                        <td class="rownum" style="color:#9b8ab0;">{{ $loop->iteration }}</td>
                         <td>
                             <strong style="color:#43275b;">{{ $expense->name }}</strong>
                             <div class="sub">{{ $expense->category ?: 'Sin categoría' }}@if ($expense->provider) · {{ $expense->provider }}@endif</div>
@@ -80,7 +82,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="ftable-empty">Aún no hay gastos. Agrega el primero con “＋ Nuevo gasto”.</td></tr>
+                    <tr><td colspan="8" class="ftable-empty">Aún no hay gastos. Agrega el primero con “＋ Nuevo gasto”.</td></tr>
                 @endforelse
             </tbody>
         </table>

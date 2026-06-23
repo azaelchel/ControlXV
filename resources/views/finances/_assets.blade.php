@@ -59,6 +59,18 @@
         if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
     });
 
+    // ----- Numeración (#) de filas visibles -----
+    function renumber(table) {
+        if (!table) return;
+        let n = 0;
+        table.querySelectorAll('tbody tr').forEach(function (tr) {
+            const cell = tr.querySelector('.rownum');
+            if (!cell) return;
+            if (tr.style.display === 'none') return;
+            cell.textContent = ++n;
+        });
+    }
+
     // ----- Filtro (buscador + estado) -----
     function applyFilter(tableId) {
         const table = document.getElementById(tableId);
@@ -70,6 +82,7 @@
             const okSt = !st || tr.dataset.status === st;
             tr.style.display = (okText && okSt) ? '' : 'none';
         });
+        renumber(table);
     }
     document.querySelectorAll('[data-table-filter]').forEach(i => i.addEventListener('input', () => applyFilter(i.dataset.tableFilter)));
     document.querySelectorAll('[data-status-filter]').forEach(s => s.addEventListener('change', () => applyFilter(s.dataset.statusFilter)));
@@ -91,7 +104,11 @@
                 return String(av).localeCompare(String(bv), 'es') * dir;
             });
             rows.forEach(r => tbody.appendChild(r));
+            renumber(table);
         });
     });
+
+    // Numeración inicial
+    document.querySelectorAll('table.ftable').forEach(t => renumber(t));
 })();
 </script>

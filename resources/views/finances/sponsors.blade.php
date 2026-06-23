@@ -41,6 +41,7 @@
         <table class="ftable" id="sponsors-table">
             <thead>
                 <tr>
+                    <th style="width:40px;">#</th>
                     <th data-sort="text">Padrino</th>
                     <th data-sort="num" class="num">Comprometido</th>
                     <th data-sort="num" class="num">Dado</th>
@@ -58,6 +59,7 @@
                         $st = $s->status();
                     @endphp
                     <tr data-status="{{ $st }}">
+                        <td class="rownum" style="color:#9b8ab0;">{{ $loop->iteration }}</td>
                         <td>
                             <strong style="color:#43275b;">{{ $s->guest?->name ?? '—' }}</strong>
                             <div class="sub">{{ $s->concept ?: ($s->guest?->sponsor ? 'Padrino de '.$s->guest->sponsor : 'Apoyo económico') }}</div>
@@ -79,7 +81,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="ftable-empty">Aún no hay apoyos registrados. Agrega el primero con “＋ Nuevo apoyo”.</td></tr>
+                    <tr><td colspan="7" class="ftable-empty">Aún no hay apoyos registrados. Agrega el primero con “＋ Nuevo apoyo”.</td></tr>
                 @endforelse
             </tbody>
         </table>
