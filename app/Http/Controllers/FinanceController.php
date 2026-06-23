@@ -49,7 +49,31 @@ class FinanceController extends Controller
 
     public function index(): View
     {
-        return view('finances.index', ['totals' => $this->totals()]);
+        $expenses = Expense::with('payments')->get();
+
+        // Próximos pagos: gastos con saldo pendiente, los de fecha más cercana primero.
+        $upcoming = $expenses
+            ->filter(fn (Expense $e) => $e->remaining() > 0)
+            ->sortBy(fn (Expense $e) => $e->due_date?->format('Y-m-d') ?? '9999-12-31')
+            ->take(8)
+            ->values();
+
+        // Gasto por categoría: total y pagado por cada categoría.
+        $byCategory = $expenses
+            ->groupBy(fn (Expense $e) => $e->category ?: 'Sin categoría')
+            ->map(fn ($group, $cat) => [
+                'category' => $cat,
+                'total' => (float) $group->sum('total_amount'),
+                'paid' => (float) $group->sum(fn (Expense $e) => $e->paidAmount()),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
+        return view('finances.index', [
+            'totals' => $this->totals(),
+            'upcoming' => $upcoming,
+            'byCategory' => $byCategory,
+        ]);
     }
 
     public function expenses(): View
