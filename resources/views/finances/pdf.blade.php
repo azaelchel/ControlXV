@@ -51,13 +51,13 @@
             <td><div class="lbl">Costo total</div><div class="val">{{ $m($t['cost']) }}</div></td>
             <td><div class="lbl">Pagado ({{ $t['paid_percent'] }}%)</div><div class="val green">{{ $m($t['paid']) }}</div></td>
             <td><div class="lbl">Falta pagar</div><div class="val red">{{ $m($t['to_pay']) }}</div></td>
-            <td><div class="lbl">Saldo en mano</div><div class="val">{{ $m($t['balance']) }}</div></td>
+            <td><div class="lbl">Aporte propio estimado</div><div class="val">{{ $m($t['own_estimate']) }}</div></td>
         </tr>
         <tr>
-            <td><div class="lbl">Mis aportaciones</div><div class="val">{{ $m($t['own']) }}</div></td>
             <td><div class="lbl">Padrinos comprometido</div><div class="val">{{ $m($t['pledged']) }}</div></td>
             <td><div class="lbl">Padrinos recibido</div><div class="val green">{{ $m($t['given']) }}</div></td>
-            <td><div class="lbl">Falta por reunir</div><div class="val red">{{ $m($t['to_gather']) }}</div></td>
+            <td><div class="lbl">Padrinos por recibir</div><div class="val red">{{ $m($t['pledge_remaining']) }}</div></td>
+            <td></td>
         </tr>
     </table>
 
@@ -105,23 +105,6 @@
                 </tr>
             @empty
                 <tr><td colspan="6" class="empty">Sin apoyos registrados.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    {{-- Mis aportaciones --}}
-    <div class="sec">Mis aportaciones (total {{ $m($t['own']) }})</div>
-    <table class="t">
-        <thead><tr><th>Fecha</th><th class="n">Monto</th><th>Concepto</th></tr></thead>
-        <tbody>
-            @forelse ($own as $c)
-                <tr>
-                    <td>{{ $c->contributed_on?->format('d/m/Y') ?? '—' }}</td>
-                    <td class="n green">{{ $m($c->amount) }}</td>
-                    <td>{{ $c->concept ?: '—' }}</td>
-                </tr>
-            @empty
-                <tr><td colspan="3" class="empty">Sin aportaciones registradas.</td></tr>
             @endforelse
         </tbody>
     </table>

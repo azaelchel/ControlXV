@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\ExpensePayment;
 use App\Models\Guest;
-use App\Models\OwnContribution;
 use App\Models\SponsorContribution;
 use App\Models\SponsorSupport;
 use App\Support\CatalogOptions;
@@ -27,11 +26,8 @@ class FinanceController extends Controller
     {
         $cost = (float) Expense::sum('total_amount');
         $paid = (float) ExpensePayment::sum('amount');
-        $own = (float) OwnContribution::sum('amount');
         $pledged = (float) SponsorSupport::sum('pledged_amount');
         $given = (float) SponsorContribution::sum('amount');
-
-        $gathered = $own + $given; // dinero realmente reunido (propio + recibido de padrinos)
 
         return [
             'cost' => $cost,
@@ -39,16 +35,13 @@ class FinanceController extends Controller
             'to_pay' => max(0, $cost - $paid),
             'paid_percent' => $cost > 0 ? (int) round(($paid / $cost) * 100) : 0,
 
-            'own' => $own,
             'pledged' => $pledged,
             'given' => $given,
             'pledge_remaining' => max(0, $pledged - $given),
             'given_percent' => $pledged > 0 ? (int) round(($given / $pledged) * 100) : 0,
 
-            'gathered' => $gathered,
-            'gathered_percent' => $cost > 0 ? (int) round(($gathered / $cost) * 100) : 0,
-            'to_gather' => max(0, $cost - $gathered),
-            'balance' => $gathered - $paid, // saldo en mano (reunido menos pagado)
+            // Lo que la familia debe cubrir aparte del apoyo comprometido de padrinos.
+            'own_estimate' => max(0, $cost - $pledged),
         ];
     }
 
@@ -97,19 +90,6 @@ class FinanceController extends Controller
         ]);
     }
 
-    public function own(): View
-    {
-        $contributions = OwnContribution::query()
-            ->orderByDesc('contributed_on')
-            ->orderByDesc('id')
-            ->get();
-
-        return view('finances.own', [
-            'contributions' => $contributions,
-            'totals' => $this->totals(),
-        ]);
-    }
-
     // ---------- Exportaciones ----------
 
     /** Reúne todo el estado financiero para PDF/Excel. */
@@ -119,7 +99,6 @@ class FinanceController extends Controller
             'expenses' => Expense::with('payments')->orderBy('name')->get(),
             'supports' => SponsorSupport::with(['guest', 'contributions'])
                 ->get()->sortBy(fn (SponsorSupport $s) => $s->guest?->name ?? '')->values(),
-            'own' => OwnContribution::orderByDesc('contributed_on')->get(),
             'totals' => $this->totals(),
         ];
     }
@@ -158,14 +137,11 @@ class FinanceController extends Controller
             ['Pagado a proveedores', $t['paid']],
             ['Falta pagar', $t['to_pay']],
             ['', ''],
-            ['Mis aportaciones', $t['own']],
             ['Padrinos comprometido', $t['pledged']],
             ['Padrinos recibido', $t['given']],
             ['Padrinos por recibir', $t['pledge_remaining']],
             ['', ''],
-            ['Reunido (mío + padrinos)', $t['gathered']],
-            ['Falta por reunir', $t['to_gather']],
-            ['Saldo en mano', $t['balance']],
+            ['Aporte propio estimado', $t['own_estimate']],
         ];
         $row = 3;
         foreach ($rows as [$label, $val]) {
@@ -225,25 +201,6 @@ class FinanceController extends Controller
         $p->getStyle("C2:E{$pr}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
         foreach (range('A', 'F') as $c) {
             $p->getColumnDimension($c)->setAutoSize(true);
-        }
-
-        // ----- Hoja Mis aportaciones -----
-        $o = $book->createSheet();
-        $o->setTitle('Mis aportaciones');
-        foreach (['Fecha', 'Monto', 'Concepto'] as $i => $h) {
-            $o->setCellValue(chr(65 + $i) . '1', $h);
-        }
-        $o->getStyle('A1:C1')->applyFromArray(['font' => $headFont, 'fill' => $headFill]);
-        $orow = 2;
-        foreach ($data['own'] as $c) {
-            $o->setCellValue("A{$orow}", $c->contributed_on?->format('d/m/Y') ?? '');
-            $o->setCellValue("B{$orow}", (float) $c->amount);
-            $o->setCellValue("C{$orow}", $c->concept);
-            $orow++;
-        }
-        $o->getStyle("B2:B{$orow}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
-        foreach (range('A', 'C') as $c) {
-            $o->getColumnDimension($c)->setAutoSize(true);
         }
 
         $book->setActiveSheetIndex(0);
@@ -355,35 +312,6 @@ class FinanceController extends Controller
     public function destroyContribution(SponsorContribution $sponsorContribution): RedirectResponse
     {
         $sponsorContribution->update(['active' => false]);
-
-        return back()->with('status', 'Aportación eliminada.');
-    }
-
-    // ---------- Mis aportaciones (dinero propio) ----------
-
-    public function storeOwn(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'contributed_on' => ['nullable', 'date'],
-            'concept' => ['nullable', 'string', 'max:120'],
-            'notes' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        OwnContribution::create([
-            'amount' => $data['amount'],
-            'contributed_on' => $data['contributed_on'] ?? now()->toDateString(),
-            'concept' => $data['concept'] ?? null,
-            'notes' => $data['notes'] ?? null,
-            'active' => true,
-        ]);
-
-        return back()->with('status', 'Aportación registrada.');
-    }
-
-    public function destroyOwn(OwnContribution $ownContribution): RedirectResponse
-    {
-        $ownContribution->update(['active' => false]);
 
         return back()->with('status', 'Aportación eliminada.');
     }

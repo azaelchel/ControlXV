@@ -85,11 +85,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/finanzas/padrinos/{sponsorSupport}', [FinanceController::class, 'destroySupport'])->name('finances.supports.destroy');
         Route::post('/finanzas/padrinos/{sponsorSupport}/aportaciones', [FinanceController::class, 'storeContribution'])->name('finances.contributions.store');
         Route::delete('/finanzas/aportaciones/{sponsorContribution}', [FinanceController::class, 'destroyContribution'])->name('finances.contributions.destroy');
-
-        // Mis aportaciones
-        Route::get('/finanzas/mis-aportaciones', [FinanceController::class, 'own'])->name('finances.own');
-        Route::post('/finanzas/mis-aportaciones', [FinanceController::class, 'storeOwn'])->name('finances.own.store');
-        Route::delete('/finanzas/mis-aportaciones/{ownContribution}', [FinanceController::class, 'destroyOwn'])->name('finances.own.destroy');
     });
 
     Route::middleware('module:catalogs')->group(function () {
