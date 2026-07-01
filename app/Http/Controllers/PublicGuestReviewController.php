@@ -130,7 +130,9 @@ class PublicGuestReviewController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($guest, $rows, $keptRows, $currentCompanions, $publicLink) {
+        $isConfirmFlow = in_array($publicLink->mode, ['invitation', 'last_chance'], true);
+
+        DB::transaction(function () use ($guest, $rows, $keptRows, $currentCompanions, $publicLink, $isConfirmFlow) {
             $keptIds = [];
 
             foreach ($keptRows as $row) {
@@ -173,21 +175,21 @@ class PublicGuestReviewController extends Controller
             GuestCompanionSynchronizer::syncGuestCounts($guest);
 
             $publicLink->update([
-                'response' => $publicLink->mode === 'invitation' ? 'confirmed' : 'validated',
+                'response' => $isConfirmFlow ? 'confirmed' : 'validated',
                 'responded_at' => now(),
                 'closed_reason' => 'responded',
             ]);
 
             $guest->update([
-                'status' => $publicLink->mode === 'invitation' ? 'Confirmado' : $guest->status,
-                'public_link_response' => $publicLink->mode === 'invitation' ? 'confirmed' : 'validated',
+                'status' => $isConfirmFlow ? 'Confirmado' : $guest->status,
+                'public_link_response' => $isConfirmFlow ? 'confirmed' : 'validated',
                 'public_link_responded_at' => now(),
             ]);
         });
 
         return redirect()
             ->to(route('guest-review.show', ['guest' => $guest, 'token' => $token], absolute: false))
-            ->with('status', $publicLink->mode === 'invitation'
+            ->with('status', $isConfirmFlow
                 ? '¡Gracias por confirmar!'
                 : 'Gracias por revisar tu información.');
     }

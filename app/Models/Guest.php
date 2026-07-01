@@ -67,7 +67,7 @@ class Guest extends Model
 
     public function canGeneratePublicLink(): bool
     {
-        return in_array($this->status, ['Invitacion Enviada', 'Confirmado'], true);
+        return in_array($this->status, ['Invitacion Enviada', 'Confirmado', 'No contesto'], true);
     }
 
     public function publicLinks(): HasMany
@@ -175,6 +175,7 @@ class Guest extends Model
         return match ($this->public_link_mode) {
             'invitation' => 'Registro y confirmación',
             'validation' => 'Validación final',
+            'last_chance' => 'Última oportunidad',
             default => 'Sin definir',
         };
     }

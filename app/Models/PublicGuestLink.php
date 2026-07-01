@@ -64,6 +64,7 @@ class PublicGuestLink extends Model
         return match ($this->mode) {
             'invitation' => 'Registro y confirmación',
             'validation' => 'Validación final',
+            'last_chance' => 'Última oportunidad',
             default => 'Sin definir',
         };
     }

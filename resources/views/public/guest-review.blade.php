@@ -5,18 +5,22 @@
 @section('meta_description', 'Confirma o valida la asistencia de tu familia a los XV de Zugeily. Revisa la información de las personas que asistirán contigo.')
 
 @php
+    $isLastChance = $mode === 'last_chance';
+    $isInvitationLike = in_array($mode, ['invitation', 'last_chance'], true);
+    $registrationClosedDate = \App\Models\Setting::get('registration_closed_date', '30 de junio');
+
     $modeTitle = 'Personas que asistirán';
-    $modeMessage = $mode === 'invitation'
+    $modeMessage = $isInvitationLike
         ? 'Por favor registra a las personas que asistirán contigo y confirma tu respuesta.'
         : 'Ya tenemos registrada tu respuesta. Por favor revisa que la información de las personas que asistirán sea correcta.';
-    $timeLabel = $mode === 'invitation' ? 'para confirmar' : 'para validar';
-    $heroTitle = $mode === 'invitation'
+    $timeLabel = $isInvitationLike ? 'para confirmar' : 'para validar';
+    $heroTitle = $isInvitationLike
         ? 'Confirma tu asistencia a los XV de Zugeily'
         : 'Ya tenemos tu respuesta, solo revisa que todo esté correcto';
-    $heroKicker = $mode === 'invitation'
+    $heroKicker = $isInvitationLike
         ? 'Confirmación de asistencia'
         : 'Revisa y valida tu asistencia a los XV de Zugeily';
-    $sectionKicker = $mode === 'invitation'
+    $sectionKicker = $isInvitationLike
         ? 'Confirmación de asistencia'
         : 'Validación de asistencia';
 @endphp
@@ -33,6 +37,19 @@
         </div>
     </div>
 
+    @if ($isLastChance && ! $isExpired && ! $publicLink->responded_at && $guest->status !== 'No asistirá')
+        <div class="card" style="margin-bottom: 22px; border-color:#ead4a2; background:#fff8e8;">
+            <div class="kicker" style="color:#b26a00;">⚠️ Última oportunidad</div>
+            <h2 style="margin:6px 0;">El registro ya cerró, pero aún estás a tiempo</h2>
+            <p style="margin:0;">
+                El registro para confirmar asistencia cerró el <strong>{{ $registrationClosedDate }}</strong>.
+                Nos encantaría contar contigo, por eso te damos un último plazo:
+                te queda(n) <strong>{{ $daysRemaining }} día(s)</strong> para confirmar aquí abajo.
+                Pasado este tiempo ya no podremos incluirte en el registro final. 💜
+            </p>
+        </div>
+    @endif
+
     <div class="grid cols-2" style="margin-bottom: 22px;">
         <div class="metric">
             <span class="small">Invitación para</span>
@@ -45,7 +62,7 @@
                 @elseif ($isExpired)
                     Vigencia agotada
                 @else
-                    {{ $mode === 'invitation' ? 'Tiempo disponible' : 'Tiempo para validar' }}
+                    {{ $isInvitationLike ? 'Tiempo disponible' : 'Tiempo para validar' }}
                 @endif
             </span>
             <strong>
@@ -63,7 +80,7 @@
     @if ($publicLink->opened_at && ! $publicLink->responded_at && ! $isExpired)
         <div class="card" style="margin-bottom: 22px; background:#fcf7ff;">
             <div class="small">
-                @if ($mode === 'invitation')
+                @if ($isInvitationLike)
                     Les quedan {{ $daysRemaining }} día(s) {{ $timeLabel }}.
                 @else
                     Tienes {{ $daysRemaining }} día(s) para revisar o corregir la información registrada.
@@ -260,7 +277,7 @@
 
             @if (! $isLocked)
                 <div class="inline" style="margin-top: 18px; justify-content: flex-end;">
-                    <button class="btn" type="submit">{{ $mode === 'invitation' ? 'Guardar cambios y confirmar' : 'Guardar y validar información' }}</button>
+                    <button class="btn" type="submit">{{ $isInvitationLike ? 'Guardar cambios y confirmar' : 'Guardar y validar información' }}</button>
                 </div>
             @endif
         </form>

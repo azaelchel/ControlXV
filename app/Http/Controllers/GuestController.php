@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGuestRequest;
 use App\Models\Guest;
 use App\Models\PublicGuestLink;
+use App\Services\PublicGuestLinkService;
 use App\Support\CatalogOptions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -134,53 +135,27 @@ class GuestController extends Controller
             ->with('status', "Estatus de la familia o grupo actualizado a {$validated['status']}.");
     }
 
-    public function generatePublicLink(Request $request, Guest $guest): RedirectResponse
+    public function generatePublicLink(Request $request, Guest $guest, PublicGuestLinkService $linkService): RedirectResponse
     {
         if (! $guest->canGeneratePublicLink()) {
             return redirect()
                 ->to($request->input('return_to', route('guests.index')))
-                ->with('status', 'Solo puedes generar links para familias con estatus Invitacion Enviada o Confirmado.');
+                ->with('status', 'Solo puedes generar links para familias con estatus Invitacion Enviada, Confirmado o No contesto.');
         }
 
-        $publicLink = \DB::transaction(function () use ($guest) {
-            PublicGuestLink::query()
-                ->where('guest_id', $guest->id)
-                ->where('is_current', true)
-                ->get()
-                ->each(function (PublicGuestLink $link) {
-                    $link->update([
-                        'is_current' => false,
-                        'closed_reason' => $link->responded_at
-                            ? ($link->closed_reason ?: 'responded')
-                            : ($link->isExpired() ? 'expired' : 'replaced'),
-                    ]);
-                });
+        $publicLink = $linkService->generateLinkFor($guest);
 
-            $link = PublicGuestLink::create([
-                'guest_id' => $guest->id,
-                'token' => Str::random(48),
-                'mode' => $guest->status === 'Invitacion Enviada' ? 'invitation' : 'validation',
-                'generated_at' => now(),
-                'expires_at' => now()->addDays(7),
-                'is_current' => true,
-            ]);
+        if (! $publicLink) {
+            return redirect()
+                ->to($request->input('return_to', route('guests.index')))
+                ->with('status', 'No se pudo generar el link para esta familia o grupo.');
+        }
 
-            $guest->update([
-                'public_link_token' => $link->token,
-                'public_link_mode' => $link->mode,
-                'public_link_response' => null,
-                'public_link_generated_at' => $link->generated_at,
-                'public_link_expires_at' => $link->expires_at,
-                'public_link_opened_at' => null,
-                'public_link_responded_at' => null,
-            ]);
-
-            return $link;
-        });
+        $vigencia = (int) round($publicLink->generated_at->diffInDays($publicLink->expires_at));
 
         return redirect()
             ->to($request->input('return_to', route('guests.index')))
-            ->with('status', 'Link generado correctamente. La vigencia es de 7 días.')
+            ->with('status', "Link generado correctamente. La vigencia es de {$vigencia} días.")
             ->with('generated_link_url', route('guest-review.show', ['guest' => $guest, 'token' => $publicLink->token], absolute: true))
             ->with('generated_link_guest_id', $guest->id);
     }

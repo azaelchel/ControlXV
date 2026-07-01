@@ -31,11 +31,29 @@ class PublicGuestLinkService
             return null;
         }
 
-        if ($existing = $this->activeLinkFor($guest)) {
+        $existing = $this->activeLinkFor($guest);
+
+        // Para última oportunidad ('No contesto') siempre queremos un link en modo
+        // last_chance. Si el link activo es de otro modo (ej. una invitación previa
+        // que aún no vence), lo regeneramos para que abra en el flujo correcto.
+        if ($guest->status === 'No contesto' && $existing && $existing->mode !== 'last_chance') {
+            return $this->generateLinkFor($guest);
+        }
+
+        if ($existing) {
             return $existing;
         }
 
         return $this->generateLinkFor($guest);
+    }
+
+    private function modeForStatus(?string $status): string
+    {
+        return match ($status) {
+            'No contesto'        => 'last_chance',
+            'Invitacion Enviada' => 'invitation',
+            default              => 'validation',
+        };
     }
 
     public function generateLinkFor(Guest $guest): ?PublicGuestLink
@@ -58,12 +76,15 @@ class PublicGuestLinkService
                     ]);
                 });
 
-            $days = Setting::getInt('link_validity_days', 7);
+            $mode = $this->modeForStatus($guest->status);
+            $days = $mode === 'last_chance'
+                ? Setting::getInt('last_chance_validity_days', 2)
+                : Setting::getInt('link_validity_days', 7);
 
             $link = PublicGuestLink::create([
                 'guest_id'     => $guest->id,
                 'token'        => Str::random(48),
-                'mode'         => $guest->status === 'Invitacion Enviada' ? 'invitation' : 'validation',
+                'mode'         => $mode,
                 'generated_at' => now(),
                 'expires_at'   => now()->addDays($days),
                 'is_current'   => true,
