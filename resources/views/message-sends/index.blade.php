@@ -69,7 +69,14 @@
                 <div style="font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600;">Acciones</div>
                 <h3 style="margin: 4px 0 0 0; font-size: 20px;">Generar y enviar mensajes</h3>
             </div>
-            <div class="inline" style="gap: 10px;">
+            <div class="inline" style="gap: 10px; align-items: center;">
+                <label class="inline" style="gap: 6px; align-items: center; color: white; font-size: 13px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 0 10px; height: 42px;" title="Elige si el botón de enviar abre la app de WhatsApp o WhatsApp Web">
+                    Abrir con
+                    <select id="wa-open-mode" style="height: 30px; border-radius: 6px; border: none; padding: 0 6px; color: var(--primary-dark); font-weight: 600;">
+                        <option value="app">App</option>
+                        <option value="web">Web</option>
+                    </select>
+                </label>
                 <a href="{{ route('message-sends.create') }}" class="btn" style="background: white; color: var(--primary-dark);">+ Envío masivo</a>
                 <a href="{{ route('message-sends.history') }}" class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);">Historial</a>
             </div>
@@ -450,6 +457,16 @@
             });
         })();
 
+        // Selector App/Web de WhatsApp (persistente por navegador)
+        (function () {
+            const sel = document.getElementById('wa-open-mode');
+            if (!sel) return;
+            sel.value = window.waMode();
+            sel.addEventListener('change', () => {
+                localStorage.setItem('whatsapp_open_mode', sel.value === 'web' ? 'web' : 'app');
+            });
+        })();
+
         // Abrir WhatsApp (con último mensaje si existe)
         document.querySelectorAll('[data-open-whatsapp]').forEach(btn => {
             btn.addEventListener('click', async () => {
@@ -457,11 +474,8 @@
                 const message = btn.dataset.message;
                 if (message) {
                     await copyToClipboard(message);
-                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-                    window.open(url, '_blank');
-                } else {
-                    window.open(`https://wa.me/${phone}`, '_blank');
                 }
+                window.open(window.waUrl(phone, message), '_blank');
             });
         });
 
@@ -563,8 +577,7 @@
                 await copyToClipboard(currentState.message);
                 await registerSend();
                 if (currentState.phone) {
-                    const url = `https://wa.me/${currentState.phone}?text=${encodeURIComponent(currentState.message)}`;
-                    window.open(url, '_blank');
+                    window.open(window.waUrl(currentState.phone, currentState.message), '_blank');
                 }
                 close();
                 // Recargar tabla para reflejar nuevo envío

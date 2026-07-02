@@ -736,5 +736,20 @@
                 @endif
             </div>
         </div>
+
+        <script>
+            // Preferencia App vs Web de WhatsApp (se recuerda por navegador).
+            window.waMode = function () {
+                return localStorage.getItem('whatsapp_open_mode') === 'web' ? 'web' : 'app';
+            };
+            // Arma el link de WhatsApp según la preferencia elegida.
+            window.waUrl = function (phone, message) {
+                const text = message ? encodeURIComponent(message) : '';
+                if (window.waMode() === 'web') {
+                    return 'https://web.whatsapp.com/send?phone=' + phone + (text ? '&text=' + text : '');
+                }
+                return 'https://wa.me/' + phone + (text ? '?text=' + text : '');
+            };
+        </script>
     </body>
 </html>

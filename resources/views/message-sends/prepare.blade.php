@@ -136,8 +136,7 @@
                 statusEl.style.display = 'inline';
 
                 if (phone) {
-                    const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
-                    window.open(url, '_blank');
+                    window.open(window.waUrl(phone, message), '_blank');
                 }
             });
         });

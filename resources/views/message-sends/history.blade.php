@@ -441,7 +441,7 @@
 
         document.querySelectorAll('[data-wa-send]').forEach(btn => {
             btn.addEventListener('click', () => {
-                window.open(`https://wa.me/${btn.dataset.phone}?text=${encodeURIComponent(btn.dataset.message)}`, '_blank');
+                window.open(window.waUrl(btn.dataset.phone, btn.dataset.message), '_blank');
             });
         });
     </script>
