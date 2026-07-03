@@ -77,11 +77,11 @@ TXT,
                 'includes_link' => false,
                 'position'      => 4,
                 'content'       => <<<TXT
-Estimada/o {prefijo} {nombre}, esperamos que se encuentren muy bien.
+{prefijo} {nombre}, esperamos que se encuentre muy bien. 💜
 
-Te escribimos del equipo de *{equipo}* de los *{evento}*, que se celebrarán el *{fecha_evento}*. Sabemos que los tiempos y compromisos no siempre coinciden, y queremos agradecerles por habernos tenido en mente.
+Le escribimos del equipo *{equipo}* de los *{evento}*. Como no logramos recibir su confirmación, entendemos que en esta ocasión no podrá acompañarnos, y lo respetamos con todo cariño.
 
-Lamentamos no poder contar con su presencia ese día, pero esperamos coincidir en una próxima celebración. ¡Muchos saludos y hasta pronto! 🙌
+Le agradecemos de corazón por tenernos en mente. Fue un gusto invitarle y esperamos coincidir muy pronto. ¡Un fuerte abrazo y hasta pronto! 🙌
 TXT,
             ],
         ];
