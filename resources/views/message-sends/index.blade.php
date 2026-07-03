@@ -13,6 +13,14 @@
         .stat-card .desc { font-size: 12px; color: var(--muted); margin-top: 6px; }
         .stat-card.alert .value { color: #d8527f; }
 
+        /* Toggle App/Web de WhatsApp */
+        .wa-toggle { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 13px; font-weight: 600; }
+        .wa-toggle .lbl { opacity: 0.9; white-space: nowrap; }
+        .wa-seg { display: inline-flex; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 3px; gap: 2px; }
+        .wa-seg-btn { border: 0; background: transparent; color: #fff; font-weight: 700; font-size: 13px; padding: 6px 16px; border-radius: 999px; cursor: pointer; transition: background .15s, color .15s; line-height: 1; }
+        .wa-seg-btn.active { background: #fff; color: var(--primary-dark); box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+        .wa-seg-btn:not(.active):hover { background: rgba(255,255,255,0.12); }
+
         .filter-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
         .filter-row > div { min-width: 0; }
         .filter-row label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
@@ -70,13 +78,13 @@
                 <h3 style="margin: 4px 0 0 0; font-size: 20px;">Generar y enviar mensajes</h3>
             </div>
             <div class="inline" style="gap: 10px; align-items: center;">
-                <label class="inline" style="gap: 6px; align-items: center; color: white; font-size: 13px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 0 10px; height: 42px;" title="Elige si el botón de enviar abre la app de WhatsApp o WhatsApp Web">
-                    Abrir con
-                    <select id="wa-open-mode" style="height: 30px; border-radius: 6px; border: none; padding: 0 6px; color: var(--primary-dark); font-weight: 600;">
-                        <option value="app">App</option>
-                        <option value="web">Web</option>
-                    </select>
-                </label>
+                <div class="wa-toggle" role="group" aria-label="Abrir WhatsApp con" title="Elige si el botón de enviar abre WhatsApp Web o la app. Web respeta mejor los emojis.">
+                    <span class="lbl">Abrir con</span>
+                    <div class="wa-seg">
+                        <button type="button" class="wa-seg-btn" data-wa-mode="web">Web</button>
+                        <button type="button" class="wa-seg-btn" data-wa-mode="app">App</button>
+                    </div>
+                </div>
                 <a href="{{ route('message-sends.create') }}" class="btn" style="background: white; color: var(--primary-dark);">+ Envío masivo</a>
                 <a href="{{ route('message-sends.history') }}" class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);">Historial</a>
             </div>
@@ -457,14 +465,19 @@
             });
         })();
 
-        // Selector App/Web de WhatsApp (persistente por navegador)
+        // Control segmentado App/Web de WhatsApp (persistente por navegador)
         (function () {
-            const sel = document.getElementById('wa-open-mode');
-            if (!sel) return;
-            sel.value = window.waMode();
-            sel.addEventListener('change', () => {
-                localStorage.setItem('whatsapp_open_mode', sel.value === 'web' ? 'web' : 'app');
-            });
+            const btns = document.querySelectorAll('[data-wa-mode]');
+            if (!btns.length) return;
+            const sync = () => {
+                const mode = window.waMode();
+                btns.forEach(b => b.classList.toggle('active', b.dataset.waMode === mode));
+            };
+            btns.forEach(b => b.addEventListener('click', () => {
+                localStorage.setItem('whatsapp_open_mode', b.dataset.waMode === 'app' ? 'app' : 'web');
+                sync();
+            }));
+            sync();
         })();
 
         // Abrir WhatsApp (con último mensaje si existe)

@@ -739,8 +739,9 @@
 
         <script>
             // Preferencia App vs Web de WhatsApp (se recuerda por navegador).
+            // Default: Web — decodifica bien los emojis (la app de escritorio los distorsiona).
             window.waMode = function () {
-                return localStorage.getItem('whatsapp_open_mode') === 'web' ? 'web' : 'app';
+                return localStorage.getItem('whatsapp_open_mode') === 'app' ? 'app' : 'web';
             };
             // Arma el link de WhatsApp según la preferencia elegida.
             window.waUrl = function (phone, message) {
