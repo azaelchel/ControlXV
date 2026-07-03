@@ -214,7 +214,7 @@ class MessageSendController extends Controller
 
         $guest = Guest::findOrFail($data['guest_id']);
 
-        $send = MessageSend::create([
+        $attributes = [
             'guest_id'             => $guest->id,
             'message_template_id'  => $data['message_template_id'],
             'public_guest_link_id' => $data['public_guest_link_id'] ?? null,
@@ -222,7 +222,20 @@ class MessageSendController extends Controller
             'rendered_message'     => $data['rendered_message'],
             'phone'                => $guest->phone,
             'sent_at'              => now(),
-        ]);
+            'active'               => true,
+        ];
+
+        // Con link, el envío ya pudo auto-registrarse al preparar el mensaje
+        // (firstOrCreate por link en renderForSend). Actualizamos esa fila en vez
+        // de crear un duplicado. Sin link, cada clic sí genera un registro nuevo.
+        if (! empty($data['public_guest_link_id'])) {
+            $send = MessageSend::withoutGlobalScope('active')->updateOrCreate(
+                ['public_guest_link_id' => $data['public_guest_link_id']],
+                $attributes
+            );
+        } else {
+            $send = MessageSend::create($attributes);
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['ok' => true, 'send_id' => $send->id]);
