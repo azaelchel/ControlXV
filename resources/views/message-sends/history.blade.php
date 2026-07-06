@@ -143,6 +143,15 @@
         @endphp
 
         @forelse ($groupedSends as $date => $dailySends)
+            @php
+                // Mismo minuto = misma "hora" para el usuario; dentro del minuto, por nombre A→Z.
+                $dailySends = $dailySends->sort(function ($a, $b) {
+                    $ma = $a->sent_at?->format('Y-m-d H:i') ?? '';
+                    $mb = $b->sent_at?->format('Y-m-d H:i') ?? '';
+                    if ($ma !== $mb) { return strcmp($mb, $ma); } // minuto más reciente primero
+                    return strcasecmp($a->guest?->name ?? '', $b->guest?->name ?? ''); // nombre ascendente
+                })->values();
+            @endphp
             <div class="day-group">
                 <div class="day-header">
                     <span>{{ $date !== '—' ? \Carbon\Carbon::parse($date)->isoFormat('dddd, D [de] MMMM [de] YYYY') : 'Sin fecha' }}</span>
