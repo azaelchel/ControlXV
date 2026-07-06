@@ -171,27 +171,47 @@ class MessageSendController extends Controller
 
     public function companions(Guest $guest): JsonResponse
     {
-        $companions = Companion::query()
+        $companionModels = Companion::query()
             ->where('invited_group', $guest->name)
             ->orderBy('type')
             ->orderBy('name')
-            ->get()
-            ->map(fn (Companion $c) => [
-                'id'    => $c->id,
-                'name'  => $c->name,
-                'type'  => $c->type ?? '—',
-                'sex'   => $c->sex ?? '',
-                'notes' => $c->notes ?? '',
-                'source' => $c->source,
-                'created_at' => $c->created_at?->format('d/m/Y H:i'),
-            ]);
+            ->get();
+
+        $companions = $companionModels->map(fn (Companion $c) => [
+            'id'    => $c->id,
+            'name'  => $c->name,
+            'type'  => $c->type ?? '—',
+            'sex'   => $c->sex ?? '',
+            'notes' => $c->notes ?? '',
+            'source' => $c->source,
+            'created_at' => $c->created_at?->format('d/m/Y H:i'),
+            'updated_at' => $c->updated_at?->format('d/m/Y H:i'),
+        ]);
 
         $byType = $companions->groupBy('type')->map->count();
+
+        // Última actualización de invitados: lo más reciente entre la modificación
+        // de un invitado y la respuesta de la familia por su link.
+        $lastCompanionUpdate = $companionModels->max('updated_at');
+        $respondedAt         = $guest->public_link_responded_at;
+        $lastUpdated         = collect([$lastCompanionUpdate, $respondedAt])->filter()->max();
+
+        $lastUpdatedVia = null;
+        if ($lastUpdated) {
+            if ($respondedAt && $respondedAt->equalTo($lastUpdated)) {
+                $lastUpdatedVia = 'link';
+            } else {
+                $newest = $companionModels->sortByDesc('updated_at')->first();
+                $lastUpdatedVia = $newest?->source === 'link' ? 'link' : 'manual';
+            }
+        }
 
         return response()->json([
             'guest_name' => $guest->name,
             'status'     => $guest->status,
             'companions' => $companions,
+            'last_updated'     => $lastUpdated?->format('d/m/Y H:i'),
+            'last_updated_via' => $lastUpdatedVia,
             'counts'     => [
                 'total'        => $companions->count(),
                 'adults'       => $byType['Adulto'] ?? 0,

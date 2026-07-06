@@ -322,6 +322,7 @@
                 <div>
                     <div class="section-kicker">Invitados registrados</div>
                     <h3 class="section-title" style="margin: 0;" id="cmp-guest-name">—</h3>
+                    <div class="small" id="cmp-updated" style="margin-top: 4px;"></div>
                 </div>
                 <button type="button" class="btn ghost" id="cmp-close">✕</button>
             </div>
@@ -358,6 +359,7 @@
                             <th>Género</th>
                             <th>Origen</th>
                             <th>Registrado</th>
+                            <th>Modificado</th>
                         </tr>
                     </thead>
                     <tbody id="cmp-list"></tbody>
@@ -472,6 +474,13 @@
                         const data = await res.json();
 
                         guestNameEl.textContent = data.guest_name + ' · ' + data.status;
+                        const updatedEl = document.getElementById('cmp-updated');
+                        if (data.last_updated) {
+                            const viaTxt = data.last_updated_via === 'link' ? ' · vía link ✨' : (data.last_updated_via === 'manual' ? ' · edición manual' : '');
+                            updatedEl.innerHTML = '🕒 Última actualización: <strong>' + data.last_updated + '</strong>' + viaTxt;
+                        } else {
+                            updatedEl.textContent = 'Sin actualizaciones registradas';
+                        }
                         totalEl.textContent = data.counts.total;
                         adultsEl.textContent = data.counts.adults;
                         adolEl.textContent = data.counts.adolescents;
@@ -488,7 +497,7 @@
                         };
 
                         if (data.companions.length === 0) {
-                            list.innerHTML = '<tr><td colspan="5" class="empty">Aún no hay invitados registrados para esta familia.</td></tr>';
+                            list.innerHTML = '<tr><td colspan="6" class="empty">Aún no hay invitados registrados para esta familia.</td></tr>';
                         } else {
                             list.innerHTML = data.companions.map(c => `
                                 <tr>
@@ -497,11 +506,12 @@
                                     <td>${c.sex || '—'}</td>
                                     <td>${sourceBadge(c.source)}</td>
                                     <td class="small">${c.created_at || '—'}</td>
+                                    <td class="small">${c.updated_at || '—'}</td>
                                 </tr>
                             `).join('');
                         }
                     } catch (e) {
-                        list.innerHTML = '<tr><td colspan="5" class="empty">No se pudieron cargar los invitados.</td></tr>';
+                        list.innerHTML = '<tr><td colspan="6" class="empty">No se pudieron cargar los invitados.</td></tr>';
                     } finally {
                         loading.style.display = 'none';
                     }
