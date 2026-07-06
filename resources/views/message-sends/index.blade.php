@@ -21,6 +21,24 @@
         .wa-seg-btn.active { background: #fff; color: var(--primary-dark); box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
         .wa-seg-btn:not(.active):hover { background: rgba(255,255,255,0.12); }
 
+        /* Panel de progreso */
+        .progress-bar { height: 12px; border-radius: 999px; background: #eee6f7; overflow: hidden; margin: 12px 0 14px; }
+        .progress-bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary) 0%, #7c4dbb 100%); transition: width .4s; }
+        .status-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .status-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text); background: #faf6ff; border: 1px solid #ece3fa; border-radius: 999px; padding: 5px 12px; }
+        .status-chip strong { color: var(--primary-dark); }
+        .status-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+
+        /* Pestañas por estado */
+        .state-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .state-tab { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 13px; font-weight: 600; color: var(--text); background: white; border: 1px solid #e6dff1; border-radius: 999px; padding: 8px 14px; transition: background .15s, border-color .15s, color .15s; }
+        .state-tab:hover { border-color: var(--primary); }
+        .state-tab .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 6px; font-size: 12px; font-weight: 800; border-radius: 999px; background: #f0e9fb; color: var(--primary-dark); }
+        .state-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
+        .state-tab.active .badge { background: rgba(255,255,255,0.25); color: white; }
+        .la-cell { white-space: nowrap; }
+        .la-cell .n { font-weight: 700; color: var(--primary-dark); }
+
         .filter-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
         .filter-row > div { min-width: 0; }
         .filter-row label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
@@ -46,27 +64,30 @@
         .modal-box { background: white; border-radius: 16px; max-width: 720px; width: 100%; max-height: 92vh; overflow: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     </style>
 
-    {{-- Stats --}}
-    <div class="stat-grid">
-        <div class="card stat-card">
-            <div class="label">Esperando respuesta</div>
-            <div class="value">{{ number_format($stats['waiting']) }}</div>
-            <div class="desc">Links activos sin contestar</div>
+    {{-- Panel de progreso --}}
+    @php $pct = $totalGuests ? (int) round($confirmedCount / $totalGuests * 100) : 0; @endphp
+    <div class="card" style="margin-bottom: 18px;">
+        <div class="inline" style="justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <div class="section-kicker">Progreso general</div>
+                <h3 class="section-title" style="margin: 2px 0;">{{ number_format($confirmedCount) }} de {{ number_format($totalGuests) }} familias confirmadas</h3>
+            </div>
+            <div class="inline" style="gap: 16px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 22px; font-weight: 800; color: var(--primary-dark); line-height: 1;">{{ $pct }}%</div>
+                    <div class="small">confirmado</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 22px; font-weight: 800; color: #d8527f; line-height: 1;">{{ number_format($stats['needs_resend']) }}</div>
+                    <div class="small">por reenviar</div>
+                </div>
+            </div>
         </div>
-        <div class="card stat-card">
-            <div class="label">Ya respondieron</div>
-            <div class="value">{{ number_format($stats['responded']) }}</div>
-            <div class="desc">A través de su link</div>
-        </div>
-        <div class="card stat-card alert">
-            <div class="label">Necesitan reenvío</div>
-            <div class="value">{{ number_format($stats['needs_resend']) }}</div>
-            <div class="desc">Familias activas con link vencido</div>
-        </div>
-        <div class="card stat-card">
-            <div class="label">Enviados hoy</div>
-            <div class="value">{{ number_format($stats['today']) }}</div>
-            <div class="desc">{{ number_format($stats['week']) }} esta semana</div>
+        <div class="progress-bar"><span style="width: {{ $pct }}%;"></span></div>
+        <div class="status-chips">
+            @foreach ($statusCounts as $status => $count)
+                <span class="status-chip"><span class="dot"></span>{{ $status }} <strong>{{ number_format($count) }}</strong></span>
+            @endforeach
         </div>
     </div>
 
@@ -134,6 +155,27 @@
         </form>
     </div>
 
+    {{-- Pestañas por estado --}}
+    @php
+        $base = array_filter(['q' => $nameQuery, 'group' => $groupFilter], fn ($v) => $v !== '' && $v !== null);
+        $tabs = [
+            ['label' => 'Todos',               'count' => $tabCounts['all'],         'params' => $base,                                   'active' => ! $linkStateFilter && $statusFilter !== 'No contesto'],
+            ['label' => 'Sin enviar',          'count' => $tabCounts['none'],        'params' => $base + ['link_state' => 'none'],        'active' => $linkStateFilter === 'none'],
+            ['label' => 'Esperando',           'count' => $tabCounts['active'],      'params' => $base + ['link_state' => 'active'],      'active' => $linkStateFilter === 'active'],
+            ['label' => 'Abrió sin responder', 'count' => $tabCounts['opened'],      'params' => $base + ['link_state' => 'opened'],      'active' => $linkStateFilter === 'opened'],
+            ['label' => 'Respondieron',        'count' => $tabCounts['responded'],   'params' => $base + ['link_state' => 'responded'],   'active' => $linkStateFilter === 'responded'],
+            ['label' => 'Necesitan reenvío',   'count' => $tabCounts['expired'],     'params' => $base + ['link_state' => 'expired'],     'active' => $linkStateFilter === 'expired'],
+            ['label' => 'No contestaron',      'count' => $tabCounts['no_contesto'], 'params' => $base + ['status' => 'No contesto'],     'active' => $statusFilter === 'No contesto'],
+        ];
+    @endphp
+    <div class="state-tabs">
+        @foreach ($tabs as $tab)
+            <a href="{{ route('message-sends.index', $tab['params']) }}" class="state-tab {{ $tab['active'] ? 'active' : '' }}">
+                {{ $tab['label'] }} <span class="badge">{{ number_format($tab['count']) }}</span>
+            </a>
+        @endforeach
+    </div>
+
     {{-- Tabla --}}
     <div class="card">
         <div class="inline" style="justify-content: space-between; align-items: end; margin-bottom: 14px;">
@@ -162,8 +204,8 @@
                     <tr>
                         <th>Familia / Grupo</th>
                         <th>Estatus</th>
-                        <th>Teléfono</th>
                         <th>Estado del link</th>
+                        <th>Links · Envíos</th>
                         <th>Vence</th>
                         <th>Último mensaje</th>
                         <th>Acciones</th>
@@ -182,23 +224,25 @@
                             <td>
                                 <strong>{{ $guest->name }}</strong>
                                 <div class="small">{{ $guest->group_name }}</div>
-                                @if ($row['sends_count'] > 0)
-                                    <div class="small" style="margin-top: 4px;">📨 {{ $row['sends_count'] }} envío(s)</div>
-                                @endif
+                                <div class="small" style="margin-top: 2px;">
+                                    @if ($guest->phone)
+                                        {{ $guest->phone }}
+                                    @else
+                                        <span style="color: var(--danger);">Sin tel</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="small">{{ $guest->status }}</td>
-                            <td class="small">
-                                @if ($guest->phone)
-                                    {{ $guest->phone }}
-                                @else
-                                    <span style="color: var(--danger);">Sin tel</span>
-                                @endif
-                            </td>
                             <td>
                                 <span class="pill {{ $state['class'] }}">{{ $state['label'] }}</span>
                                 @if ($link)
                                     <a href="{{ route('guest-review.show', ['guest' => $guest, 'token' => $link->token]) }}" target="_blank" class="small" style="display:block; margin-top: 4px;">Abrir link →</a>
                                 @endif
+                            </td>
+                            <td class="small la-cell">
+                                <span title="Links generados para esta familia">🔗 <span class="n">{{ $row['links_count'] }}</span></span>
+                                &nbsp;·&nbsp;
+                                <span title="Mensajes enviados">📨 <span class="n">{{ $row['sends_count'] }}</span></span>
                             </td>
                             <td class="small">
                                 @if ($link && ! $link->responded_at && ! $link->isExpired() && $link->closed_reason !== 'cancelled')

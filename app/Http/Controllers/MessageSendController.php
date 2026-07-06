@@ -29,9 +29,11 @@ class MessageSendController extends Controller
         $perPage         = (int) ($request->integer('per_page') ?: 25);
         $page            = (int) ($request->integer('page') ?: 1);
 
+        // Universo base: solo nombre y grupo. Así las pestañas de estado y el
+        // panel de progreso muestran el total real sin importar la pestaña activa.
         $guests = Guest::query()
+            ->withCount('publicLinks')
             ->with(['currentPublicLink', 'messageSends' => fn ($q) => $q->latest()->with('template')])
-            ->when($statusFilter, fn ($q) => $q->where('status', $statusFilter))
             ->when($groupFilter, fn ($q) => $q->where('group_name', $groupFilter))
             ->when($nameQuery, fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($nameQuery) . '%']))
             ->orderBy('name')
@@ -45,11 +47,29 @@ class MessageSendController extends Controller
             ->pluck('total', 'invited_group')
             ->all();
 
-        $rows = $guests->map(fn (Guest $g) => $this->buildRow($g, $companionCounts));
+        $allRows = $guests->map(fn (Guest $g) => $this->buildRow($g, $companionCounts));
 
-        if ($linkStateFilter) {
-            $rows = $rows->filter(fn ($r) => $r['state']['key'] === $linkStateFilter)->values();
-        }
+        // Conteos para las pestañas de estado (sobre el universo base)
+        $tabCounts = [
+            'all'         => $allRows->count(),
+            'none'        => $allRows->where('state.key', 'none')->count(),
+            'active'      => $allRows->where('state.key', 'active')->count(),
+            'opened'      => $allRows->where('state.key', 'opened')->count(),
+            'responded'   => $allRows->where('state.key', 'responded')->count(),
+            'expired'     => $allRows->where('state.key', 'expired')->count(),
+            'no_contesto' => $guests->where('status', 'No contesto')->count(),
+        ];
+
+        // Progreso por estatus
+        $statusCounts   = $guests->groupBy('status')->map->count()->sortKeys();
+        $totalGuests    = $guests->count();
+        $confirmedCount = (int) ($statusCounts['Confirmado'] ?? 0);
+
+        // Filas de la tabla: aplica estatus + estado del link sobre el universo base
+        $rows = $allRows
+            ->when($statusFilter, fn ($c) => $c->filter(fn ($r) => $r['guest']->status === $statusFilter))
+            ->when($linkStateFilter, fn ($c) => $c->filter(fn ($r) => $r['state']['key'] === $linkStateFilter))
+            ->values();
 
         $paginator = new LengthAwarePaginator(
             $rows->forPage($page, $perPage)->values(),
@@ -62,6 +82,10 @@ class MessageSendController extends Controller
         return view('message-sends.index', [
             'rows'            => $paginator,
             'stats'           => $this->buildStats(),
+            'tabCounts'       => $tabCounts,
+            'statusCounts'    => $statusCounts,
+            'totalGuests'     => $totalGuests,
+            'confirmedCount'  => $confirmedCount,
             'statuses'        => CatalogOptions::values('statuses'),
             'groups'          => CatalogOptions::values('guest_groups'),
             'templates'       => MessageTemplate::orderBy('position')->get(),
@@ -346,6 +370,7 @@ class MessageSendController extends Controller
             'state'           => $this->describeLinkState($link),
             'last_send'       => $lastSend,
             'sends_count'     => $guest->messageSends->count(),
+            'links_count'     => (int) ($guest->public_links_count ?? 0),
             'phone_intl'      => $this->phoneIntl($guest),
             'companion_count' => $companionCounts[$guest->name] ?? 0,
         ];
