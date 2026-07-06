@@ -254,7 +254,7 @@
                                     @endforeach
                                 </select>
                                 <div class="row-note" data-child-note style="{{ old("rows.$index.type", $row['type']) === 'Niño' ? '' : 'display:none;' }}">
-                                    Niño será considerado hasta 9 años de edad.
+                                    Niños de 2 a 10 años de edad.
                                 </div>
                             </div>
                             <div>
