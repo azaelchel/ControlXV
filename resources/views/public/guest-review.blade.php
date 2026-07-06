@@ -248,13 +248,14 @@
                             </div>
                             <div>
                                 <label>Categoría</label>
-                                <select name="rows[{{ $index }}][type]" data-child-note-trigger @disabled($isLocked)>
+                                <select name="rows[{{ $index }}][type]" data-type-select @disabled($isLocked)>
                                     @foreach ($types as $type)
                                         <option value="{{ $type }}" @selected(old("rows.$index.type", $row['type']) === $type)>{{ $type }}</option>
                                     @endforeach
                                 </select>
-                                <div class="row-note" data-child-note style="{{ old("rows.$index.type", $row['type']) === 'Niño' ? '' : 'display:none;' }}">
-                                    Niños de 2 a 10 años de edad.
+                                @php $curType = old("rows.$index.type", $row['type']); @endphp
+                                <div class="row-note" data-menu-hint style="margin-top:6px; font-weight:600; {{ $curType === 'Niño' ? 'color:#b26a00;' : '' }}">
+                                    {{ $curType === 'Niño' ? '🍔 Menú infantil (2 a 10 años)' : '🍽️ Menú general' }}
                                 </div>
                             </div>
                             <div>
@@ -292,19 +293,21 @@
                 return;
             }
 
-            document.querySelectorAll('[data-child-note-trigger]').forEach((select) => {
-                const note = select.closest('div')?.querySelector('[data-child-note]');
+            document.querySelectorAll('[data-type-select]').forEach((select) => {
+                const hint = select.closest('div')?.querySelector('[data-menu-hint]');
 
-                const toggle = () => {
-                    if (!note) {
+                const update = () => {
+                    if (!hint) {
                         return;
                     }
 
-                    note.style.display = select.value === 'Niño' ? '' : 'none';
+                    const isChild = select.value === 'Niño';
+                    hint.textContent = isChild ? '🍔 Menú infantil (2 a 10 años)' : '🍽️ Menú general';
+                    hint.style.color = isChild ? '#b26a00' : '';
                 };
 
-                toggle();
-                select.addEventListener('change', toggle);
+                update();
+                select.addEventListener('change', update);
             });
 
             tbody.addEventListener('click', (event) => {
