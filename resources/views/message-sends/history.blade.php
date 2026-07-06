@@ -32,6 +32,13 @@
         .day-header .day-line { flex: 1; height: 1px; background: var(--border); }
         .day-header .day-count { font-size: 12px; color: var(--muted); font-weight: 600; }
 
+        .day-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .sum-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text); background: white; border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; }
+        .sum-chip strong { font-weight: 800; }
+        .sum-chip.ok { background: #f3fbf6; border-color: #cde6d5; color: #1f7a44; }
+        .sum-chip.no { background: #fff3f7; border-color: #f0c4d2; color: #b3325b; }
+        .sum-chip.wait { background: #fff8e8; border-color: #ead4a2; color: #8a6100; }
+
         .send-row {
             background: white;
             border: 1px solid var(--border);
@@ -143,6 +150,21 @@
                     <span class="day-count">{{ $dailySends->count() }} envío{{ $dailySends->count() === 1 ? '' : 's' }}</span>
                 </div>
 
+                @php
+                    $enviados     = $dailySends->count();
+                    $respondieron = $dailySends->filter(fn ($s) => $s->publicLink?->responded_at)->count();
+                    $confirmados  = $dailySends->filter(fn ($s) => $s->guest?->status === 'Confirmado')->count();
+                    $noAsistiran  = $dailySends->filter(fn ($s) => $s->publicLink?->response === 'declined' || $s->guest?->status === 'No asistirá')->count();
+                    $sinResponder = $dailySends->filter(fn ($s) => ! $s->publicLink?->responded_at && $s->publicLink?->closed_reason !== 'cancelled')->count();
+                @endphp
+                <div class="day-summary">
+                    <span class="sum-chip">📤 Enviados <strong>{{ $enviados }}</strong></span>
+                    <span class="sum-chip">✓ Respondieron <strong>{{ $respondieron }}</strong></span>
+                    <span class="sum-chip ok">💜 Confirmados <strong>{{ $confirmados }}</strong></span>
+                    <span class="sum-chip no">✕ No asistirán <strong>{{ $noAsistiran }}</strong></span>
+                    <span class="sum-chip wait">⏳ Sin responder <strong>{{ $sinResponder }}</strong></span>
+                </div>
+
                 @foreach ($dailySends as $send)
                     @php
                         $link = $send->publicLink;
@@ -151,9 +173,21 @@
                         $stateIcon = '—';
                         if ($link) {
                             if ($link->responded_at) {
-                                $stateLabel = 'Respondió ' . $link->responded_at->diffForHumans($send->sent_at, true, true) . ' después';
-                                $stateClass = 'status-confirmado';
-                                $stateIcon = '✓';
+                                $timing = $link->responded_at->diffForHumans($send->sent_at, true, true) . ' después';
+                                if ($link->response === 'declined') {
+                                    $stateLabel = 'Rechazó — no asistirá';
+                                    $stateClass = 'status-no-asistira';
+                                    $stateIcon = '✕';
+                                } elseif ($link->response === 'validated') {
+                                    $stateLabel = 'Validó sus datos';
+                                    $stateClass = 'status-confirmado';
+                                    $stateIcon = '✓';
+                                } else {
+                                    $stateLabel = 'Confirmó asistencia';
+                                    $stateClass = 'status-confirmado';
+                                    $stateIcon = '✓';
+                                }
+                                $stateLabel .= ' · ' . $timing;
                             } elseif ($link->closed_reason === 'cancelled') {
                                 $stateLabel = 'Cancelado';
                                 $stateClass = 'status-no-asistira';
