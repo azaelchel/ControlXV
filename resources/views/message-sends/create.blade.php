@@ -147,18 +147,23 @@
                 </span>
             </div>
 
+            <style>
+                .guest-table th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+                .guest-table th.sortable:hover { color: var(--primary-dark); }
+                .guest-table th.sortable [data-sort-ind] { color: var(--primary); font-weight: 800; }
+            </style>
             <div class="table-wrap" style="max-height: 520px; overflow: auto;">
                 <table class="guest-table">
                     <thead>
                         <tr>
                             <th style="width: 40px;"></th>
-                            <th>Familia</th>
-                            <th>Estatus</th>
-                            <th>Categoría</th>
-                            <th>Grupo</th>
-                            <th>Teléfono</th>
+                            <th class="sortable" data-sort="name" title="Ordenar por nombre">Familia<span data-sort-ind></span></th>
+                            <th class="sortable" data-sort="status" title="Ordenar por estatus">Estatus<span data-sort-ind></span></th>
+                            <th class="sortable" data-sort="category" title="Ordenar por categoría">Categoría<span data-sort-ind></span></th>
+                            <th class="sortable" data-sort="group" title="Ordenar por grupo">Grupo<span data-sort-ind></span></th>
+                            <th class="sortable" data-sort="phone" title="Ordenar por teléfono">Teléfono<span data-sort-ind></span></th>
                             <th>Link actual</th>
-                            <th>Último envío</th>
+                            <th class="sortable" data-sort="lastsend" title="Ordenar por último envío">Último envío<span data-sort-ind></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -183,6 +188,8 @@
                                 data-status="{{ $guest->status }}"
                                 data-category="{{ $guest->category }}"
                                 data-group="{{ $guest->group_name }}"
+                                data-phone="{{ preg_replace('/[^0-9]/', '', $guest->phone ?? '') }}"
+                                data-lastsend="{{ $lastSend?->sent_at?->timestamp ?? 0 }}"
                                 data-with-phone="{{ $hasPhone ? '1' : '0' }}">
                                 <td><input type="checkbox" name="guest_ids[]" value="{{ $guest->id }}" data-guest-check {{ $hasPhone ? '' : 'disabled' }}></td>
                                 <td><strong>{{ $guest->name }}</strong></td>
@@ -276,6 +283,26 @@
             selectAll.addEventListener('click', () => { visibleChecks().forEach(c => c.checked = true); updateCount(); });
             deselectAll.addEventListener('click', () => { checks.forEach(c => c.checked = false); updateCount(); });
             checks.forEach(c => c.addEventListener('change', updateCount));
+
+            // Ordenamiento por columnas (clic en el encabezado alterna asc/desc)
+            const tbody = rows.length ? rows[0].parentNode : null;
+            let sortKey = null, sortDir = 1;
+            const headers = Array.from(document.querySelectorAll('th.sortable'));
+            function sortRows(key) {
+                if (!tbody) return;
+                if (sortKey === key) { sortDir = -sortDir; } else { sortKey = key; sortDir = 1; }
+                const numeric = key === 'lastsend';
+                rows.slice().sort((a, b) => {
+                    let va = a.dataset[key] || '', vb = b.dataset[key] || '';
+                    if (numeric) return ((parseFloat(va) || 0) - (parseFloat(vb) || 0)) * sortDir;
+                    return va.localeCompare(vb, 'es', { numeric: true, sensitivity: 'base' }) * sortDir;
+                }).forEach(r => tbody.appendChild(r));
+                headers.forEach(h => {
+                    const ind = h.querySelector('[data-sort-ind]');
+                    if (ind) ind.textContent = h.dataset.sort === sortKey ? (sortDir === 1 ? ' ▲' : ' ▼') : '';
+                });
+            }
+            headers.forEach(h => h.addEventListener('click', () => sortRows(h.dataset.sort)));
 
             applyFilters();
             updateCount();
