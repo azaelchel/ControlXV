@@ -132,6 +132,7 @@ class MessageSendController extends Controller
             ->when($dateFrom, fn ($q) => $q->whereDate('sent_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('sent_at', '<=', $dateTo))
             ->latest('sent_at')
+            ->orderBy(Guest::select('name')->whereColumn('guests.id', 'message_sends.guest_id'), 'asc')
             ->paginate(30)
             ->withQueryString();
 

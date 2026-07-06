@@ -475,7 +475,12 @@
 
         document.querySelectorAll('[data-wa-send]').forEach(btn => {
             btn.addEventListener('click', () => {
-                window.open(window.waUrl(btn.dataset.phone, btn.dataset.message), '_blank');
+                // Forzar la app de WhatsApp (wa.me abre la app en el teléfono),
+                // ignorando la preferencia App/Web del resto del sistema.
+                const phone = btn.dataset.phone;
+                const message = btn.dataset.message;
+                const url = 'https://wa.me/' + phone + (message ? '?text=' + encodeURIComponent(message) : '');
+                window.open(url, '_blank');
             });
         });
     </script>
