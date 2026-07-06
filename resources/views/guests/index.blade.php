@@ -235,6 +235,7 @@
                 <thead>
                     <tr>
                         <th>Grupo</th>
+                        <th>Prefijo</th>
                         <th>Nombre</th>
                         <th>Categoria</th>
                         <th>Estatus</th>
@@ -263,7 +264,8 @@
                         @endphp
                         <tr data-status-current="{{ $guest->status }}" data-category-current="{{ $guest->category }}">
                             <td>{{ $guest->group_name }}</td>
-                            <td>{{ $guest->display_name }}</td>
+                            <td class="small">{{ $guest->prefix ?: '—' }}</td>
+                            <td>{{ $guest->name }}</td>
                             <td>
                                 <select
                                     form="{{ $quickFormId }}"
@@ -355,7 +357,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="empty">Aún no hay familias o grupos registrados.</td>
+                            <td colspan="10" class="empty">Aún no hay familias o grupos registrados.</td>
                         </tr>
                     @endforelse
                 </tbody>

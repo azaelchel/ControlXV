@@ -521,15 +521,15 @@ const initDataTables = () => {
         }
 
         const type = element.dataset.datatable;
-        const nonOrderableTargets = type === 'guests' ? [8] : (type === 'companions' ? [6] : []);
-        const nonSearchableTargets = type === 'guests' ? [8] : (type === 'companions' ? [6] : []);
+        const nonOrderableTargets = type === 'guests' ? [9] : (type === 'companions' ? [6] : []);
+        const nonSearchableTargets = type === 'guests' ? [9] : (type === 'companions' ? [6] : []);
         const emptyTable = type === 'guests'
             ? 'No hay familias o grupos registrados'
             : (type === 'companions' ? 'No hay invitados registrados' : 'No hay registros disponibles');
 
         const defaultOrder = type === 'companions'
             ? [[2, 'desc']]               // Companions: fecha de registro descendente (mas recientes primero)
-            : [[0, 'asc'], [1, 'asc']];   // Guests: por grupo y nombre
+            : [[2, 'asc']];               // Guests: por Nombre (columna 2, tras separar el prefijo)
 
         const table = new DataTable(element, {
             stateSave: true,
