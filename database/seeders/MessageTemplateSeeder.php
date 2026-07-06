@@ -30,24 +30,22 @@ TXT,
             ],
             [
                 'name'          => 'Recordatorio faltando 1 mes',
-                'description'   => 'Para confirmados. Reconfirmación cálida + aviso de accesos QR.',
+                'description'   => 'Para confirmados. Reconfirmación de datos (5 días) + aviso de pases QR por WhatsApp.',
                 'kicker'        => 'Reconfirmación + accesos',
                 'includes_link' => true,
                 'position'      => 2,
                 'content'       => <<<TXT
-{prefijo} {nombre}, ¡qué gusto saludarte! 🎊
+{prefijo} {nombre}, ¡qué gusto saludarle! 🎊
 
-Ya tenemos tu registro para los *{evento}* del *{fecha_evento}* y estamos a pocos días de vivir esta celebración juntos. 💜
+Sabemos que ya confirmó su asistencia a los *{evento}* y eso nos llena de alegría. 💜 Antes de cerrar la lista final, necesitamos asegurarnos de que toda su información quede *correctamente registrada*.
 
-Antes de cerrar la lista final, queremos confirmar contigo tus datos y asistencia para empezar a trabajar en tus *accesos personalizados*, que te enviaremos por este medio una semana antes del evento con tu *código QR* de entrada.
-
-Solo necesitamos que revises tu enlace y validemos que todo esté correcto:
+Por favor, entre a su enlace personalizado y verifique que los datos de todas las personas que le acompañarán estén completos y bien escritos:
 
 {link}
 
-Tu enlace estará activo por *{dias_vigencia} días*. Te pedimos confirmarlo lo antes posible para asegurar tu lugar y el de tus acompañantes.
+Este paso es *muy importante*: con esta información ya confirmada prepararemos sus *pases personalizados con código QR*, que le haremos llegar por este mismo medio (WhatsApp) unos días antes de la fiesta. Sin esta verificación no podremos generarlos.
 
-¡Gracias por ser parte de este momento tan especial! ✨
+Le pedimos revisarlo dentro de los próximos *5 días*. ¡Gracias por ser parte de este momento tan especial! ✨
 TXT,
             ],
             [
@@ -79,9 +77,9 @@ TXT,
                 'content'       => <<<TXT
 {prefijo} {nombre}, esperamos que se encuentre muy bien. 💜
 
-Le escribimos del equipo *{equipo}* de los *{evento}*. Como no logramos recibir su confirmación, entendemos que en esta ocasión no podrá acompañarnos, y lo respetamos con todo cariño.
+Le escribimos del equipo *{equipo}* de los *{evento}*. La fecha límite para confirmar asistencia fue el *30 de junio* y, al no recibir su confirmación, ya no nos fue posible reservar su lugar en el registro final. Entendemos que en esta ocasión no podrá acompañarnos, y lo respetamos con todo cariño.
 
-Le agradecemos de corazón por tenernos en mente. Fue un gusto invitarle y esperamos coincidir muy pronto. ¡Un fuerte abrazo y hasta pronto! 🙌
+Le agradecemos de corazón por tenernos en mente. Fue un gusto invitarle y esperamos coincidir en una próxima ocasión. ¡Un fuerte abrazo y hasta pronto! 🙌
 TXT,
             ],
         ];
