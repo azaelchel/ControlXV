@@ -142,20 +142,36 @@
     <div class="card">
         <div class="inline" style="justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <div class="small">Mostrando {{ $sends->firstItem() ?? 0 }}–{{ $sends->lastItem() ?? 0 }} de {{ number_format($sends->total()) }} envío(s)</div>
-            <form method="get" action="{{ route('message-sends.history') }}" style="display: inline;">
-                @foreach (request()->except(['per_page', 'page']) as $key => $value)
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
-                <label style="display: inline-flex; align-items: center; gap: 6px;">
-                    <span class="small">Mostrar:</span>
-                    <select name="per_page" onchange="this.form.submit()" style="width: auto; height: 36px;">
-                        @foreach ([30, 60, 100, 200, 500] as $size)
-                            <option value="{{ $size }}" @selected((int) $perPage === $size)>{{ $size }}</option>
-                        @endforeach
-                    </select>
-                    <span class="small">por página</span>
-                </label>
-            </form>
+            <div class="inline" style="gap: 14px; flex-wrap: wrap;">
+                <form method="get" action="{{ route('message-sends.history') }}" style="display: inline;">
+                    @foreach (request()->except(['sort', 'page']) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <label style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span class="small">Ordenar por:</span>
+                        <select name="sort" onchange="this.form.submit()" style="width: auto; height: 36px;">
+                            <option value="hora" @selected($sortBy === 'hora')>Hora de envío</option>
+                            <option value="resp_desc" @selected($sortBy === 'resp_desc')>Último en responder (arriba)</option>
+                            <option value="resp_asc" @selected($sortBy === 'resp_asc')>Primero en responder (arriba)</option>
+                            <option value="nombre" @selected($sortBy === 'nombre')>Nombre (A→Z)</option>
+                        </select>
+                    </label>
+                </form>
+                <form method="get" action="{{ route('message-sends.history') }}" style="display: inline;">
+                    @foreach (request()->except(['per_page', 'page']) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <label style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span class="small">Mostrar:</span>
+                        <select name="per_page" onchange="this.form.submit()" style="width: auto; height: 36px;">
+                            @foreach ([30, 60, 100, 200, 500] as $size)
+                                <option value="{{ $size }}" @selected((int) $perPage === $size)>{{ $size }}</option>
+                            @endforeach
+                        </select>
+                        <span class="small">por página</span>
+                    </label>
+                </form>
+            </div>
         </div>
 
         @php
@@ -164,12 +180,30 @@
 
         @forelse ($groupedSends as $date => $dailySends)
             @php
-                // Mismo minuto = misma "hora" para el usuario; dentro del minuto, por nombre A→Z.
-                $dailySends = $dailySends->sort(function ($a, $b) {
+                $dailySends = $dailySends->sort(function ($a, $b) use ($sortBy) {
+                    $an = $a->guest?->name ?? '';
+                    $bn = $b->guest?->name ?? '';
+
+                    if ($sortBy === 'nombre') {
+                        return strcasecmp($an, $bn);
+                    }
+
+                    if ($sortBy === 'resp_desc' || $sortBy === 'resp_asc') {
+                        $ar = $a->publicLink?->responded_at;
+                        $br = $b->publicLink?->responded_at;
+                        // Los que aún no responden se van al final.
+                        if (! $ar && ! $br) { return strcasecmp($an, $bn); }
+                        if (! $ar) { return 1; }
+                        if (! $br) { return -1; }
+                        $cmp = $ar->timestamp <=> $br->timestamp;
+                        return $sortBy === 'resp_desc' ? -$cmp : $cmp;
+                    }
+
+                    // 'hora' (default): mismo minuto = misma hora; dentro del minuto, por nombre.
                     $ma = $a->sent_at?->format('Y-m-d H:i') ?? '';
                     $mb = $b->sent_at?->format('Y-m-d H:i') ?? '';
-                    if ($ma !== $mb) { return strcmp($mb, $ma); } // minuto más reciente primero
-                    return strcasecmp($a->guest?->name ?? '', $b->guest?->name ?? ''); // nombre ascendente
+                    if ($ma !== $mb) { return strcmp($mb, $ma); }
+                    return strcasecmp($an, $bn);
                 })->values();
             @endphp
             @php $sum = $daySummaries[$date] ?? ['enviados' => $dailySends->count(), 'respondieron' => 0, 'confirmados' => 0, 'no_asistiran' => 0, 'sin_responder' => 0]; @endphp
@@ -189,6 +223,7 @@
                         'status'      => $statusFilter,
                         'template_id' => $templateFilter ?: null,
                         'per_page'    => $perPage,
+                        'sort'        => $sortBy !== 'hora' ? $sortBy : null,
                         'from'        => $date,
                         'to'          => $date,
                     ], fn ($v) => $v !== '' && $v !== null);

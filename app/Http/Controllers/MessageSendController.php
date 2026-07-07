@@ -124,6 +124,7 @@ class MessageSendController extends Controller
         $dateFrom       = $request->string('from')->toString();
         $dateTo         = $request->string('to')->toString();
         $respFilter     = $request->string('resp')->toString();
+        $sortBy         = $request->string('sort')->toString() ?: 'hora';
         $perPage        = (int) ($request->integer('per_page') ?: 30);
 
         // Filtros comunes (para la lista paginada y para el resumen por día).
@@ -178,6 +179,7 @@ class MessageSendController extends Controller
             'daySummaries'     => $daySummaries,
             'perPage'          => $perPage,
             'respFilter'       => $respFilter,
+            'sortBy'           => $sortBy,
             'templates'        => MessageTemplate::orderBy('position')->get(),
             'statuses'         => CatalogOptions::values('statuses'),
             'templateFilter'   => $templateFilter,
