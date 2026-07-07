@@ -123,17 +123,37 @@ class MessageSendController extends Controller
         $nameQuery      = $request->string('q')->toString();
         $dateFrom       = $request->string('from')->toString();
         $dateTo         = $request->string('to')->toString();
+        $perPage        = (int) ($request->integer('per_page') ?: 30);
 
-        $sends = MessageSend::query()
-            ->with(['guest', 'template', 'publicLink', 'user'])
+        // Filtros comunes (para la lista paginada y para el resumen por día).
+        $applyFilters = fn ($q) => $q
             ->when($templateFilter, fn ($q) => $q->where('message_template_id', $templateFilter))
             ->when($statusFilter, fn ($q) => $q->whereHas('guest', fn ($g) => $g->where('status', $statusFilter)))
             ->when($nameQuery, fn ($q) => $q->whereHas('guest', fn ($g) => $g->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($nameQuery) . '%'])))
             ->when($dateFrom, fn ($q) => $q->whereDate('sent_at', '>=', $dateFrom))
-            ->when($dateTo, fn ($q) => $q->whereDate('sent_at', '<=', $dateTo))
+            ->when($dateTo, fn ($q) => $q->whereDate('sent_at', '<=', $dateTo));
+
+        $sends = $applyFilters(
+                MessageSend::query()->with(['guest', 'template', 'publicLink', 'user'])
+            )
             ->latest('sent_at')
-            ->paginate(30)
+            ->paginate($perPage)
             ->withQueryString();
+
+        // Resumen por día calculado sobre TODO el conjunto filtrado (no solo la
+        // página visible), para que los totales sean reales sin importar la paginación.
+        $daySummaries = $applyFilters(
+                MessageSend::query()->with(['guest:id,status', 'publicLink:id,responded_at,response,closed_reason'])
+            )
+            ->get()
+            ->groupBy(fn ($s) => $s->sent_at?->format('Y-m-d') ?? '—')
+            ->map(fn ($day) => [
+                'enviados'      => $day->count(),
+                'respondieron'  => $day->filter(fn ($s) => $s->publicLink?->responded_at)->count(),
+                'confirmados'   => $day->filter(fn ($s) => $s->guest?->status === 'Confirmado')->count(),
+                'no_asistiran'  => $day->filter(fn ($s) => $s->publicLink?->response === 'declined' || $s->guest?->status === 'No asistirá')->count(),
+                'sin_responder' => $day->filter(fn ($s) => ! $s->publicLink?->responded_at && $s->publicLink?->closed_reason !== 'cancelled')->count(),
+            ]);
 
         $totalsByTemplate = MessageSend::query()
             ->selectRaw('message_template_id, COUNT(*) as total')
@@ -142,6 +162,8 @@ class MessageSendController extends Controller
 
         return view('message-sends.history', [
             'sends'            => $sends,
+            'daySummaries'     => $daySummaries,
+            'perPage'          => $perPage,
             'templates'        => MessageTemplate::orderBy('position')->get(),
             'statuses'         => CatalogOptions::values('statuses'),
             'templateFilter'   => $templateFilter,

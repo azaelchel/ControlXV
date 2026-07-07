@@ -138,6 +138,24 @@
 
     {{-- Línea de tiempo agrupada por fecha --}}
     <div class="card">
+        <div class="inline" style="justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div class="small">Mostrando {{ $sends->firstItem() ?? 0 }}–{{ $sends->lastItem() ?? 0 }} de {{ number_format($sends->total()) }} envío(s)</div>
+            <form method="get" action="{{ route('message-sends.history') }}" style="display: inline;">
+                @foreach (request()->except(['per_page', 'page']) as $key => $value)
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endforeach
+                <label style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="small">Mostrar:</span>
+                    <select name="per_page" onchange="this.form.submit()" style="width: auto; height: 36px;">
+                        @foreach ([30, 60, 100, 200, 500] as $size)
+                            <option value="{{ $size }}" @selected((int) $perPage === $size)>{{ $size }}</option>
+                        @endforeach
+                    </select>
+                    <span class="small">por página</span>
+                </label>
+            </form>
+        </div>
+
         @php
             $groupedSends = $sends->getCollection()->groupBy(fn ($s) => $s->sent_at?->format('Y-m-d') ?? '—');
         @endphp
@@ -152,26 +170,23 @@
                     return strcasecmp($a->guest?->name ?? '', $b->guest?->name ?? ''); // nombre ascendente
                 })->values();
             @endphp
+            @php $sum = $daySummaries[$date] ?? ['enviados' => $dailySends->count(), 'respondieron' => 0, 'confirmados' => 0, 'no_asistiran' => 0, 'sin_responder' => 0]; @endphp
             <div class="day-group">
                 <div class="day-header">
                     <span>{{ $date !== '—' ? \Carbon\Carbon::parse($date)->isoFormat('dddd, D [de] MMMM [de] YYYY') : 'Sin fecha' }}</span>
                     <span class="day-line"></span>
-                    <span class="day-count">{{ $dailySends->count() }} envío{{ $dailySends->count() === 1 ? '' : 's' }}</span>
+                    <span class="day-count">
+                        {{ $sum['enviados'] }} envío{{ $sum['enviados'] === 1 ? '' : 's' }}
+                        @if ($dailySends->count() < $sum['enviados']) · mostrando {{ $dailySends->count() }} en esta página @endif
+                    </span>
                 </div>
 
-                @php
-                    $enviados     = $dailySends->count();
-                    $respondieron = $dailySends->filter(fn ($s) => $s->publicLink?->responded_at)->count();
-                    $confirmados  = $dailySends->filter(fn ($s) => $s->guest?->status === 'Confirmado')->count();
-                    $noAsistiran  = $dailySends->filter(fn ($s) => $s->publicLink?->response === 'declined' || $s->guest?->status === 'No asistirá')->count();
-                    $sinResponder = $dailySends->filter(fn ($s) => ! $s->publicLink?->responded_at && $s->publicLink?->closed_reason !== 'cancelled')->count();
-                @endphp
                 <div class="day-summary">
-                    <span class="sum-chip">📤 Enviados <strong>{{ $enviados }}</strong></span>
-                    <span class="sum-chip">✓ Respondieron <strong>{{ $respondieron }}</strong></span>
-                    <span class="sum-chip ok">💜 Confirmados <strong>{{ $confirmados }}</strong></span>
-                    <span class="sum-chip no">✕ No asistirán <strong>{{ $noAsistiran }}</strong></span>
-                    <span class="sum-chip wait">⏳ Sin responder <strong>{{ $sinResponder }}</strong></span>
+                    <span class="sum-chip">📤 Enviados <strong>{{ $sum['enviados'] }}</strong></span>
+                    <span class="sum-chip">✓ Respondieron <strong>{{ $sum['respondieron'] }}</strong></span>
+                    <span class="sum-chip ok">💜 Confirmados <strong>{{ $sum['confirmados'] }}</strong></span>
+                    <span class="sum-chip no">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></span>
+                    <span class="sum-chip wait">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></span>
                 </div>
 
                 @foreach ($dailySends as $send)
