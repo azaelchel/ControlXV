@@ -46,6 +46,8 @@
 
     .map-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; font-size:12px; color:#6b5a7e; }
     .map-legend i { width:16px; height:16px; border-radius:5px; display:inline-block; vertical-align:middle; margin-right:5px; }
+    .venue.hide-empty .tbl.is-empty { display: none; }
+    .empty-toggle { display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:#5f4c70; cursor:pointer; }
 </style>
 
 @php
@@ -82,13 +84,16 @@
             <span><i style="background:linear-gradient(135deg,#e6b364,#cf8f3f);"></i>Casi llena</span>
             <span><i style="background:linear-gradient(135deg,#7bc59a,#3f9e6b);"></i>Completa</span>
             <span><i style="background:linear-gradient(135deg,#e2726f,#c9403c);"></i>Sobrecupo</span>
+            <label class="empty-toggle" style="margin-left:auto;">
+                <input type="checkbox" id="show-empty"> Mostrar mesas vacías
+            </label>
         </div>
     </div>
 
     {{-- Croquis --}}
     <div class="card">
         <div class="venue-wrap">
-            <div class="venue">
+            <div class="venue" id="venue">
                 {{-- Zonas fijas --}}
                 <div class="zone entrance" style="left:0; top:33%; width:3.2%; height:26%;">Entrada</div>
                 <div class="zone" style="left:4%; top:4%; width:33%; height:10%;">Pasillo trasero</div>
@@ -115,7 +120,7 @@
                                 'type'  => $a->companion->type ?: '—',
                             ])->values();
                     @endphp
-                    <div class="tbl {{ $fillClass($occ, $cap) }}"
+                    <div class="tbl {{ $fillClass($occ, $cap) }} {{ $occ === 0 ? 'is-empty' : '' }}"
                         style="left: {{ $x }}%; top: {{ $y }}%;"
                         data-name="{{ $table->name }}"
                         data-cap="{{ $cap }}"
@@ -179,6 +184,18 @@
             const close = () => { modal.style.display = 'none'; };
             document.getElementById('tm-close').addEventListener('click', close);
             modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+            // Mostrar/ocultar mesas vacías (por defecto ocultas; se recuerda en el navegador).
+            const venue = document.getElementById('venue');
+            const showEmpty = document.getElementById('show-empty');
+            const apply = (on) => venue.classList.toggle('hide-empty', !on);
+            const saved = localStorage.getItem('tables_show_empty') === '1';
+            showEmpty.checked = saved;
+            apply(saved);
+            showEmpty.addEventListener('change', () => {
+                localStorage.setItem('tables_show_empty', showEmpty.checked ? '1' : '0');
+                apply(showEmpty.checked);
+            });
         })();
     </script>
 @endsection
