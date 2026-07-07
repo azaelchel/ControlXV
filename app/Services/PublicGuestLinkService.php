@@ -25,7 +25,7 @@ class PublicGuestLinkService
         return $link;
     }
 
-    public function ensureLinkFor(Guest $guest): ?PublicGuestLink
+    public function ensureLinkFor(Guest $guest, ?string $forceMode = null): ?PublicGuestLink
     {
         if (! $guest->canGeneratePublicLink()) {
             return null;
@@ -33,18 +33,22 @@ class PublicGuestLinkService
 
         $existing = $this->activeLinkFor($guest);
 
-        // Para última oportunidad ('No contesto') siempre queremos un link en modo
-        // last_chance. Si el link activo es de otro modo (ej. una invitación previa
-        // que aún no vence), lo regeneramos para que abra en el flujo correcto.
-        if ($guest->status === 'No contesto' && $existing && $existing->mode !== 'last_chance') {
-            return $this->generateLinkFor($guest);
+        // Modo deseado: el que fuerza la plantilla (ej. 'last_chance' de última
+        // oportunidad) o, para status 'No contesto', también last_chance.
+        $desiredMode = $forceMode
+            ?? ($guest->status === 'No contesto' ? 'last_chance' : null);
+
+        // Si el link activo es de otro modo (ej. invitación de 7 días previa),
+        // lo regeneramos para que abra con el modo y vigencia correctos.
+        if ($desiredMode !== null && $existing && $existing->mode !== $desiredMode) {
+            return $this->generateLinkFor($guest, $forceMode);
         }
 
         if ($existing) {
             return $existing;
         }
 
-        return $this->generateLinkFor($guest);
+        return $this->generateLinkFor($guest, $forceMode);
     }
 
     private function modeForStatus(?string $status): string
@@ -56,13 +60,13 @@ class PublicGuestLinkService
         };
     }
 
-    public function generateLinkFor(Guest $guest): ?PublicGuestLink
+    public function generateLinkFor(Guest $guest, ?string $forceMode = null): ?PublicGuestLink
     {
         if (! $guest->canGeneratePublicLink()) {
             return null;
         }
 
-        return DB::transaction(function () use ($guest) {
+        return DB::transaction(function () use ($guest, $forceMode) {
             PublicGuestLink::query()
                 ->where('guest_id', $guest->id)
                 ->where('is_current', true)
@@ -76,7 +80,7 @@ class PublicGuestLinkService
                     ]);
                 });
 
-            $mode = $this->modeForStatus($guest->status);
+            $mode = $forceMode ?? $this->modeForStatus($guest->status);
             $days = $mode === 'last_chance'
                 ? Setting::getInt('last_chance_validity_days', 2)
                 : Setting::getInt('link_validity_days', 7);

@@ -53,6 +53,7 @@ TXT,
                 'description'   => 'Último aviso con link para quienes no confirmaron. Da 2 días de plazo tras cerrar el registro.',
                 'kicker'        => 'Última llamada',
                 'includes_link' => true,
+                'link_mode'     => 'last_chance',
                 'position'      => 3,
                 'content'       => <<<TXT
 Estimada/o {prefijo} {nombre}, esperamos que te encuentres muy bien. 💜

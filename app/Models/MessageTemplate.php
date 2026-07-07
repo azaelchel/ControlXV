@@ -16,6 +16,7 @@ class MessageTemplate extends Model
         'content',
         'kicker',
         'includes_link',
+        'link_mode',
         'position',
         'active',
     ];
