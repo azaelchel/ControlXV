@@ -303,6 +303,10 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                             <span class="pill {{ $stateClass }}">{{ $stateIcon }} {{ $stateLabel }}</span>
+                            @if ($link && ! $link->responded_at && ! $link->isExpired() && $link->closed_reason !== 'cancelled' && $link->expires_at)
+                                <span class="pill status-considerado" data-countdown="{{ $link->expires_at->toIso8601String() }}"
+                                    title="Tiempo restante antes de que venza el link" style="font-weight:700;">⏳ …</span>
+                            @endif
                             @if ($link && $link->opened_at && !$link->responded_at && !$link->isExpired() && $link->closed_reason !== 'cancelled')
                                 <form method="post" action="{{ route('message-sends.reset-opened', $link) }}" style="display: inline;">
                                     @csrf
@@ -565,5 +569,36 @@
                 window.open(url, '_blank');
             });
         });
+
+        // Contador en vivo: cuánto le queda a cada link antes de vencer.
+        (function () {
+            const els = Array.from(document.querySelectorAll('[data-countdown]'));
+            if (!els.length) return;
+            const fmt = (ms) => {
+                if (ms <= 0) return '⏰ Vencido';
+                const s = Math.floor(ms / 1000);
+                const d = Math.floor(s / 86400);
+                const h = Math.floor((s % 86400) / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                const sec = s % 60;
+                if (d > 0) return `⏳ ${d}d ${h}h ${m}m`;
+                if (h > 0) return `⏳ ${h}h ${m}m`;
+                if (m > 0) return `⏳ ${m}m ${sec}s`;
+                return `⏳ ${sec}s`;
+            };
+            const tick = () => {
+                const now = Date.now();
+                els.forEach(el => {
+                    const left = new Date(el.dataset.countdown).getTime() - now;
+                    el.textContent = fmt(left);
+                    el.classList.remove('status-considerado', 'status-pendiente', 'status-no-asistira');
+                    if (left <= 0) el.classList.add('status-no-asistira');
+                    else if (left < 12 * 3600 * 1000) el.classList.add('status-pendiente');
+                    else el.classList.add('status-considerado');
+                });
+            };
+            tick();
+            setInterval(tick, 1000);
+        })();
     </script>
 @endsection
