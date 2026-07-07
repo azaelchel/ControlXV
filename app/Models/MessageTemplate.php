@@ -17,6 +17,7 @@ class MessageTemplate extends Model
         'kicker',
         'includes_link',
         'link_mode',
+        'link_validity_days',
         'position',
         'active',
     ];
@@ -24,6 +25,7 @@ class MessageTemplate extends Model
     protected $casts = [
         'active' => 'boolean',
         'includes_link' => 'boolean',
+        'link_validity_days' => 'integer',
     ];
 
     public function sends(): HasMany

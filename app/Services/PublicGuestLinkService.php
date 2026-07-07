@@ -25,7 +25,7 @@ class PublicGuestLinkService
         return $link;
     }
 
-    public function ensureLinkFor(Guest $guest, ?string $forceMode = null): ?PublicGuestLink
+    public function ensureLinkFor(Guest $guest, ?string $forceMode = null, ?int $forceDays = null): ?PublicGuestLink
     {
         if (! $guest->canGeneratePublicLink()) {
             return null;
@@ -41,14 +41,14 @@ class PublicGuestLinkService
         // Si el link activo es de otro modo (ej. invitación de 7 días previa),
         // lo regeneramos para que abra con el modo y vigencia correctos.
         if ($desiredMode !== null && $existing && $existing->mode !== $desiredMode) {
-            return $this->generateLinkFor($guest, $forceMode);
+            return $this->generateLinkFor($guest, $forceMode, $forceDays);
         }
 
         if ($existing) {
             return $existing;
         }
 
-        return $this->generateLinkFor($guest, $forceMode);
+        return $this->generateLinkFor($guest, $forceMode, $forceDays);
     }
 
     private function modeForStatus(?string $status): string
@@ -60,13 +60,13 @@ class PublicGuestLinkService
         };
     }
 
-    public function generateLinkFor(Guest $guest, ?string $forceMode = null): ?PublicGuestLink
+    public function generateLinkFor(Guest $guest, ?string $forceMode = null, ?int $forceDays = null): ?PublicGuestLink
     {
         if (! $guest->canGeneratePublicLink()) {
             return null;
         }
 
-        return DB::transaction(function () use ($guest, $forceMode) {
+        return DB::transaction(function () use ($guest, $forceMode, $forceDays) {
             PublicGuestLink::query()
                 ->where('guest_id', $guest->id)
                 ->where('is_current', true)
@@ -81,9 +81,10 @@ class PublicGuestLinkService
                 });
 
             $mode = $forceMode ?? $this->modeForStatus($guest->status);
-            $days = $mode === 'last_chance'
-                ? Setting::getInt('last_chance_validity_days', 2)
-                : Setting::getInt('link_validity_days', 7);
+            $days = $forceDays
+                ?? ($mode === 'last_chance'
+                    ? Setting::getInt('last_chance_validity_days', 2)
+                    : Setting::getInt('link_validity_days', 7));
 
             $link = PublicGuestLink::create([
                 'guest_id'     => $guest->id,

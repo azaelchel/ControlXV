@@ -84,11 +84,12 @@ Fue un gusto invitarle y esperamos coincidir en una próxima ocasión. ¡Un fuer
 TXT,
             ],
             [
-                'name'          => 'Validación final de datos',
-                'description'   => 'Para confirmados: reconfirmación de datos (2 días) + aviso de pases QR por WhatsApp.',
-                'kicker'        => 'Validación final',
-                'includes_link' => true,
-                'position'      => 10,
+                'name'               => 'Validación final de datos',
+                'description'        => 'Para confirmados: reconfirmación de datos (2 días) + aviso de pases QR por WhatsApp.',
+                'kicker'             => 'Validación final',
+                'includes_link'      => true,
+                'link_validity_days' => 2,
+                'position'           => 10,
                 'content'       => <<<TXT
 Estimada/o {prefijo} {nombre}, esperamos que se encuentre muy bien. 💜
 

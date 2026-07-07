@@ -404,7 +404,7 @@ class MessageSendController extends Controller
         $linkModel = null;
 
         if ($template->hasLinkPlaceholder()) {
-            $link = $this->linkService->ensureLinkFor($guest, $template->link_mode);
+            $link = $this->linkService->ensureLinkFor($guest, $template->link_mode, $template->link_validity_days);
             if ($link) {
                 $linkModel = $link;
                 $linkUrl   = $this->linkService->linkUrl($guest, $link);
