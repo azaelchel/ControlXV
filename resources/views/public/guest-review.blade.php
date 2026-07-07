@@ -256,8 +256,8 @@
                                 @php
                                     $curType = old("rows.$index.type", $row['type']);
                                     $menuMap = [
-                                        'Niño'        => ['🍔 Menú infantil — hamburguesa (2 a 10 años)', 'color:#b26a00;'],
-                                        'Adolescente' => ['<span style="font-size:1.5em; vertical-align:-3px;">🍔</span> Menú de adolescente — hamburguesa grande', 'color:#b26a00;'],
+                                        'Niño'        => ['🍔 Menú infantil · niños de 2 a 10 años', 'color:#b26a00;'],
+                                        'Adolescente' => ['🍔 Menú de adolescente · mayores de 10 años', 'color:#b26a00;'],
                                         'Adulto'      => ['🍽️ Menú de adulto', ''],
                                     ];
                                     [$menuTxt, $menuColor] = $menuMap[$curType] ?? ['🍽️ Menú general', ''];
@@ -305,8 +305,8 @@
                 const hint = select.closest('div')?.querySelector('[data-menu-hint]');
 
                 const menus = {
-                    'Niño':        ['🍔 Menú infantil — hamburguesa (2 a 10 años)', '#b26a00'],
-                    'Adolescente': ['<span style="font-size:1.5em; vertical-align:-3px;">🍔</span> Menú de adolescente — hamburguesa grande', '#b26a00'],
+                    'Niño':        ['🍔 Menú infantil · niños de 2 a 10 años', '#b26a00'],
+                    'Adolescente': ['🍔 Menú de adolescente · mayores de 10 años', '#b26a00'],
                     'Adulto':      ['🍽️ Menú de adulto', ''],
                 };
                 const update = () => {
