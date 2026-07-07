@@ -123,6 +123,7 @@ class MessageSendController extends Controller
         $nameQuery      = $request->string('q')->toString();
         $dateFrom       = $request->string('from')->toString();
         $dateTo         = $request->string('to')->toString();
+        $respFilter     = $request->string('resp')->toString();
         $perPage        = (int) ($request->integer('per_page') ?: 30);
 
         // Filtros comunes (para la lista paginada y para el resumen por día).
@@ -133,9 +134,20 @@ class MessageSendController extends Controller
             ->when($dateFrom, fn ($q) => $q->whereDate('sent_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('sent_at', '<=', $dateTo));
 
+        // Filtro por estado de respuesta (los chips del resumen). Solo afecta la
+        // lista visible, no el resumen (que sigue mostrando el desglose completo).
         $sends = $applyFilters(
                 MessageSend::query()->with(['guest', 'template', 'publicLink', 'user'])
             )
+            ->when($respFilter === 'responded', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')))
+            ->when($respFilter === 'confirmed', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')->whereIn('response', ['confirmed', 'validated'])))
+            ->when($respFilter === 'declined', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')->where('response', 'declined')))
+            ->when($respFilter === 'pending', fn ($q) => $q->where(function ($w) {
+                $w->whereDoesntHave('publicLink')
+                  ->orWhereHas('publicLink', fn ($p) => $p->whereNull('responded_at')->where(function ($c) {
+                      $c->whereNull('closed_reason')->orWhere('closed_reason', '!=', 'cancelled');
+                  }));
+            }))
             ->latest('sent_at')
             ->paginate($perPage)
             ->withQueryString();
@@ -165,6 +177,7 @@ class MessageSendController extends Controller
             'sends'            => $sends,
             'daySummaries'     => $daySummaries,
             'perPage'          => $perPage,
+            'respFilter'       => $respFilter,
             'templates'        => MessageTemplate::orderBy('position')->get(),
             'statuses'         => CatalogOptions::values('statuses'),
             'templateFilter'   => $templateFilter,

@@ -33,7 +33,9 @@
         .day-header .day-count { font-size: 12px; color: var(--muted); font-weight: 600; }
 
         .day-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-        .sum-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text); background: white; border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; }
+        .sum-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text); background: white; border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; text-decoration: none; cursor: pointer; transition: box-shadow .15s; }
+        .sum-chip:hover { box-shadow: 0 2px 8px rgba(80,40,120,0.18); }
+        .sum-chip.active { box-shadow: 0 0 0 2px var(--primary-dark); }
         .sum-chip strong { font-weight: 800; }
         .sum-chip.ok { background: #f3fbf6; border-color: #cde6d5; color: #1f7a44; }
         .sum-chip.no { background: #fff3f7; border-color: #f0c4d2; color: #b3325b; }
@@ -129,7 +131,7 @@
             </div>
             <div class="inline" style="gap: 6px;">
                 <button class="btn secondary" type="submit">Filtrar</button>
-                @if ($statusFilter || $templateFilter || $nameQuery || $dateFrom || $dateTo)
+                @if ($statusFilter || $templateFilter || $nameQuery || $dateFrom || $dateTo || $respFilter)
                     <a href="{{ route('message-sends.history') }}" class="btn secondary">Limpiar</a>
                 @endif
             </div>
@@ -181,12 +183,23 @@
                     </span>
                 </div>
 
+                @php
+                    $dayBase = array_filter([
+                        'q'           => $nameQuery,
+                        'status'      => $statusFilter,
+                        'template_id' => $templateFilter ?: null,
+                        'per_page'    => $perPage,
+                        'from'        => $date,
+                        'to'          => $date,
+                    ], fn ($v) => $v !== '' && $v !== null);
+                    $isDayFiltered = ($dateFrom === $date && $dateTo === $date);
+                @endphp
                 <div class="day-summary">
-                    <span class="sum-chip">📤 Enviados <strong>{{ $sum['enviados'] }}</strong></span>
-                    <span class="sum-chip">✓ Respondieron <strong>{{ $sum['respondieron'] }}</strong></span>
-                    <span class="sum-chip ok" title="De los que respondieron, cuántos confirmaron/validaron su asistencia">💜 Confirmaron <strong>{{ $sum['confirmados'] }}</strong></span>
-                    <span class="sum-chip no" title="De los que respondieron, cuántos dijeron que no asistirán">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></span>
-                    <span class="sum-chip wait">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></span>
+                    <a href="{{ route('message-sends.history', $dayBase) }}" class="sum-chip {{ ($respFilter === '' && $isDayFiltered) ? 'active' : '' }}" title="Ver todos los de este día">📤 Enviados <strong>{{ $sum['enviados'] }}</strong></a>
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'responded']) }}" class="sum-chip {{ $respFilter === 'responded' ? 'active' : '' }}" title="Ver solo los que respondieron">✓ Respondieron <strong>{{ $sum['respondieron'] }}</strong></a>
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'confirmed']) }}" class="sum-chip ok {{ $respFilter === 'confirmed' ? 'active' : '' }}" title="Ver solo los que confirmaron/validaron su asistencia">💜 Confirmaron <strong>{{ $sum['confirmados'] }}</strong></a>
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'declined']) }}" class="sum-chip no {{ $respFilter === 'declined' ? 'active' : '' }}" title="Ver solo los que dijeron que no asistirán">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></a>
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'pending']) }}" class="sum-chip wait {{ $respFilter === 'pending' ? 'active' : '' }}" title="Ver solo los que aún no responden">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></a>
                 </div>
 
                 @foreach ($dailySends as $send)
