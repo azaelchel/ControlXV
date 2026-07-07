@@ -253,9 +253,17 @@
                                         <option value="{{ $type }}" @selected(old("rows.$index.type", $row['type']) === $type)>{{ $type }}</option>
                                     @endforeach
                                 </select>
-                                @php $curType = old("rows.$index.type", $row['type']); @endphp
-                                <div class="row-note" data-menu-hint style="margin-top:6px; font-weight:600; {{ $curType === 'Niño' ? 'color:#b26a00;' : '' }}">
-                                    {{ $curType === 'Niño' ? '🍔 Menú infantil (2 a 10 años)' : '🍽️ Menú general' }}
+                                @php
+                                    $curType = old("rows.$index.type", $row['type']);
+                                    $menuMap = [
+                                        'Niño'        => ['🍔 Menú infantil — hamburguesa (2 a 10 años)', 'color:#b26a00;'],
+                                        'Adolescente' => ['<span style="font-size:1.5em; vertical-align:-3px;">🍔</span> Menú de adolescente — hamburguesa grande', 'color:#b26a00;'],
+                                        'Adulto'      => ['🍽️ Menú de adulto', ''],
+                                    ];
+                                    [$menuTxt, $menuColor] = $menuMap[$curType] ?? ['🍽️ Menú general', ''];
+                                @endphp
+                                <div class="row-note" data-menu-hint style="margin-top:6px; font-weight:600; {{ $menuColor }}">
+                                    {!! $menuTxt !!}
                                 </div>
                             </div>
                             <div>
@@ -296,14 +304,19 @@
             document.querySelectorAll('[data-type-select]').forEach((select) => {
                 const hint = select.closest('div')?.querySelector('[data-menu-hint]');
 
+                const menus = {
+                    'Niño':        ['🍔 Menú infantil — hamburguesa (2 a 10 años)', '#b26a00'],
+                    'Adolescente': ['<span style="font-size:1.5em; vertical-align:-3px;">🍔</span> Menú de adolescente — hamburguesa grande', '#b26a00'],
+                    'Adulto':      ['🍽️ Menú de adulto', ''],
+                };
                 const update = () => {
                     if (!hint) {
                         return;
                     }
 
-                    const isChild = select.value === 'Niño';
-                    hint.textContent = isChild ? '🍔 Menú infantil (2 a 10 años)' : '🍽️ Menú general';
-                    hint.style.color = isChild ? '#b26a00' : '';
+                    const [html, color] = menus[select.value] || ['🍽️ Menú general', ''];
+                    hint.innerHTML = html;
+                    hint.style.color = color;
                 };
 
                 update();
