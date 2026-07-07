@@ -150,8 +150,9 @@ class MessageSendController extends Controller
             ->map(fn ($day) => [
                 'enviados'      => $day->count(),
                 'respondieron'  => $day->filter(fn ($s) => $s->publicLink?->responded_at)->count(),
-                'confirmados'   => $day->filter(fn ($s) => $s->guest?->status === 'Confirmado')->count(),
-                'no_asistiran'  => $day->filter(fn ($s) => $s->publicLink?->response === 'declined' || $s->guest?->status === 'No asistirá')->count(),
+                // De los que respondieron: confirmaron/validaron (sí asisten) vs rechazaron.
+                'confirmados'   => $day->filter(fn ($s) => $s->publicLink?->responded_at && in_array($s->publicLink?->response, ['confirmed', 'validated'], true))->count(),
+                'no_asistiran'  => $day->filter(fn ($s) => $s->publicLink?->responded_at && $s->publicLink?->response === 'declined')->count(),
                 'sin_responder' => $day->filter(fn ($s) => ! $s->publicLink?->responded_at && $s->publicLink?->closed_reason !== 'cancelled')->count(),
             ]);
 

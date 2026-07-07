@@ -184,8 +184,8 @@
                 <div class="day-summary">
                     <span class="sum-chip">📤 Enviados <strong>{{ $sum['enviados'] }}</strong></span>
                     <span class="sum-chip">✓ Respondieron <strong>{{ $sum['respondieron'] }}</strong></span>
-                    <span class="sum-chip ok">💜 Confirmados <strong>{{ $sum['confirmados'] }}</strong></span>
-                    <span class="sum-chip no">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></span>
+                    <span class="sum-chip ok" title="De los que respondieron, cuántos confirmaron/validaron su asistencia">💜 Confirmaron <strong>{{ $sum['confirmados'] }}</strong></span>
+                    <span class="sum-chip no" title="De los que respondieron, cuántos dijeron que no asistirán">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></span>
                     <span class="sum-chip wait">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></span>
                 </div>
 
