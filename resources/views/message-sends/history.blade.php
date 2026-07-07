@@ -215,6 +215,13 @@
                                 $stateIcon = '📤';
                             }
                         }
+
+                        // Teléfono ACTUAL del invitado (para reenviar al número vigente,
+                        // no al que se usó cuando se generó el envío). Formato internacional.
+                        $currentPhone = $send->guest?->phone ?: $send->phone;
+                        $phoneDigits  = preg_replace('/[^0-9]/', '', (string) $currentPhone);
+                        $phoneIntl    = $phoneDigits === '' ? null : (strlen($phoneDigits) === 10 ? '52'.$phoneDigits : $phoneDigits);
+                        $phoneChanged = $send->guest?->phone && $send->phone && preg_replace('/[^0-9]/', '', $send->guest->phone) !== preg_replace('/[^0-9]/', '', $send->phone);
                     @endphp
                     <div class="send-row">
                         <div class="time">{{ $send->sent_at?->format('H:i') ?? '—' }}</div>
@@ -223,8 +230,11 @@
                             <div class="meta">
                                 <span class="tpl">{{ $send->template?->name ?? 'Plantilla borrada' }}</span>
                                 · {{ $send->guest?->status ?? '' }}
-                                @if ($send->phone)
-                                    · 📱 {{ $send->phone }}
+                                @if ($currentPhone)
+                                    · 📱 {{ $currentPhone }}
+                                    @if ($phoneChanged)
+                                        <span title="El número cambió; se envió antes al {{ $send->phone }}" style="color:#b26a00; font-weight:600;">(actualizado)</span>
+                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -254,11 +264,11 @@
                             <button type="button" class="btn secondary icon-btn" data-copy-msg
                                 data-message="{{ $send->rendered_message }}"
                                 title="Copiar mensaje">📋</button>
-                            @if ($send->phone)
+                            @if ($phoneIntl)
                                 <button type="button" class="btn secondary icon-btn" data-wa-send
-                                    data-phone="{{ $send->phone }}"
+                                    data-phone="{{ $phoneIntl }}"
                                     data-message="{{ $send->rendered_message }}"
-                                    title="Enviar por WhatsApp">💬</button>
+                                    title="Enviar por WhatsApp al número actual{{ $phoneChanged ? ' (actualizado)' : '' }}">💬</button>
                             @endif
                             @if ($link && $link->responded_at && $send->guest)
                                 <button type="button" class="btn secondary icon-btn" data-view-companions
