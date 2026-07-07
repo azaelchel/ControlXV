@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('module:tables')->group(function () {
         Route::get('/confirmed-tables', [ConfirmedTableController::class, 'index'])->name('tables.index');
+        Route::get('/confirmed-tables/mapa', [ConfirmedTableController::class, 'map'])->name('tables.map');
         Route::get('/confirmed-tables/asignaciones', [ConfirmedTableController::class, 'manage'])->name('tables.manage');
         Route::get('/confirmed-tables/print', [ConfirmedTableController::class, 'print'])->name('tables.print');
         Route::post('/confirmed-tables', [ConfirmedTableController::class, 'store'])->name('tables.store');

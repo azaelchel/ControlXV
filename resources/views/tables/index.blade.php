@@ -76,8 +76,9 @@
                 </div>
             </div>
             <div class="inline" style="gap: 8px;">
-                <a class="btn" href="{{ route('tables.manage') }}">🪑 Ir a asignaciones</a>
-                <a class="btn secondary" href="{{ route('tables.print') }}" target="_blank">📄 Descargar PDF</a>
+                <a class="btn" href="{{ route('tables.map') }}">🗺️ Mapa del salón</a>
+                <a class="btn secondary" href="{{ route('tables.manage') }}">🪑 Asignaciones</a>
+                <a class="btn secondary" href="{{ route('tables.print') }}" target="_blank">📄 PDF</a>
             </div>
         </div>
         <div class="pbar" style="margin-top: 14px;"><span style="width: {{ $progress['percent'] }}%;"></span></div>

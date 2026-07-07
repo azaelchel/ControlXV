@@ -51,6 +51,21 @@ class ConfirmedTableController extends Controller
     }
 
     /**
+     * MAPA DEL SALÓN: croquis con las mesas en su posición real (position_x/y),
+     * ocupación por mesa y clic para ver quién está sentado. Solo lectura.
+     */
+    public function map(Request $request): View
+    {
+        $data = $this->buildPlannerData();
+
+        return view('tables.map', [
+            'tables'   => $data['tables'],
+            'summary'  => $data['summary'],
+            'progress' => $data['progress'],
+        ]);
+    }
+
+    /**
      * Vista de ASIGNACIONES: crear/editar/eliminar mesas, panel de invitados sin mesa
      * (con filtro) y acciones de sentar/mover/quitar.
      */
