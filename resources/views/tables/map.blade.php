@@ -120,7 +120,7 @@
                         data-name="{{ $table->name }}"
                         data-cap="{{ $cap }}"
                         data-occ="{{ $occ }}"
-                        data-occupants='@json($occupants)'
+                        data-occupants='@json($occupants, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)'
                         title="{{ $table->name }} — {{ $occ }}/{{ $cap }}">
                         <span class="num">{{ $tableNum($table->name) }}</span>
                         <span class="occ">{{ $occ }}/{{ $cap }}</span>
