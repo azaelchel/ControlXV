@@ -328,12 +328,40 @@ class MessageSendController extends Controller
 
     public function destroy(MessageSend $messageSend): RedirectResponse
     {
-        $name = $messageSend->guest?->name ?? '—';
-        $messageSend->update(['active' => false]);
+        $guest = $messageSend->guest;
+        $name  = $guest?->name ?? '—';
+        $link  = $messageSend->publicLink;
+        $cancelledLink = false;
+
+        \DB::transaction(function () use ($messageSend, $link, $guest, &$cancelledLink) {
+            $messageSend->update(['active' => false]);
+
+            // Borrar el envío debe deshacer también su link: si llevaba un link
+            // vigente y aún no lo respondían, se cancela para que el estado del
+            // invitado deje de mostrar "validación enviada".
+            if ($link && $link->is_current && $link->responded_at === null) {
+                $link->update([
+                    'is_current'    => false,
+                    'expires_at'    => now(),
+                    'closed_reason' => 'cancelled',
+                ]);
+                $cancelledLink = true;
+
+                if ($guest && $guest->public_link_token === $link->token) {
+                    $guest->update([
+                        'public_link_expires_at'   => now(),
+                        'public_link_response'     => null,
+                        'public_link_responded_at' => null,
+                    ]);
+                }
+            }
+        });
 
         return redirect()
             ->route('message-sends.history')
-            ->with('status', "Envío de {$name} eliminado del histórico.");
+            ->with('status', $cancelledLink
+                ? "Envío de {$name} eliminado y su link cancelado."
+                : "Envío de {$name} eliminado del histórico.");
     }
 
     public function resetOpened(PublicGuestLink $publicGuestLink): RedirectResponse
