@@ -67,7 +67,7 @@ class SettingSeeder extends Seeder
             [
                 'key'         => 'event_time',
                 'value'       => '3:30 PM',
-                'label'       => 'Hora de la reservación',
+                'label'       => 'Hora de la recepción',
                 'group'       => 'evento',
                 'type'        => 'text',
                 'helper_text' => 'Reemplaza {hora_evento} y se muestra en el agradecimiento del portal.',

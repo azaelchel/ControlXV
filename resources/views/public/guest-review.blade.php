@@ -138,7 +138,7 @@
                         @endif
                         @if ($eventTime)
                             <div style="margin-bottom: 10px;">
-                                <span style="color: #6b1f3f; font-weight: 600;">Hora de reservación:</span> <strong>{{ $eventTime }}</strong>
+                                <span style="color: #6b1f3f; font-weight: 600;">Hora de recepción:</span> <strong>{{ $eventTime }}</strong>
                             </div>
                         @endif
                         <p style="margin: 8px 0 0 0;">

@@ -46,7 +46,7 @@ class MessageTemplate extends Model
             '{link}'          => 'URL del link de revisión / confirmación',
             '{evento}'        => 'Nombre del evento (desde Configuración)',
             '{fecha_evento}'  => 'Fecha del evento (desde Configuración)',
-            '{hora_evento}'   => 'Hora de la reservación (desde Configuración)',
+            '{hora_evento}'   => 'Hora de la recepción (desde Configuración)',
             '{equipo}'        => 'Nombre del equipo o planner (desde Configuración)',
             '{dias_vigencia}' => 'Días de vigencia del link (desde Configuración)',
             '{accesos}'       => 'Nota sobre accesos / QR (desde Configuración)',
