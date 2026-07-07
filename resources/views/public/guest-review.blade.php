@@ -257,7 +257,7 @@
                                     $curType = old("rows.$index.type", $row['type']);
                                     $menuMap = [
                                         'Niño'        => ['🍔 Menú infantil · niños de 2 a 10 años', 'color:#b26a00;'],
-                                        'Adolescente' => ['🍔 Menú de adolescente · mayores de 10 años', 'color:#b26a00;'],
+                                        'Adolescente' => ['<span style="font-size:1.25em; vertical-align:-2px;">🍔</span> Menú de adolescente · mayores de 10 años', 'color:#b26a00;'],
                                         'Adulto'      => ['🍽️ Menú de adulto', ''],
                                     ];
                                     [$menuTxt, $menuColor] = $menuMap[$curType] ?? ['🍽️ Menú general', ''];
@@ -306,7 +306,7 @@
 
                 const menus = {
                     'Niño':        ['🍔 Menú infantil · niños de 2 a 10 años', '#b26a00'],
-                    'Adolescente': ['🍔 Menú de adolescente · mayores de 10 años', '#b26a00'],
+                    'Adolescente': ['<span style="font-size:1.25em; vertical-align:-2px;">🍔</span> Menú de adolescente · mayores de 10 años', '#b26a00'],
                     'Adulto':      ['🍽️ Menú de adulto', ''],
                 };
                 const update = () => {
