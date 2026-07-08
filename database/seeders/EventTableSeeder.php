@@ -45,7 +45,7 @@ class EventTableSeeder extends Seeder
         EventTable::withoutGlobalScope('active')->updateOrCreate(
             ['name' => 'MP'],
             [
-                'capacity'     => 12,
+                'capacity'     => 5,
                 'table_type'   => 'Principal',
                 'shape'        => 'Rectangular',
                 'is_principal' => true,
