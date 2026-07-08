@@ -47,6 +47,7 @@ class PublicGuestReviewController extends Controller
             'declineUrl' => route('guest-review.decline', ['guest' => $guest, 'token' => $token], absolute: false),
             'mode' => $publicLink->mode,
             'daysRemaining' => $publicLink->daysRemaining(),
+            'remainingTimeLabel' => $publicLink->remainingTimeLabel(),
             'isExpired' => $publicLink->isExpired(),
             'isLocked' => $publicLink->isLocked(),
             'publicLink' => $publicLink,

@@ -44,7 +44,7 @@
             <p style="margin:0;">
                 El registro para confirmar asistencia cerró el <strong>{{ $registrationClosedDate }}</strong>.
                 Nos encantaría contar contigo, por eso te damos un último plazo:
-                te queda(n) <strong>{{ $daysRemaining }} día(s)</strong> para confirmar aquí abajo.
+                te queda(n) <strong>{{ $remainingTimeLabel }}</strong> para confirmar aquí abajo.
                 Pasado este tiempo ya no podremos incluirte en el registro final. 💜
             </p>
         </div>
@@ -71,7 +71,7 @@
                 @elseif ($guest->public_link_responded_at instanceof \Illuminate\Support\Carbon)
                     {{ $guest->public_link_responded_at->format('d/m/Y H:i') }}
                 @else
-                    {{ $daysRemaining }} día(s)
+                    {{ $remainingTimeLabel }}
                 @endif
             </strong>
         </div>
@@ -81,9 +81,9 @@
         <div class="card" style="margin-bottom: 22px; background:#fcf7ff;">
             <div class="small">
                 @if ($isInvitationLike)
-                    Les quedan {{ $daysRemaining }} día(s) {{ $timeLabel }}.
+                    Les quedan {{ $remainingTimeLabel }} {{ $timeLabel }}.
                 @else
-                    Tienes {{ $daysRemaining }} día(s) para revisar o corregir la información registrada.
+                    Tienes {{ $remainingTimeLabel }} para revisar o corregir la información registrada.
                 @endif
             </div>
         </div>

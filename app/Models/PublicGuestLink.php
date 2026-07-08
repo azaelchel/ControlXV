@@ -59,6 +59,41 @@ class PublicGuestLink extends Model
         return max(0, now()->startOfDay()->diffInDays($this->expires_at->copy()->endOfDay(), false));
     }
 
+    public function remainingTimeLabel(): string
+    {
+        if (! $this->expires_at instanceof Carbon || $this->isExpired()) {
+            return 'Link vencido';
+        }
+
+        $seconds = max(0, now()->diffInSeconds($this->expires_at, false));
+
+        if ($seconds < 60) {
+            return 'menos de 1 minuto';
+        }
+
+        $days = intdiv($seconds, 86400);
+        $seconds %= 86400;
+        $hours = intdiv($seconds, 3600);
+        $seconds %= 3600;
+        $minutes = intdiv($seconds, 60);
+
+        $parts = [];
+
+        if ($days > 0) {
+            $parts[] = $days . ' ' . ($days === 1 ? 'día' : 'días');
+        }
+
+        if ($hours > 0) {
+            $parts[] = $hours . ' ' . ($hours === 1 ? 'hora' : 'horas');
+        }
+
+        if ($days === 0 && $minutes > 0) {
+            $parts[] = $minutes . ' ' . ($minutes === 1 ? 'minuto' : 'minutos');
+        }
+
+        return implode(' ', array_slice($parts, 0, 2));
+    }
+
     public function modeLabel(): string
     {
         return match ($this->mode) {
