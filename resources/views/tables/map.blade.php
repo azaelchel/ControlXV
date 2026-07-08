@@ -36,6 +36,9 @@
         transition: transform .1s, box-shadow .15s; user-select: none;
     }
     .tbl:hover { transform: translate(-50%,-50%) scale(1.06); box-shadow: 0 10px 22px rgba(80,40,120,.28); z-index: 5; }
+    .tbl.horizontal { width: 92px; height: 58px; }
+    .tbl.vertical { width: 64px; height: 96px; }
+    .tbl.principal { width: 72px; height: 84px; }
     .tbl .num { font-size: 22px; font-weight: 900; line-height: 1; }
     .tbl .occ { font-size: 12px; font-weight: 700; opacity: .95; margin-top: 3px; }
     .tbl.libre  { background: #cbb8e4; color:#4a2f6b; border-color:#e6dbf5; }
@@ -48,7 +51,12 @@
     .map-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; font-size:12px; color:#6b5a7e; }
     .map-legend i { width:16px; height:16px; border-radius:5px; display:inline-block; vertical-align:middle; margin-right:5px; }
     .venue.hide-empty .tbl.is-empty { display: none; }
-    .empty-toggle { display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:#5f4c70; cursor:pointer; }
+    .empty-toggle { margin-left:auto; display:inline-flex; align-items:center; gap:9px; font-size:13px; font-weight:700; color:#5f4c70; cursor:pointer; white-space:nowrap; }
+    .empty-toggle input { position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; }
+    .toggle-ui { width:42px; height:22px; border-radius:999px; background:#d7cae8; border:2px solid #c9b9df; position:relative; flex:0 0 auto; }
+    .toggle-ui::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; left:2px; top:1px; box-shadow:0 1px 4px rgba(55,35,80,.28); transition:left .15s, background .15s; }
+    .empty-toggle input:checked + .toggle-ui { background:#2d1b43; border-color:#c9b9df; }
+    .empty-toggle input:checked + .toggle-ui::after { left:20px; background:#fff; }
 </style>
 
 @php
@@ -60,6 +68,14 @@
         return 'parcial';
     };
     $tableNum = fn ($name) => preg_replace('/\D+/', '', (string) $name) ?: $name;
+    $horizontalTables = ['1', '3', '5', '7', '9', '11', '13', '15', '17', '19', '21', '23'];
+    $orientationClass = function ($table) use ($tableNum, $horizontalTables) {
+        if ($table->is_principal) {
+            return 'principal';
+        }
+
+        return in_array($tableNum($table->name), $horizontalTables, true) ? 'horizontal' : 'vertical';
+    };
 @endphp
 
     {{-- Resumen --}}
@@ -93,8 +109,10 @@
             <span><i style="background:linear-gradient(135deg,#e6b364,#cf8f3f);"></i>Casi llena</span>
             <span><i style="background:linear-gradient(135deg,#7bc59a,#3f9e6b);"></i>Completa</span>
             <span><i style="background:linear-gradient(135deg,#e2726f,#c9403c);"></i>Sobrecupo</span>
-            <label class="empty-toggle" style="margin-left:auto;">
-                <input type="checkbox" id="show-empty"> Mostrar mesas vacías
+            <label class="empty-toggle">
+                <input type="checkbox" id="show-empty">
+                <span class="toggle-ui" aria-hidden="true"></span>
+                <span>Mostrar mesas vacías</span>
             </label>
         </div>
     </div>
@@ -129,7 +147,7 @@
                                 'type'  => $a->companion->type ?: '—',
                             ])->values();
                     @endphp
-                    <div class="tbl {{ $table->is_principal ? 'principal' : $fillClass($occ, $cap) }} {{ $occ === 0 && ! $table->is_principal ? 'is-empty' : '' }}"
+                    <div class="tbl {{ $orientationClass($table) }} {{ $table->is_principal ? 'principal' : $fillClass($occ, $cap) }} {{ $occ === 0 && ! $table->is_principal ? 'is-empty' : '' }}"
                         style="left: {{ $x }}%; top: {{ $y }}%;"
                         data-name="{{ $table->name }}"
                         data-cap="{{ $cap }}"
