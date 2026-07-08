@@ -143,12 +143,13 @@ class MessageSendController extends Controller
             ->when($respFilter === 'responded', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')))
             ->when($respFilter === 'confirmed', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')->whereIn('response', ['confirmed', 'validated'])))
             ->when($respFilter === 'declined', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')->where('response', 'declined')))
-            ->when($respFilter === 'pending', fn ($q) => $q->where(function ($w) {
-                $w->whereDoesntHave('publicLink')
-                  ->orWhereHas('publicLink', fn ($p) => $p->whereNull('responded_at')->where(function ($c) {
-                      $c->whereNull('closed_reason')->orWhere('closed_reason', '!=', 'cancelled');
-                  }));
-            }))
+            ->when($respFilter === 'pending', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p
+                ->whereNull('responded_at')
+                ->where(function ($c) {
+                    $c->whereNull('closed_reason')->orWhere('closed_reason', '!=', 'cancelled');
+                })
+            ))
+            ->when($respFilter === 'no_link', fn ($q) => $q->whereDoesntHave('publicLink'))
             ->latest('sent_at')
             ->paginate($perPage)
             ->withQueryString();
@@ -166,7 +167,8 @@ class MessageSendController extends Controller
                 // De los que respondieron: confirmaron/validaron (sí asisten) vs rechazaron.
                 'confirmados'   => $day->filter(fn ($s) => $s->publicLink?->responded_at && in_array($s->publicLink?->response, ['confirmed', 'validated'], true))->count(),
                 'no_asistiran'  => $day->filter(fn ($s) => $s->publicLink?->responded_at && $s->publicLink?->response === 'declined')->count(),
-                'sin_responder' => $day->filter(fn ($s) => ! $s->publicLink?->responded_at && $s->publicLink?->closed_reason !== 'cancelled')->count(),
+                'sin_responder' => $day->filter(fn ($s) => $s->publicLink && ! $s->publicLink->responded_at && $s->publicLink->closed_reason !== 'cancelled')->count(),
+                'sin_link'      => $day->filter(fn ($s) => ! $s->publicLink)->count(),
             ]);
 
         $totalsByTemplate = MessageSend::query()

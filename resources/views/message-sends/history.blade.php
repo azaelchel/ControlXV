@@ -40,6 +40,7 @@
         .sum-chip.ok { background: #f3fbf6; border-color: #cde6d5; color: #1f7a44; }
         .sum-chip.no { background: #fff3f7; border-color: #f0c4d2; color: #b3325b; }
         .sum-chip.wait { background: #fff8e8; border-color: #ead4a2; color: #8a6100; }
+        .sum-chip.info { background: #f4f7fb; border-color: #ccd7e6; color: #35506f; }
 
         .send-row {
             background: white;
@@ -206,7 +207,7 @@
                     return strcasecmp($an, $bn);
                 })->values();
             @endphp
-            @php $sum = $daySummaries[$date] ?? ['enviados' => $dailySends->count(), 'respondieron' => 0, 'confirmados' => 0, 'no_asistiran' => 0, 'sin_responder' => 0]; @endphp
+            @php $sum = $daySummaries[$date] ?? ['enviados' => $dailySends->count(), 'respondieron' => 0, 'confirmados' => 0, 'no_asistiran' => 0, 'sin_responder' => 0, 'sin_link' => 0]; @endphp
             <div class="day-group">
                 <div class="day-header">
                     <span>{{ $date !== '—' ? \Carbon\Carbon::parse($date)->isoFormat('dddd, D [de] MMMM [de] YYYY') : 'Sin fecha' }}</span>
@@ -235,6 +236,7 @@
                     <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'confirmed']) }}" class="sum-chip ok {{ $respFilter === 'confirmed' ? 'active' : '' }}" title="Ver solo los que confirmaron/validaron su asistencia">💜 Confirmaron <strong>{{ $sum['confirmados'] }}</strong></a>
                     <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'declined']) }}" class="sum-chip no {{ $respFilter === 'declined' ? 'active' : '' }}" title="Ver solo los que dijeron que no asistirán">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></a>
                     <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'pending']) }}" class="sum-chip wait {{ $respFilter === 'pending' ? 'active' : '' }}" title="Ver solo los que aún no responden">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></a>
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'no_link']) }}" class="sum-chip info {{ $respFilter === 'no_link' ? 'active' : '' }}" title="Ver mensajes enviados sin link de respuesta">Sin link <strong>{{ $sum['sin_link'] }}</strong></a>
                 </div>
 
                 @foreach ($dailySends as $send)
