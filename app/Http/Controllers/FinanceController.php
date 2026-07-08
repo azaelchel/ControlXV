@@ -26,6 +26,7 @@ class FinanceController extends Controller
     private const CHILD_PLATE_PRICE = 332.0;
     private const TURNTABLE_RATE = 60.0;
     private const TURNTABLE_PERCENT = 0.70;
+    private const AUTOMATIC_OVERAGE_EXPENSE_NAME = 'Extra automático por invitados';
 
     private function guestOverage(): array
     {
@@ -72,18 +73,72 @@ class FinanceController extends Controller
         ];
     }
 
+    private function syncGuestOverageExpense(?array $guestOverage = null): array
+    {
+        $guestOverage ??= $this->guestOverage();
+        $totalExtraCost = (float) $guestOverage['total_extra_cost'];
+
+        $expense = Expense::withoutGlobalScope('active')
+            ->where('name', self::AUTOMATIC_OVERAGE_EXPENSE_NAME)
+            ->first();
+
+        if (! $expense && $totalExtraCost <= 0) {
+            return $guestOverage;
+        }
+
+        $data = [
+            'name' => self::AUTOMATIC_OVERAGE_EXPENSE_NAME,
+            'category' => 'Extras automáticos',
+            'provider' => 'Sistema',
+            'total_amount' => $totalExtraCost,
+            'due_date' => null,
+            'notes' => sprintf(
+                'Automático: %d confirmados, %d incluidos, %d extras. Platillos: %s niños y %s adulto/adolescente. Tornamesa extra: %s.',
+                $guestOverage['confirmed_total'],
+                $guestOverage['included_guests'],
+                $guestOverage['extra_people'],
+                $guestOverage['extra_children'],
+                $guestOverage['extra_adult_like'],
+                $guestOverage['extra_turntable_people']
+            ),
+            'active' => true,
+        ];
+
+        if (! $expense) {
+            Expense::create($data);
+
+            return $guestOverage;
+        }
+
+        $needsUpdate = collect($data)->contains(function ($value, $key) use ($expense) {
+            if ($key === 'total_amount') {
+                return (float) $expense->{$key} !== (float) $value;
+            }
+
+            return $expense->{$key} !== $value;
+        });
+
+        if ($needsUpdate) {
+            $expense->update($data);
+        }
+
+        return $guestOverage;
+    }
+
     /** Totales del panorama (sumas directas; el global scope ya filtra activos). */
     private function totals(?array $guestOverage = null): array
     {
-        $guestOverage ??= $this->guestOverage();
-        $manualCost = (float) Expense::sum('total_amount');
-        $cost = $manualCost + (float) $guestOverage['total_extra_cost'];
+        $guestOverage ??= $this->syncGuestOverageExpense();
+        $automaticCost = (float) Expense::where('name', self::AUTOMATIC_OVERAGE_EXPENSE_NAME)->sum('total_amount');
+        $manualCost = (float) Expense::where('name', '!=', self::AUTOMATIC_OVERAGE_EXPENSE_NAME)->sum('total_amount');
+        $cost = $manualCost + $automaticCost;
         $paid = (float) ExpensePayment::sum('amount');
         $pledged = (float) SponsorSupport::sum('pledged_amount');
         $given = (float) SponsorContribution::sum('amount');
 
         return [
             'manual_cost' => $manualCost,
+            'automatic_cost' => $automaticCost,
             'guest_overage' => $guestOverage,
             'cost' => $cost,
             'paid' => $paid,
@@ -104,7 +159,7 @@ class FinanceController extends Controller
 
     public function index(): View
     {
-        $guestOverage = $this->guestOverage();
+        $guestOverage = $this->syncGuestOverageExpense();
         $totals = $this->totals($guestOverage);
         $expenses = Expense::with('payments')->get();
 
@@ -135,14 +190,6 @@ class FinanceController extends Controller
             ->sortByDesc('total')
             ->values();
 
-        if ($guestOverage['total_extra_cost'] > 0) {
-            $byCategory->prepend([
-                'category' => 'Extras automáticos por invitados',
-                'total' => (float) $guestOverage['total_extra_cost'],
-                'paid' => 0.0,
-            ]);
-        }
-
         return view('finances.index', [
             'totals' => $totals,
             'guestOverage' => $guestOverage,
@@ -155,7 +202,7 @@ class FinanceController extends Controller
 
     public function expenses(): View
     {
-        $guestOverage = $this->guestOverage();
+        $guestOverage = $this->syncGuestOverageExpense();
 
         // Orden con sentido: primero los que aún deben (por fecha límite más
         // próxima/vencida, sin fecha al final), y los ya pagados hasta abajo.
@@ -172,6 +219,7 @@ class FinanceController extends Controller
             'paymentMethods' => CatalogOptions::values('payment_methods'),
             'totals' => $this->totals($guestOverage),
             'guestOverage' => $guestOverage,
+            'automaticOverageExpenseName' => self::AUTOMATIC_OVERAGE_EXPENSE_NAME,
         ]);
     }
 
@@ -203,7 +251,7 @@ class FinanceController extends Controller
     /** Reúne todo el estado financiero para PDF/Excel. */
     private function gather(): array
     {
-        $guestOverage = $this->guestOverage();
+        $guestOverage = $this->syncGuestOverageExpense();
 
         return [
             'expenses' => Expense::with('payments')->orderBy('name')->get(),
@@ -247,7 +295,7 @@ class FinanceController extends Controller
         $rows = [
             ['Costo total', $t['cost']],
             ['Costo capturado manualmente', $t['manual_cost']],
-            ['Extra automático invitados', $guestOverage['total_extra_cost']],
+            ['Extra automático invitados', $t['automatic_cost']],
             ['Pagado a proveedores', $t['paid']],
             ['Falta pagar', $t['to_pay']],
             ['', ''],
@@ -287,17 +335,6 @@ class FinanceController extends Controller
             $g->setCellValue("F{$gr}", $e->remaining());
             $g->setCellValue("G{$gr}", $e->status());
             $g->setCellValue("H{$gr}", $e->due_date?->format('d/m/Y') ?? '');
-            $gr++;
-        }
-        if ($guestOverage['total_extra_cost'] > 0) {
-            $g->setCellValue("A{$gr}", 'Extra automático por invitados');
-            $g->setCellValue("B{$gr}", 'Extras automáticos');
-            $g->setCellValue("C{$gr}", 'Sistema');
-            $g->setCellValue("D{$gr}", (float) $guestOverage['total_extra_cost']);
-            $g->setCellValue("E{$gr}", 0);
-            $g->setCellValue("F{$gr}", (float) $guestOverage['total_extra_cost']);
-            $g->setCellValue("G{$gr}", 'Pendiente');
-            $g->setCellValue("H{$gr}", '');
             $gr++;
         }
         $g->getStyle("D2:F{$gr}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
@@ -348,6 +385,10 @@ class FinanceController extends Controller
 
     public function updateExpense(Request $request, Expense $expense): RedirectResponse
     {
+        if ($expense->name === self::AUTOMATIC_OVERAGE_EXPENSE_NAME) {
+            return back()->with('status', 'El extra automático se recalcula solo; solo registra abonos para marcarlo como pagado.');
+        }
+
         $expense->update($this->validateExpense($request));
 
         return back()->with('status', 'Gasto actualizado.');
@@ -355,6 +396,10 @@ class FinanceController extends Controller
 
     public function destroyExpense(Expense $expense): RedirectResponse
     {
+        if ($expense->name === self::AUTOMATIC_OVERAGE_EXPENSE_NAME) {
+            return back()->with('status', 'El extra automático no se elimina; baja solo cuando bajan los confirmados.');
+        }
+
         ExpensePayment::where('expense_id', $expense->id)->update(['active' => false]);
         $expense->update(['active' => false]);
 

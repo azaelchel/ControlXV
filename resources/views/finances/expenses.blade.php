@@ -71,6 +71,7 @@
             <tbody>
                 @forelse ($expenses as $expense)
                     @php
+                        $isAutomaticOverage = $expense->name === $automaticOverageExpenseName;
                         $paid = $expense->paidAmount();
                         $rem = $expense->remaining();
                         $pct = (float) $expense->total_amount > 0 ? (int) round(($paid / (float) $expense->total_amount) * 100) : 0;
@@ -80,7 +81,10 @@
                         <td class="rownum" style="color:#9b8ab0;">{{ $loop->iteration }}</td>
                         <td>
                             <strong style="color:#43275b;">{{ $expense->name }}</strong>
-                            <div class="sub">{{ $expense->category ?: 'Sin categoría' }}@if ($expense->provider) · {{ $expense->provider }}@endif</div>
+                            <div class="sub">
+                                {{ $expense->category ?: 'Sin categoría' }}@if ($expense->provider) · {{ $expense->provider }}@endif
+                                @if ($isAutomaticOverage) · Automático, recalculado por confirmados @endif
+                            </div>
                         </td>
                         <td class="num money" data-val="{{ $expense->total_amount }}">{{ $m($expense->total_amount) }}</td>
                         <td class="num money" data-val="{{ $paid }}" style="color:#3f9e6b;">{{ $m($paid) }}</td>
@@ -90,12 +94,14 @@
                         <td>
                             <div class="rowact">
                                 <button class="btn small secondary" type="button" data-modal-open="payments-{{ $expense->id }}">Abonos ({{ $expense->payments->count() }})</button>
-                                <button class="btn small secondary" type="button" data-modal-open="edit-expense-{{ $expense->id }}">Editar</button>
-                                <form method="post" action="{{ route('finances.expenses.destroy', $expense) }}"
-                                    data-confirm-title="¿Eliminar el gasto {{ $expense->name }}?" data-confirm-text="Se ocultará junto con sus abonos. No se borra físicamente." data-confirm-button="Sí, eliminar" data-confirm-color="#d8527f" data-confirm-icon="warning">
-                                    @csrf @method('delete')
-                                    <button class="btn small danger" type="submit">✕</button>
-                                </form>
+                                @if (! $isAutomaticOverage)
+                                    <button class="btn small secondary" type="button" data-modal-open="edit-expense-{{ $expense->id }}">Editar</button>
+                                    <form method="post" action="{{ route('finances.expenses.destroy', $expense) }}"
+                                        data-confirm-title="¿Eliminar el gasto {{ $expense->name }}?" data-confirm-text="Se ocultará junto con sus abonos. No se borra físicamente." data-confirm-button="Sí, eliminar" data-confirm-color="#d8527f" data-confirm-icon="warning">
+                                        @csrf @method('delete')
+                                        <button class="btn small danger" type="submit">✕</button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -124,20 +130,22 @@
     </div>
 
     @foreach ($expenses as $expense)
-        {{-- Editar gasto --}}
-        <div class="modal" id="edit-expense-{{ $expense->id }}">
-            <div class="modal-box">
-                <div class="modal-head"><h3>Editar gasto</h3><button class="modal-x" type="button" data-modal-close>&times;</button></div>
-                <form method="post" action="{{ route('finances.expenses.update', $expense) }}">
-                    @csrf @method('put')
-                    @include('finances._expense_fields', ['expense' => $expense, 'categories' => $categories])
-                    <div class="modal-actions">
-                        <button class="btn secondary" type="button" data-modal-close>Cancelar</button>
-                        <button class="btn" type="submit">Guardar cambios</button>
-                    </div>
-                </form>
+        @if ($expense->name !== $automaticOverageExpenseName)
+            {{-- Editar gasto --}}
+            <div class="modal" id="edit-expense-{{ $expense->id }}">
+                <div class="modal-box">
+                    <div class="modal-head"><h3>Editar gasto</h3><button class="modal-x" type="button" data-modal-close>&times;</button></div>
+                    <form method="post" action="{{ route('finances.expenses.update', $expense) }}">
+                        @csrf @method('put')
+                        @include('finances._expense_fields', ['expense' => $expense, 'categories' => $categories])
+                        <div class="modal-actions">
+                            <button class="btn secondary" type="button" data-modal-close>Cancelar</button>
+                            <button class="btn" type="submit">Guardar cambios</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
+        @endif
 
         {{-- Abonos --}}
         <div class="modal" id="payments-{{ $expense->id }}">

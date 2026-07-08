@@ -46,7 +46,7 @@ class Expense extends Model
 
     public function status(): string
     {
-        if ($this->remaining() <= 0 && (float) $this->total_amount > 0) {
+        if ($this->remaining() <= 0 && ((float) $this->total_amount > 0 || $this->paidAmount() > 0)) {
             return 'Pagado';
         }
 
