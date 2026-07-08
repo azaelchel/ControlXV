@@ -154,6 +154,7 @@
                             <option value="hora" @selected($sortBy === 'hora')>Hora de envío</option>
                             <option value="resp_desc" @selected($sortBy === 'resp_desc')>Último en responder (arriba)</option>
                             <option value="resp_asc" @selected($sortBy === 'resp_asc')>Primero en responder (arriba)</option>
+                            <option value="grupo" @selected($sortBy === 'grupo')>Grupo (A→Z)</option>
                             <option value="nombre" @selected($sortBy === 'nombre')>Nombre (A→Z)</option>
                         </select>
                     </label>
@@ -184,6 +185,14 @@
                 $dailySends = $dailySends->sort(function ($a, $b) use ($sortBy) {
                     $an = $a->guest?->name ?? '';
                     $bn = $b->guest?->name ?? '';
+                    $ag = $a->guest?->group_name ?? '';
+                    $bg = $b->guest?->group_name ?? '';
+
+                    if ($sortBy === 'grupo') {
+                        $cmp = strcasecmp($ag, $bg);
+                        if ($cmp !== 0) { return $cmp; }
+                        return strcasecmp($an, $bn);
+                    }
 
                     if ($sortBy === 'nombre') {
                         return strcasecmp($an, $bn);
@@ -294,6 +303,9 @@
                             <strong>{{ $send->guest?->name ?? '—' }}</strong>
                             <div class="meta">
                                 <span class="tpl">{{ $send->template?->name ?? 'Plantilla borrada' }}</span>
+                                @if ($send->guest?->group_name)
+                                    · <span title="Grupo">{{ $send->guest->group_name }}</span>
+                                @endif
                                 · {{ $send->guest?->status ?? '' }}
                                 @if ($currentPhone)
                                     · 📱 {{ $currentPhone }}

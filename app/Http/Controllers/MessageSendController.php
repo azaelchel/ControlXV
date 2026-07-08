@@ -126,6 +126,7 @@ class MessageSendController extends Controller
         $respFilter     = $request->string('resp')->toString();
         $sortBy         = $request->string('sort')->toString() ?: 'hora';
         $perPage        = (int) ($request->integer('per_page') ?: 30);
+        $page           = (int) ($request->integer('page') ?: 1);
 
         // Filtros comunes (para la lista paginada y para el resumen por día).
         $applyFilters = fn ($q) => $q
@@ -137,7 +138,7 @@ class MessageSendController extends Controller
 
         // Filtro por estado de respuesta (los chips del resumen). Solo afecta la
         // lista visible, no el resumen (que sigue mostrando el desglose completo).
-        $sends = $applyFilters(
+        $allSends = $applyFilters(
                 MessageSend::query()->with(['guest', 'template', 'publicLink', 'user'])
             )
             ->when($respFilter === 'responded', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')))
@@ -150,9 +151,17 @@ class MessageSendController extends Controller
                 })
             ))
             ->when($respFilter === 'no_link', fn ($q) => $q->whereDoesntHave('publicLink'))
-            ->latest('sent_at')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->get();
+
+        $allSends = $this->sortMessageHistory($allSends, $sortBy);
+
+        $sends = new LengthAwarePaginator(
+            $allSends->forPage($page, $perPage)->values(),
+            $allSends->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         // Resumen por día calculado sobre TODO el conjunto filtrado (no solo la
         // página visible), para que los totales sean reales sin importar la paginación.
@@ -191,6 +200,67 @@ class MessageSendController extends Controller
             'dateTo'           => $dateTo,
             'totalsByTemplate' => $totalsByTemplate,
         ]);
+    }
+
+    private function sortMessageHistory(Collection $sends, string $sortBy): Collection
+    {
+        return $sends->sort(function (MessageSend $a, MessageSend $b) use ($sortBy) {
+            $an = $a->guest?->name ?? '';
+            $bn = $b->guest?->name ?? '';
+            $ag = $a->guest?->group_name ?? '';
+            $bg = $b->guest?->group_name ?? '';
+
+            if ($sortBy === 'grupo') {
+                $cmp = strcasecmp($ag, $bg);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                $cmp = strcasecmp($an, $bn);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                return ($b->sent_at?->timestamp ?? 0) <=> ($a->sent_at?->timestamp ?? 0);
+            }
+
+            if ($sortBy === 'nombre') {
+                $cmp = strcasecmp($an, $bn);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                return strcasecmp($ag, $bg);
+            }
+
+            if ($sortBy === 'resp_desc' || $sortBy === 'resp_asc') {
+                $ar = $a->publicLink?->responded_at;
+                $br = $b->publicLink?->responded_at;
+
+                if (! $ar && ! $br) {
+                    $cmp = strcasecmp($ag, $bg);
+                    return $cmp !== 0 ? $cmp : strcasecmp($an, $bn);
+                }
+                if (! $ar) {
+                    return 1;
+                }
+                if (! $br) {
+                    return -1;
+                }
+
+                $cmp = $ar->timestamp <=> $br->timestamp;
+                return $sortBy === 'resp_desc' ? -$cmp : $cmp;
+            }
+
+            $ma = $a->sent_at?->timestamp ?? 0;
+            $mb = $b->sent_at?->timestamp ?? 0;
+            if ($ma !== $mb) {
+                return $mb <=> $ma;
+            }
+
+            $cmp = strcasecmp($ag, $bg);
+            return $cmp !== 0 ? $cmp : strcasecmp($an, $bn);
+        })->values();
     }
 
     public function prepare(Request $request): View
