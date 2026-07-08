@@ -19,6 +19,14 @@
             <div class="card metric"><div class="label">Sin mesa</div><div class="value">{{ $summary['unassigned'] }}</div></div>
         </div>
     </div>
+    @if (collect($summary['eligible_by_category'] ?? [])->isNotEmpty())
+        <div class="small" style="margin: -6px 0 16px; color:#8a72a4;">
+            Personas confirmadas a acomodar:
+            @foreach ($summary['eligible_by_category'] as $category => $total)
+                <strong>{{ $category }}</strong> {{ number_format($total) }}@if (! $loop->last) · @endif
+            @endforeach
+        </div>
+    @endif
 
     <div class="inline" style="justify-content: space-between; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
         <a class="btn secondary" href="{{ route('tables.index') }}">← Ver consulta</a>

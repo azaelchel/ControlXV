@@ -287,14 +287,17 @@ class ConfirmedTableController extends Controller
     {
         $tables = EventTable::query()
             ->with(['assignments.companion'])
-            ->orderByDesc('is_principal')
-            ->orderBy('name')
-            ->get();
+            ->get()
+            ->sortBy(fn (EventTable $table) => $this->tableSortKey($table))
+            ->values();
 
         // Companions elegibles: activos, de guests activos con status Confirmado.
-        $confirmedNames = Guest::query()
+        $confirmedGuests = Guest::query()
             ->where('status', 'Confirmado')
-            ->pluck('name');
+            ->get(['name', 'category']);
+
+        $confirmedNames = $confirmedGuests->pluck('name');
+        $guestCategories = $confirmedGuests->pluck('category', 'name');
 
         $eligible = Companion::query()
             ->whereIn('invited_group', $confirmedNames)
@@ -347,6 +350,10 @@ class ConfirmedTableController extends Controller
         $totalEligible = $eligible->count();
         $totalUnassigned = $totalEligible - $totalSeated;
         $percent = $totalEligible > 0 ? (int) round(($totalSeated / $totalEligible) * 100) : 0;
+        $eligibleByCategory = $eligible
+            ->groupBy(fn (Companion $companion) => $guestCategories[$companion->invited_group] ?? 'Sin categoría')
+            ->map->count()
+            ->sortKeys();
 
         return [
             'tables' => $tables,
@@ -364,7 +371,21 @@ class ConfirmedTableController extends Controller
                 'capacity' => $totalCapacity,
                 'seated' => $totalSeated,
                 'unassigned' => $totalUnassigned,
+                'eligible_by_category' => $eligibleByCategory,
             ],
         ];
+    }
+
+    private function tableSortKey(EventTable $table): string
+    {
+        if ($table->is_principal) {
+            return '0|0000|' . mb_strtolower($table->name);
+        }
+
+        if (preg_match('/\d+/', $table->name, $matches)) {
+            return '1|' . str_pad($matches[0], 4, '0', STR_PAD_LEFT) . '|' . mb_strtolower($table->name);
+        }
+
+        return '2|9999|' . mb_strtolower($table->name);
     }
 }

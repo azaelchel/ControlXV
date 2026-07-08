@@ -71,6 +71,14 @@
                     {{ $progress['seated'] }} / {{ $progress['eligible'] }}
                     <span style="font-size:14px; color:#8a72a4;">personas sentadas ({{ $progress['percent'] }}%)</span>
                 </div>
+                @if (collect($summary['eligible_by_category'] ?? [])->isNotEmpty())
+                    <div class="small" style="margin-top: 4px; color:#8a72a4;">
+                        Confirmados:
+                        @foreach ($summary['eligible_by_category'] as $category => $total)
+                            <strong>{{ $category }}</strong> {{ number_format($total) }}@if (! $loop->last) · @endif
+                        @endforeach
+                    </div>
+                @endif
             </div>
             <div class="inline" style="gap: 8px;">
                 <a class="btn" href="{{ route('tables.manage') }}">🪑 Asignar</a>
