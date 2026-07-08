@@ -7,6 +7,7 @@
 @section('content')
 @php
     $m = fn ($v) => '$' . number_format((float) $v, 2);
+    $over = $guestOverage;
     $statusClass = fn ($s) => match ($s) {
         'Pagado' => 'status-confirmado',
         'Parcial' => 'status-pendiente',
@@ -21,6 +22,23 @@
         <div class="it">Pagado <b class="money" style="color:#3f9e6b;">{{ $m($totals['paid']) }}</b></div>
         <div class="it">Falta pagar <b class="money" style="color:#c0392b;">{{ $m($totals['to_pay']) }}</b></div>
     </div>
+
+    @if ($over['total_extra_cost'] > 0)
+        <div class="card" style="margin-bottom:16px; border-color:#f0d69f; background:#fff9ec;">
+            <div class="inline" style="justify-content:space-between; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+                <div>
+                    <div style="font-weight:800; color:#43275b;">Extra automático por invitados: <span class="money">{{ $m($over['total_extra_cost']) }}</span></div>
+                    <div class="fmini" style="margin-top:4px;">
+                        {{ $over['confirmed_total'] }} confirmados; el salón incluye {{ $over['included_guests'] }}. Sobrecupo: {{ $over['extra_people'] }}.
+                    </div>
+                </div>
+                <div class="fmini" style="text-align:right; max-width:520px;">
+                    Platillos: {{ $over['extra_children'] }} niño{{ $over['extra_children']==1?'':'s' }} × {{ $m($over['child_plate_price']) }} y {{ $over['extra_adult_like'] }} adulto/adol × {{ $m($over['adult_plate_price']) }} = <strong class="money">{{ $m($over['extra_plate_cost']) }}</strong><br>
+                    Tornamesa: {{ $over['extra_turntable_people'] }} persona{{ $over['extra_turntable_people']==1?'':'s' }} extra × {{ $m($over['turntable_rate']) }} = <strong class="money">{{ $m($over['extra_turntable_cost']) }}</strong>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="ftoolbar">
         <div class="filters">

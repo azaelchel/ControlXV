@@ -8,6 +8,7 @@
 @php
     $m = fn ($v) => '$' . number_format((float) $v, 2);
     $t = $totals;
+    $over = $guestOverage;
     $paidPct = min(100, $t['paid_percent']);
     $givenPct = min(100, $t['given_percent']);
     // Cobertura del costo: parte de padrinos vs aporte propio
@@ -49,12 +50,36 @@
     <div class="card" style="margin-bottom:16px; background:#faf6ff; border-color:#e6dff1;">
         <p style="margin:0; line-height:1.7; color:#5f4c70;">
             El evento cuesta <strong class="money">{{ $m($totals['cost']) }}</strong> en {{ $expenseCount }} gasto{{ $expenseCount==1?'':'s' }}.
+            @if ($over['total_extra_cost'] > 0)
+                Incluye <strong class="money">{{ $m($over['total_extra_cost']) }}</strong> de extra automático por {{ $over['extra_people'] }} invitado{{ $over['extra_people']==1?'':'s' }} arriba de {{ $over['included_guests'] }}.
+            @endif
             Has pagado <strong class="money" style="color:#3f9e6b;">{{ $m($totals['paid']) }}</strong> ({{ $paidPct }}%) y faltan
             <strong class="money" style="color:#c0392b;">{{ $m($totals['to_pay']) }}</strong> por pagar.
             Los padrinos prometieron <strong class="money">{{ $m($totals['pledged']) }}</strong> y ya entregaron
             <strong class="money" style="color:#3f9e6b;">{{ $m($totals['given']) }}</strong>.
         </p>
     </div>
+
+    @if ($over['total_extra_cost'] > 0)
+        <div class="card" style="margin-bottom:16px; border-color:#f0d69f; background:#fff9ec;">
+            <div class="kicker" style="color:#a87920; font-weight:800; font-size:12px; letter-spacing:.12em; margin-bottom:8px;">EXTRA AUTOMÁTICO POR INVITADOS</div>
+            <div class="grid cols-3" style="gap:14px;">
+                <div>
+                    <div class="bignum"><div class="l">Confirmados vs incluidos</div><div class="v">{{ $over['confirmed_total'] }} / {{ $over['included_guests'] }}</div></div>
+                    <div class="fmini">{{ $over['extra_people'] }} persona{{ $over['extra_people']==1?'':'s' }} de sobrecupo.</div>
+                </div>
+                <div>
+                    <div class="bignum"><div class="l">Platillos extra</div><div class="v money">{{ $m($over['extra_plate_cost']) }}</div></div>
+                    <div class="fmini">{{ $over['extra_children'] }} niño{{ $over['extra_children']==1?'':'s' }} × {{ $m($over['child_plate_price']) }} · {{ $over['extra_adult_like'] }} adulto/adol × {{ $m($over['adult_plate_price']) }}</div>
+                </div>
+                <div>
+                    <div class="bignum"><div class="l">Tornamesa extra</div><div class="v money">{{ $m($over['extra_turntable_cost']) }}</div></div>
+                    <div class="fmini">{{ $over['required_turntable_people'] }} requeridos al {{ $over['turntable_percent'] }}%, {{ $over['included_turntable_people'] }} incluidos; extra {{ $over['extra_turntable_people'] }} × {{ $m($over['turntable_rate']) }}.</div>
+                </div>
+            </div>
+            <div style="margin-top:10px; font-weight:800; color:#43275b;">Total extra: <span class="money">{{ $m($over['total_extra_cost']) }}</span></div>
+        </div>
+    @endif
 
     {{-- HERO: pagos --}}
     <div class="card" style="margin-bottom:16px;">

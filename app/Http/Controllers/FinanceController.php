@@ -21,15 +21,70 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FinanceController extends Controller
 {
-    /** Totales del panorama (sumas directas; el global scope ya filtra activos). */
-    private function totals(): array
+    private const INCLUDED_GUESTS = 230;
+    private const ADULT_PLATE_PRICE = 677.0;
+    private const CHILD_PLATE_PRICE = 332.0;
+    private const TURNTABLE_RATE = 60.0;
+    private const TURNTABLE_PERCENT = 0.70;
+
+    private function guestOverage(): array
     {
-        $cost = (float) Expense::sum('total_amount');
+        $confirmed = Guest::query()
+            ->where('status', 'Confirmado')
+            ->selectRaw('COALESCE(SUM(adults), 0) as adults')
+            ->selectRaw('COALESCE(SUM(adolescents), 0) as adolescents')
+            ->selectRaw('COALESCE(SUM(children), 0) as children')
+            ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as total')
+            ->first();
+
+        $adults = (int) ($confirmed->adults ?? 0);
+        $adolescents = (int) ($confirmed->adolescents ?? 0);
+        $children = (int) ($confirmed->children ?? 0);
+        $total = (int) ($confirmed->total ?? 0);
+        $extraPeople = max(0, $total - self::INCLUDED_GUESTS);
+        $extraChildren = min($children, $extraPeople);
+        $extraAdultLike = max(0, $extraPeople - $extraChildren);
+        $includedTurntablePeople = (int) ceil(self::INCLUDED_GUESTS * self::TURNTABLE_PERCENT);
+        $requiredTurntablePeople = (int) ceil($total * self::TURNTABLE_PERCENT);
+        $extraTurntablePeople = max(0, $requiredTurntablePeople - $includedTurntablePeople);
+        $extraPlateCost = ($extraChildren * self::CHILD_PLATE_PRICE) + ($extraAdultLike * self::ADULT_PLATE_PRICE);
+        $extraTurntableCost = $extraTurntablePeople * self::TURNTABLE_RATE;
+
+        return [
+            'included_guests' => self::INCLUDED_GUESTS,
+            'adult_plate_price' => self::ADULT_PLATE_PRICE,
+            'child_plate_price' => self::CHILD_PLATE_PRICE,
+            'turntable_rate' => self::TURNTABLE_RATE,
+            'turntable_percent' => (int) (self::TURNTABLE_PERCENT * 100),
+            'included_turntable_people' => $includedTurntablePeople,
+            'confirmed_adults' => $adults,
+            'confirmed_adolescents' => $adolescents,
+            'confirmed_children' => $children,
+            'confirmed_total' => $total,
+            'extra_people' => $extraPeople,
+            'extra_children' => $extraChildren,
+            'extra_adult_like' => $extraAdultLike,
+            'extra_plate_cost' => $extraPlateCost,
+            'required_turntable_people' => $requiredTurntablePeople,
+            'extra_turntable_people' => $extraTurntablePeople,
+            'extra_turntable_cost' => $extraTurntableCost,
+            'total_extra_cost' => $extraPlateCost + $extraTurntableCost,
+        ];
+    }
+
+    /** Totales del panorama (sumas directas; el global scope ya filtra activos). */
+    private function totals(?array $guestOverage = null): array
+    {
+        $guestOverage ??= $this->guestOverage();
+        $manualCost = (float) Expense::sum('total_amount');
+        $cost = $manualCost + (float) $guestOverage['total_extra_cost'];
         $paid = (float) ExpensePayment::sum('amount');
         $pledged = (float) SponsorSupport::sum('pledged_amount');
         $given = (float) SponsorContribution::sum('amount');
 
         return [
+            'manual_cost' => $manualCost,
+            'guest_overage' => $guestOverage,
             'cost' => $cost,
             'paid' => $paid,
             'to_pay' => max(0, $cost - $paid),
@@ -49,6 +104,8 @@ class FinanceController extends Controller
 
     public function index(): View
     {
+        $guestOverage = $this->guestOverage();
+        $totals = $this->totals($guestOverage);
         $expenses = Expense::with('payments')->get();
 
         // Próximos pagos: gastos con saldo pendiente, los de fecha más cercana primero.
@@ -78,8 +135,17 @@ class FinanceController extends Controller
             ->sortByDesc('total')
             ->values();
 
+        if ($guestOverage['total_extra_cost'] > 0) {
+            $byCategory->prepend([
+                'category' => 'Extras automáticos por invitados',
+                'total' => (float) $guestOverage['total_extra_cost'],
+                'paid' => 0.0,
+            ]);
+        }
+
         return view('finances.index', [
-            'totals' => $this->totals(),
+            'totals' => $totals,
+            'guestOverage' => $guestOverage,
             'upcoming' => $upcoming,
             'byCategory' => $byCategory,
             'overdue' => $overdue,
@@ -89,6 +155,8 @@ class FinanceController extends Controller
 
     public function expenses(): View
     {
+        $guestOverage = $this->guestOverage();
+
         // Orden con sentido: primero los que aún deben (por fecha límite más
         // próxima/vencida, sin fecha al final), y los ya pagados hasta abajo.
         $expenses = Expense::with('payments')->get()->sortBy(fn (Expense $e) => sprintf(
@@ -102,7 +170,8 @@ class FinanceController extends Controller
             'expenses' => $expenses,
             'categories' => CatalogOptions::values('expense_categories'),
             'paymentMethods' => CatalogOptions::values('payment_methods'),
-            'totals' => $this->totals(),
+            'totals' => $this->totals($guestOverage),
+            'guestOverage' => $guestOverage,
         ]);
     }
 
@@ -134,11 +203,14 @@ class FinanceController extends Controller
     /** Reúne todo el estado financiero para PDF/Excel. */
     private function gather(): array
     {
+        $guestOverage = $this->guestOverage();
+
         return [
             'expenses' => Expense::with('payments')->orderBy('name')->get(),
             'supports' => SponsorSupport::with(['guest', 'contributions'])
                 ->get()->sortBy(fn (SponsorSupport $s) => $s->guest?->name ?? '')->values(),
-            'totals' => $this->totals(),
+            'totals' => $this->totals($guestOverage),
+            'guestOverage' => $guestOverage,
         ];
     }
 
@@ -155,6 +227,7 @@ class FinanceController extends Controller
     {
         $data = $this->gather();
         $t = $data['totals'];
+        $guestOverage = $data['guestOverage'];
 
         $book = new Spreadsheet();
         $headFill = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8F55BE']];
@@ -173,6 +246,8 @@ class FinanceController extends Controller
         $r->getStyle('A1:B1')->applyFromArray($titleStyle);
         $rows = [
             ['Costo total', $t['cost']],
+            ['Costo capturado manualmente', $t['manual_cost']],
+            ['Extra automático invitados', $guestOverage['total_extra_cost']],
             ['Pagado a proveedores', $t['paid']],
             ['Falta pagar', $t['to_pay']],
             ['', ''],
@@ -212,6 +287,17 @@ class FinanceController extends Controller
             $g->setCellValue("F{$gr}", $e->remaining());
             $g->setCellValue("G{$gr}", $e->status());
             $g->setCellValue("H{$gr}", $e->due_date?->format('d/m/Y') ?? '');
+            $gr++;
+        }
+        if ($guestOverage['total_extra_cost'] > 0) {
+            $g->setCellValue("A{$gr}", 'Extra automático por invitados');
+            $g->setCellValue("B{$gr}", 'Extras automáticos');
+            $g->setCellValue("C{$gr}", 'Sistema');
+            $g->setCellValue("D{$gr}", (float) $guestOverage['total_extra_cost']);
+            $g->setCellValue("E{$gr}", 0);
+            $g->setCellValue("F{$gr}", (float) $guestOverage['total_extra_cost']);
+            $g->setCellValue("G{$gr}", 'Pendiente');
+            $g->setCellValue("H{$gr}", '');
             $gr++;
         }
         $g->getStyle("D2:F{$gr}")->getNumberFormat()->setFormatCode('"$"#,##0.00');

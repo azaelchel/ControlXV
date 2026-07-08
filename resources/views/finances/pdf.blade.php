@@ -3,6 +3,7 @@
     $eventDate = \App\Models\Setting::get('event_date', '');
     $m = fn ($v) => '$' . number_format((float) $v, 2);
     $t = $totals;
+    $over = $guestOverage;
 @endphp
 <!DOCTYPE html>
 <html lang="es">
@@ -36,6 +37,8 @@
         .pan .val { font-size: 15px; font-weight: bold; color: #43275b; margin-top: 3px; font-variant-numeric: tabular-nums; }
         .foot { text-align: center; font-size: 8px; color: #b3a3c4; letter-spacing: 1px; margin-top: 18px; }
         .empty { color: #b3a3c4; font-style: italic; padding: 8px; }
+        .note { background-color: #fff9ec; border: 1px solid #f0d69f; border-radius: 8px; padding: 9px 11px; margin: 10px 0 14px; color: #5f4c70; }
+        .note b { color: #43275b; }
     </style>
 </head>
 <body>
@@ -61,6 +64,15 @@
         </tr>
     </table>
 
+    @if ($over['total_extra_cost'] > 0)
+        <div class="note">
+            <b>Extra automático por invitados: {{ $m($over['total_extra_cost']) }}</b><br>
+            {{ $over['confirmed_total'] }} confirmados contra {{ $over['included_guests'] }} incluidos; sobrecupo de {{ $over['extra_people'] }}.
+            Platillos extra: {{ $over['extra_children'] }} niño{{ $over['extra_children']==1?'':'s' }} y {{ $over['extra_adult_like'] }} adulto/adolescente = {{ $m($over['extra_plate_cost']) }}.
+            Tornamesa: {{ $over['required_turntable_people'] }} requeridos al {{ $over['turntable_percent'] }}%, {{ $over['included_turntable_people'] }} incluidos; extra {{ $over['extra_turntable_people'] }} = {{ $m($over['extra_turntable_cost']) }}.
+        </div>
+    @endif
+
     {{-- Gastos --}}
     <div class="sec">Gastos y proveedores</div>
     <table class="t">
@@ -84,6 +96,17 @@
             @empty
                 <tr><td colspan="7" class="empty">Sin gastos registrados.</td></tr>
             @endforelse
+            @if ($over['total_extra_cost'] > 0)
+                <tr>
+                    <td>Extra automático por invitados<br><span style="color:#9b8ab0;font-size:9px;">Calculado por confirmados</span></td>
+                    <td>Extras automáticos</td>
+                    <td class="n">{{ $m($over['total_extra_cost']) }}</td>
+                    <td class="n green">{{ $m(0) }}</td>
+                    <td class="n red">{{ $m($over['total_extra_cost']) }}</td>
+                    <td>Pendiente</td>
+                    <td>—</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 
