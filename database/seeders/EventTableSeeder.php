@@ -51,7 +51,7 @@ class EventTableSeeder extends Seeder
                 'is_principal' => true,
                 'notes'        => 'Mesa principal',
                 'position_x'   => 49,
-                'position_y'   => 62,
+                'position_y'   => 70,
                 'active'       => true,
             ]
         );
