@@ -128,7 +128,6 @@
                 <div class="zone" style="left:59%; top:4%; width:30%; height:10%;">Acceso a baños</div>
                 <div class="cocina-lbl" style="left:91%; top:5%;">🍳 Cocina</div>
                 <div class="zone pista" style="left:40%; top:24%; width:17%; height:30%;">Pista</div>
-                <div class="zone mp" style="left:54%; top:66%; width:17%; height:9%;">🎂 Pastel · 🎁 Regalos</div>
                 <div class="zone pasillo" style="left:4%; top:85%; width:85%; height:11%;">Pasillo</div>
 
                 {{-- Mesas --}}

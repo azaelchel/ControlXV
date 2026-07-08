@@ -2,7 +2,7 @@
     $eventName = \App\Models\Setting::get('event_name', 'XV años de Zugeily');
     $eventDate = \App\Models\Setting::get('event_date', '');
     $eventTime = \App\Models\Setting::get('event_time', '');
-    $rows = $tables->chunk(2);
+    $rows = $tables->chunk(3);
     $initials = function ($name) {
         $parts = preg_split('/\s+/', trim((string) $name));
         $a = mb_substr($parts[0] ?? '', 0, 1);
@@ -15,13 +15,33 @@
     $typeHex = fn ($t) => match ($t) {
         'Adulto' => '#6d28b8', 'Adolescente' => '#1f9e6a', 'Niño' => '#d6453f', default => '#8a8a96',
     };
+    $tableNum = fn ($name) => preg_replace('/\D+/', '', (string) $name) ?: $name;
+    $horizontalTables = ['1', '3', '5', '7', '9', '11', '13', '15', '17', '19', '21', '23'];
+    $tableBox = function ($table) use ($tableNum, $horizontalTables) {
+        if ($table->is_principal) {
+            return ['w' => 30, 'h' => 34, 'ml' => -15, 'mt' => -17, 'cls' => 'principal'];
+        }
+
+        if (in_array($tableNum($table->name), $horizontalTables, true)) {
+            return ['w' => 34, 'h' => 22, 'ml' => -17, 'mt' => -11, 'cls' => 'horizontal'];
+        }
+
+        return ['w' => 24, 'h' => 36, 'ml' => -12, 'mt' => -18, 'cls' => 'vertical'];
+    };
+    $mapFill = function ($occ, $cap) {
+        if ($cap > 0 && $occ > $cap) return 'sobre';
+        if ($occ === 0) return 'libre';
+        if ($cap > 0 && $occ >= $cap) return 'llena';
+        if ($cap > 0 && $occ >= $cap - 2) return 'casi';
+        return 'parcial';
+    };
 @endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 20mm 18mm 20mm; }
+        @page { margin: 12mm 12mm 12mm; }
         /* OJO dompdf: NO usar selector universal (*) ni resetear html{} — eso anula
            el @page margin y el contenido se pega al borde. Reset por elemento. */
         body { margin: 0; padding: 0; font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
@@ -30,48 +50,74 @@
         .display { font-family: 'DejaVu Serif', serif; }
 
         /* Portada */
-        .cover { text-align: center; margin-bottom: 22px; }
-        .cover .mono { letter-spacing: 5px; font-size: 9px; text-transform: uppercase; color: #a98c54; margin-bottom: 6px; }
-        .cover h1 { font-size: 30px; font-weight: bold; color: #43275b; }
-        .cover .when { font-size: 12px; color: #6b5a7e; font-style: italic; margin-top: 4px; }
-        .rule { width: 130px; margin: 10px auto 0; border-bottom: 2px solid #c9a86a; }
-        .stats { margin-top: 12px; }
-        .stats span { display: inline-block; padding: 0 14px; }
-        .stats .n { font-family: 'DejaVu Serif', serif; font-size: 20px; font-weight: bold; color: #6b4a86; }
+        .cover { text-align: center; margin-bottom: 6px; }
+        .cover .mono { letter-spacing: 4px; font-size: 8px; text-transform: uppercase; color: #a98c54; margin-bottom: 3px; }
+        .cover h1 { font-size: 20px; font-weight: bold; color: #43275b; }
+        .cover .when { font-size: 10px; color: #6b5a7e; font-style: italic; margin-top: 2px; }
+        .rule { width: 110px; margin: 5px auto 0; border-bottom: 2px solid #c9a86a; }
+        .stats { margin-top: 5px; }
+        .stats span { display: inline-block; padding: 0 13px; }
+        .stats .n { font-family: 'DejaVu Serif', serif; font-size: 16px; font-weight: bold; color: #6b4a86; }
         .stats .l { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #9b8ab0; }
         .legend { text-align: center; margin-top: 12px; font-size: 9px; color: #6b5a7e; }
         .legend span { display: inline-block; padding: 0 8px; }
         .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
 
+        /* Mapa */
+        .map-title { margin: 6px 0 4px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #a98c54; font-weight: bold; text-align: center; }
+        .venue { position: relative; width: 100%; height: 108mm; border: 1px solid #d8c9eb; border-radius: 8px; background-color: #fbf8ff; margin-bottom: 5px; }
+        .zone { position: absolute; text-align: center; font-size: 8px; font-weight: bold; letter-spacing: .6px; text-transform: uppercase; color: #6b5a7e; border: 1px dashed #cdbbe6; border-radius: 5px; background-color: #fff; padding-top: 5px; }
+        .zone.pista { background-color: #eadcf6; color: #5b3a86; border: 1px solid #cdbbe6; font-size: 11px; padding-top: 24px; }
+        .zone.pasillo { background-color: #f6f2fb; color: #9985b3; }
+        .zone.entrance { border-radius: 16px; padding-top: 26px; }
+        .cocina { position: absolute; font-size: 8px; font-weight: bold; color: #6b5a7e; }
+        .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1px solid #fff; }
+        .map-table .num { display: block; font-size: 13px; font-weight: bold; line-height: 1; padding-top: 5px; }
+        .map-table .occ { display: block; font-size: 7.5px; font-weight: bold; margin-top: 2px; }
+        .map-table.horizontal .num { padding-top: 4px; }
+        .map-table.principal .num { font-size: 14px; padding-top: 6px; }
+        .map-table.libre { background-color: #cbb8e4; color: #4a2f6b; border-color: #d9cbed; }
+        .map-table.parcial { background-color: #8f5dc5; }
+        .map-table.casi { background-color: #d9a44d; }
+        .map-table.llena { background-color: #6dad81; }
+        .map-table.sobre { background-color: #c95550; }
+        .map-table.principal { background-color: #5a3a7e; border: 1px solid #c9a86a; }
+        .map-legend { text-align: center; font-size: 8px; color: #6b5a7e; margin-bottom: 4px; }
+        .map-legend span { display: inline-block; padding: 0 7px; }
+        .map-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
+
+        .page-break { page-break-before: always; }
+        .section-title-pdf { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #a98c54; font-weight: bold; margin-bottom: 8px; text-align: center; }
+
         /* Mesas */
         table.layout { width: 100%; border-collapse: separate; border-spacing: 0; }
-        table.layout > tr > td { width: 50%; vertical-align: top; padding: 6px; }
+        table.layout > tr > td { width: 33.33%; vertical-align: top; padding: 4px; }
 
         .mesa { border: 1px solid #e0d2f0; border-radius: 8px; }
         .mesa.principal { border: 1px solid #c9a86a; }
-        .mesa-head { background-color: #4a2f60; color: #fff; padding: 8px 11px; border-radius: 7px 7px 0 0; }
+        .mesa-head { background-color: #4a2f60; color: #fff; padding: 6px 9px; border-radius: 7px 7px 0 0; }
         .mesa.principal .mesa-head { background-color: #6b4a86; }
-        .mesa-head .nm { font-family: 'DejaVu Serif', serif; font-size: 15px; font-weight: bold; }
-        .mesa-head .cap { float: right; font-size: 11px; font-weight: bold; color: #e6d7f5; padding-top: 3px; }
+        .mesa-head .nm { font-family: 'DejaVu Serif', serif; font-size: 13px; font-weight: bold; }
+        .mesa-head .cap { float: right; font-size: 10px; font-weight: bold; color: #e6d7f5; padding-top: 2px; }
         .mesa-meta { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: #9b7fbf; padding: 6px 11px 0; }
         .mesa-notes { font-size: 10px; color: #8a72a4; font-style: italic; padding: 2px 11px 0; }
 
         /* Sillas con iniciales y color por tipo.
            dompdf no centra texto con line-height en inline-block; se usa una
            celda de tabla con vertical-align:middle (sí confiable en dompdf). */
-        .seats { padding: 9px 11px 5px; }
-        .seat { display: inline-block; width: 24px; height: 24px; border-radius: 50%; margin: 0 3px 4px 0; }
+        .seats { padding: 7px 9px 4px; }
+        .seat { display: inline-block; width: 20px; height: 20px; border-radius: 50%; margin: 0 2px 3px 0; }
         .seat.off { background-color: #fff; border: 1px dashed #d3bfe8; }
         .seat.adulto { background-color: #6d28b8; }
         .seat.adolescente { background-color: #1f9e6a; }
         .seat.nino { background-color: #d6453f; }
         .seat.otro { background-color: #8a8a96; }
-        table.seatc { width: 24px; height: 24px; border-spacing: 0; border-collapse: collapse; }
-        table.seatc td { width: 24px; height: 24px; text-align: center; vertical-align: middle; color: #fff; font-size: 9.5px; font-weight: bold; line-height: 1; padding: 0; }
+        table.seatc { width: 20px; height: 20px; border-spacing: 0; border-collapse: collapse; }
+        table.seatc td { width: 20px; height: 20px; text-align: center; vertical-align: middle; color: #fff; font-size: 8px; font-weight: bold; line-height: 1; padding: 0; }
 
         /* Lista de sentados (nombre coloreado por tipo) */
-        .guests { padding: 2px 11px 10px; }
-        .guests .g { padding: 2px 0; border-bottom: 1px dotted #ece2f6; font-weight: bold; }
+        .guests { padding: 2px 9px 8px; }
+        .guests .g { padding: 1px 0; border-bottom: 1px dotted #ece2f6; font-weight: bold; font-size: 9px; }
         .guests .grp { color: #a594b8; font-size: 9px; font-style: italic; font-weight: normal; }
         .freeline { padding: 4px 11px 10px; font-size: 9px; font-style: italic; color: #b79bd6; }
         .empty { padding: 8px 11px 12px; color: #b3a3c4; font-style: italic; }
@@ -110,7 +156,43 @@
         </div>
     </div>
 
+    {{-- Croquis del salón --}}
+    <div class="map-title">Mapa del salón</div>
+    <div class="map-legend">
+        <span><i style="background:#cbb8e4;"></i>Vacía</span>
+        <span><i style="background:#8f5dc5;"></i>Ocupándose</span>
+        <span><i style="background:#d9a44d;"></i>Casi llena</span>
+        <span><i style="background:#6dad81;"></i>Completa</span>
+        <span><i style="background:#c95550;"></i>Sobrecupo</span>
+        <span><i style="background:#5a3a7e;"></i>Principal</span>
+    </div>
+    <div class="venue">
+        <div class="zone entrance" style="left:0.6%; top:33%; width:3.2%; height:26%;">Entrada</div>
+        <div class="zone" style="left:4%; top:4%; width:33%; height:10%;">Pasillo trasero</div>
+        <div class="zone" style="left:40%; top:1%; width:17%; height:13%;">Música</div>
+        <div class="zone" style="left:59%; top:4%; width:30%; height:10%;">Acceso a baños</div>
+        <div class="cocina" style="left:91%; top:5%;">Cocina</div>
+        <div class="zone pista" style="left:40%; top:24%; width:17%; height:30%;">Pista</div>
+        <div class="zone pasillo" style="left:4%; top:85%; width:85%; height:9%;">Pasillo</div>
+
+        @foreach ($tables as $table)
+            @php
+                $occ = $table->occupiedSeats();
+                $cap = (int) $table->capacity;
+                $box = $tableBox($table);
+                $cls = $table->is_principal ? 'principal' : $mapFill($occ, $cap);
+            @endphp
+            <div class="map-table {{ $box['cls'] }} {{ $cls }}"
+                style="left: {{ $table->position_x ?? 50 }}%; top: {{ $table->position_y ?? 50 }}%; width: {{ $box['w'] }}px; height: {{ $box['h'] }}px; margin-left: {{ $box['ml'] }}px; margin-top: {{ $box['mt'] }}px;">
+                <span class="num">{{ $tableNum($table->name) }}</span>
+                <span class="occ">{{ $occ }}/{{ $cap }}</span>
+            </div>
+        @endforeach
+    </div>
+
     {{-- Mesas como tarjetas --}}
+    <div class="page-break"></div>
+    <div class="section-title-pdf">Detalle por mesa</div>
     @if ($tables->isEmpty())
         <p class="empty">Aún no hay mesas configuradas.</p>
     @else
@@ -158,7 +240,7 @@
                             </div>
                         </td>
                     @endforeach
-                    @if ($pair->count() === 1)<td></td>@endif
+                    @for ($k = $pair->count(); $k < 3; $k++)<td></td>@endfor
                 </tr>
             @endforeach
         </table>

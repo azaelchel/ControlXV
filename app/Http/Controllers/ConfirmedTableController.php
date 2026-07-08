@@ -93,7 +93,7 @@ class ConfirmedTableController extends Controller
             'tables' => $data['tables'],
             'unassigned' => $data['unassigned'],
             'summary' => $data['summary'],
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
         // stream = se abre en el navegador (con su botón de descargar); download = baja directo.
         return $pdf->stream('distribucion-mesas-'.now()->format('Ymd').'.pdf');
