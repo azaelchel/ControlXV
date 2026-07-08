@@ -41,5 +41,19 @@ class EventTableSeeder extends Seeder
                 ]
             );
         }
+
+        EventTable::withoutGlobalScope('active')->updateOrCreate(
+            ['name' => 'MP'],
+            [
+                'capacity'     => 12,
+                'table_type'   => 'Principal',
+                'shape'        => 'Rectangular',
+                'is_principal' => true,
+                'notes'        => 'Mesa principal',
+                'position_x'   => 49,
+                'position_y'   => 62,
+                'active'       => true,
+            ]
+        );
     }
 }

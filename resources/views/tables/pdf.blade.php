@@ -100,7 +100,7 @@
         <div class="stats">
             <span><span class="n">{{ $summary['tables'] }}</span><br><span class="l">Mesas</span></span>
             <span><span class="n">{{ $summary['seated'] }}</span><br><span class="l">Sentados</span></span>
-            <span><span class="n">{{ $summary['capacity'] }}</span><br><span class="l">Lugares</span></span>
+            <span><span class="n">{{ $summary['capacity'] }}</span><br><span class="l">Capacidad máx.</span></span>
             <span><span class="n">{{ $summary['unassigned'] }}</span><br><span class="l">Pendientes</span></span>
         </div>
         <div class="legend">

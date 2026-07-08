@@ -29,7 +29,7 @@
     .seat.t-adolescente { background: #1f9e6a; }
     .seat.t-nino { background: #d6453f; }
     .seat.t-otro { background: #8a8a96; }
-    .faltan { text-align: center; font-size: 12px; color: #b0843f; font-weight: 700; margin-bottom: 10px; }
+    .faltan { text-align: center; font-size: 12px; color: #7c6691; font-weight: 700; margin-bottom: 10px; }
     .faltan.lleno { color: #3f9e6b; }
     .fill-ok .tviz-top { background: linear-gradient(135deg,#7bc59a,#3f9e6b); }
     .fill-mid .tviz-top { background: linear-gradient(135deg,#e6b364,#cf8f3f); }
@@ -84,7 +84,7 @@
         <div class="pbar" style="margin-top: 14px;"><span style="width: {{ $progress['percent'] }}%;"></span></div>
         <div class="grid cols-4" style="margin-top: 16px;">
             <div class="metric"><div class="label">Mesas</div><div class="value">{{ $summary['tables'] }}</div></div>
-            <div class="metric"><div class="label">Capacidad total</div><div class="value">{{ $summary['capacity'] }}</div></div>
+            <div class="metric"><div class="label">Capacidad máxima</div><div class="value">{{ $summary['capacity'] }}</div></div>
             <div class="metric"><div class="label">Sentados</div><div class="value">{{ $summary['seated'] }}</div></div>
             <div class="metric"><div class="label">Sin mesa</div><div class="value">{{ $summary['unassigned'] }}</div></div>
         </div>
@@ -190,7 +190,7 @@
 
                     {{-- cuántos faltan --}}
                     <div class="faltan {{ $free === 0 ? 'lleno' : '' }}">
-                        {{ $free === 0 ? '✓ Mesa completa' : 'Faltan '.$free.' por sentar' }}
+                        {{ $free === 0 ? '✓ Capacidad llena' : $free.' '.($free === 1 ? 'lugar libre' : 'lugares libres') }}
                     </div>
 
                     {{-- nombres sentados --}}

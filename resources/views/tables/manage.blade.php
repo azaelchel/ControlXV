@@ -14,7 +14,7 @@
     <div class="inline" style="justify-content: space-between; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
         <div class="grid cols-4" style="flex: 1; gap: 10px;">
             <div class="card metric"><div class="label">Mesas</div><div class="value">{{ $summary['tables'] }}</div></div>
-            <div class="card metric"><div class="label">Capacidad</div><div class="value">{{ $summary['capacity'] }}</div></div>
+            <div class="card metric"><div class="label">Capacidad máxima</div><div class="value">{{ $summary['capacity'] }}</div></div>
             <div class="card metric"><div class="label">Sentados</div><div class="value">{{ $summary['seated'] }}</div></div>
             <div class="card metric"><div class="label">Sin mesa</div><div class="value">{{ $summary['unassigned'] }}</div></div>
         </div>
@@ -77,7 +77,8 @@
                                 <select name="table_id" required style="font-size: 12px; padding: 4px 8px;">
                                     <option value="" disabled selected hidden>Elegir mesa…</option>
                                     @foreach ($tables as $t)
-                                        <option value="{{ $t->id }}">{{ $t->name }} ({{ $t->availableSeats() }} libres)</option>
+                                        @php $available = $t->availableSeats(); @endphp
+                                        <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
                                     @endforeach
                                 </select>
                                 <button class="btn small" type="submit">Sentar grupo</button>
@@ -94,7 +95,8 @@
                                         <select name="table_id" required style="font-size: 11px; padding: 3px 6px;">
                                             <option value="" disabled selected hidden>Elegir mesa…</option>
                                             @foreach ($tables as $t)
-                                                <option value="{{ $t->id }}">{{ $t->name }}</option>
+                                                @php $available = $t->availableSeats(); @endphp
+                                                <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
                                             @endforeach
                                         </select>
                                         <button class="btn small secondary" type="submit">Sentar</button>
@@ -143,7 +145,8 @@
                                                 <option value="" disabled selected hidden>Mover a…</option>
                                                 @foreach ($tables as $t)
                                                     @if ($t->id !== $table->id)
-                                                        <option value="{{ $t->id }}">{{ $t->name }}</option>
+                                                        @php $available = $t->availableSeats(); @endphp
+                                                        <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
                                                     @endif
                                                 @endforeach
                                             </select>

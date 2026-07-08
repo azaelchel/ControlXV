@@ -240,7 +240,7 @@ class ConfirmedTableController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'capacity' => ['required', 'integer', 'min:1', 'max:50'],
+            'capacity' => ['required', 'integer', 'min:1', 'max:12'],
             'table_type' => ['nullable', 'string', 'in:' . implode(',', $this->tableTypes())],
             'shape' => ['nullable', 'string', 'in:' . implode(',', $this->tableShapes())],
             'is_principal' => ['nullable', 'boolean'],

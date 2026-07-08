@@ -4,8 +4,9 @@
         <input name="name" value="{{ old('name', $table->name ?? '') }}" required placeholder="Ej. Mesa 1, Principal, Familia López">
     </div>
     <div>
-        <label class="small">Capacidad</label>
-        <input name="capacity" type="number" min="1" max="50" value="{{ old('capacity', $table->capacity ?? 10) }}" required>
+        <label class="small">Capacidad máxima</label>
+        <input name="capacity" type="number" min="1" max="12" value="{{ old('capacity', $table->capacity ?? 12) }}" required>
+        <div class="small" style="margin-top: 3px; color: #9b8ab0;">Máximo 12 lugares. No es obligatorio llenarlos todos.</div>
     </div>
     <div>
         <label class="small">Tipo de mesa</label>

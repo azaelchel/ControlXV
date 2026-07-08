@@ -43,6 +43,7 @@
     .tbl.casi    { background: linear-gradient(135deg,#e6b364,#cf8f3f); }
     .tbl.llena   { background: linear-gradient(135deg,#7bc59a,#3f9e6b); }
     .tbl.sobre   { background: linear-gradient(135deg,#e2726f,#c9403c); }
+    .tbl.principal { background: linear-gradient(135deg,#7f5aa6,#4f2d70); border-color:#e7c978; }
 
     .map-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; font-size:12px; color:#6b5a7e; }
     .map-legend i { width:16px; height:16px; border-radius:5px; display:inline-block; vertical-align:middle; margin-right:5px; }
@@ -120,7 +121,7 @@
                                 'type'  => $a->companion->type ?: '—',
                             ])->values();
                     @endphp
-                    <div class="tbl {{ $fillClass($occ, $cap) }} {{ $occ === 0 ? 'is-empty' : '' }}"
+                    <div class="tbl {{ $table->is_principal ? 'principal' : $fillClass($occ, $cap) }} {{ $occ === 0 && ! $table->is_principal ? 'is-empty' : '' }}"
                         style="left: {{ $x }}%; top: {{ $y }}%;"
                         data-name="{{ $table->name }}"
                         data-cap="{{ $cap }}"
@@ -133,7 +134,7 @@
                 @endforeach
             </div>
         </div>
-        <p class="small" style="margin: 10px 0 0; color:#8a72a4;">Toca una mesa para ver quién está sentado. Cada mesa admite hasta 12 personas.</p>
+        <p class="small" style="margin: 10px 0 0; color:#8a72a4;">Toca una mesa para ver quién está sentado. Cada mesa admite máximo 12 personas; no es necesario llenar todas.</p>
     </div>
 
     {{-- Modal detalle de mesa --}}
@@ -168,7 +169,7 @@
                     let occupants = [];
                     try { occupants = JSON.parse(el.dataset.occupants || '[]'); } catch (e) {}
                     nameEl.textContent = el.dataset.name;
-                    occEl.textContent = occ + ' de ' + cap + ' lugares ocupados' + (cap - occ > 0 ? ' · faltan ' + (cap - occ) : ' · completa');
+                    occEl.textContent = occ + ' de ' + cap + ' lugares ocupados' + (cap - occ > 0 ? ' · ' + (cap - occ) + ' libres' : ' · capacidad llena');
                     if (!occupants.length) {
                         listEl.innerHTML = '<p class="small" style="margin:0;">Mesa vacía, aún sin invitados sentados.</p>';
                     } else {
