@@ -114,22 +114,24 @@ class DashboardController extends Controller
             '15 dias' => $this->followupCounts('whatsapp_15_days'),
         ];
 
+        $realGuestNames = Guest::where('category', 'Real')->pluck('name');
+        $realCompanions = fn () => Companion::whereIn('invited_group', $realGuestNames);
+
         $companionsSummary = [
-            'total' => (int) Companion::count(),
-            'adults' => (int) Companion::where('type', 'Adulto')->count(),
-            'adolescents' => (int) Companion::where('type', 'Adolescente')->count(),
-            'children' => (int) Companion::where('type', 'Niño')->count(),
-            'men' => (int) Companion::where('sex', 'Hombre')->count(),
-            'women' => (int) Companion::where('sex', 'Mujer')->count(),
-            'adult_men' => (int) Companion::where('type', 'Adulto')->where('sex', 'Hombre')->count(),
-            'adult_women' => (int) Companion::where('type', 'Adulto')->where('sex', 'Mujer')->count(),
-            'teen_men' => (int) Companion::where('type', 'Adolescente')->where('sex', 'Hombre')->count(),
-            'teen_women' => (int) Companion::where('type', 'Adolescente')->where('sex', 'Mujer')->count(),
-            'child_men' => (int) Companion::where('type', 'Niño')->where('sex', 'Hombre')->count(),
-            'child_women' => (int) Companion::where('type', 'Niño')->where('sex', 'Mujer')->count(),
-            'difference_vs_confirmed_people' => (int) Companion::count() - (int) Guest::where('status', 'Confirmado')
-                ->selectRaw('COALESCE(SUM(adults + adolescents + children), 0) as total')
-                ->value('total'),
+            'scope' => 'Categoría Real',
+            'total' => (int) $realCompanions()->count(),
+            'adults' => (int) $realCompanions()->where('type', 'Adulto')->count(),
+            'adolescents' => (int) $realCompanions()->where('type', 'Adolescente')->count(),
+            'children' => (int) $realCompanions()->where('type', 'Niño')->count(),
+            'men' => (int) $realCompanions()->where('sex', 'Hombre')->count(),
+            'women' => (int) $realCompanions()->where('sex', 'Mujer')->count(),
+            'adult_men' => (int) $realCompanions()->where('type', 'Adulto')->where('sex', 'Hombre')->count(),
+            'adult_women' => (int) $realCompanions()->where('type', 'Adulto')->where('sex', 'Mujer')->count(),
+            'teen_men' => (int) $realCompanions()->where('type', 'Adolescente')->where('sex', 'Hombre')->count(),
+            'teen_women' => (int) $realCompanions()->where('type', 'Adolescente')->where('sex', 'Mujer')->count(),
+            'child_men' => (int) $realCompanions()->where('type', 'Niño')->where('sex', 'Hombre')->count(),
+            'child_women' => (int) $realCompanions()->where('type', 'Niño')->where('sex', 'Mujer')->count(),
+            'difference_vs_confirmed_people' => (int) $realCompanions()->count() - (int) $summary['real_confirmed_total_people'],
         ];
 
         return view('dashboard', [
