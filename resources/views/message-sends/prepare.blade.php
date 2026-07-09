@@ -2,7 +2,7 @@
 
 @section('title', 'Mensajes listos')
 @section('heading', 'Mensajes listos para enviar')
-@section('subheading', 'Copia cada mensaje y mándalo por WhatsApp. Se registra el envío al copiar.')
+@section('subheading', 'Copia cada mensaje y mándalo por WhatsApp. Los mensajes preparados quedan registrados en historial.')
 
 @section('content')
     <div class="card" style="margin-bottom: 18px;">
@@ -24,8 +24,8 @@
     <div class="card" style="margin-bottom: 18px; background: #faf6ff; border-color: #e6dff1;">
         <p class="small" style="line-height: 1.7; margin: 0;">
             <strong>Cómo funciona:</strong> Cada tarjeta trae el mensaje ya armado.
-            Al hacer clic en <strong>Copiar y abrir WhatsApp</strong> se copia al portapapeles,
-            se registra el envío y se abre <strong>WhatsApp</strong> con el número del destinatario.
+            Al preparar esta pantalla los mensajes quedan registrados en historial.
+            Al hacer clic en <strong>Copiar y abrir WhatsApp</strong> se copia al portapapeles y se abre <strong>WhatsApp</strong> con el número del destinatario.
             Puedes <strong>volver a copiar las veces que quieras</strong>.
         </p>
     </div>

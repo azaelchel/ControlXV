@@ -394,7 +394,19 @@ class MessageSendController extends Controller
                 $attributes
             );
         } else {
-            $send = MessageSend::create($attributes);
+            $send = MessageSend::withoutGlobalScope('active')->firstOrCreate(
+                [
+                    'guest_id' => $guest->id,
+                    'message_template_id' => $data['message_template_id'],
+                    'public_guest_link_id' => null,
+                    'rendered_message' => $data['rendered_message'],
+                ],
+                $attributes
+            );
+
+            if (! $send->active) {
+                $send->update($attributes);
+            }
         }
 
         if ($request->wantsJson()) {
@@ -496,10 +508,9 @@ class MessageSendController extends Controller
 
         $message = $template->render($guest, $linkUrl);
 
-        // Auto-registrar el envio para plantillas con link: apenas se genera/reusa el
-        // link, queda como envio en el historial. firstOrCreate evita duplicados si
-        // vuelven a preparar el mismo link. Para plantillas SIN link el send se crea
-        // solo al hacer click en Copiar (via store endpoint), evitando duplicados.
+        // Auto-registrar el envio al preparar: con link se evita duplicar por
+        // public_guest_link_id; sin link se evita duplicar por invitado, plantilla
+        // y mensaje renderizado.
         if ($linkModel) {
             MessageSend::firstOrCreate(
                 ['public_guest_link_id' => $linkModel->id],
@@ -510,6 +521,21 @@ class MessageSendController extends Controller
                     'rendered_message'     => $message,
                     'phone'                => $guest->phone,
                     'sent_at'              => now(),
+                ]
+            );
+        } elseif (! $template->hasLinkPlaceholder()) {
+            MessageSend::withoutGlobalScope('active')->firstOrCreate(
+                [
+                    'guest_id' => $guest->id,
+                    'message_template_id' => $template->id,
+                    'public_guest_link_id' => null,
+                    'rendered_message' => $message,
+                ],
+                [
+                    'user_id' => request()->user()?->id,
+                    'phone' => $guest->phone,
+                    'sent_at' => now(),
+                    'active' => true,
                 ]
             );
         }
