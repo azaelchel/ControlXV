@@ -114,11 +114,11 @@ class DashboardController extends Controller
             '15 dias' => $this->followupCounts('whatsapp_15_days'),
         ];
 
-        $realGuestNames = Guest::where('category', 'Real')->pluck('name');
+        $realGuestNames = Guest::where('category', 'Real')->where('status', 'Confirmado')->pluck('name');
         $realCompanions = fn () => Companion::whereIn('invited_group', $realGuestNames);
 
         $companionsSummary = [
-            'scope' => 'Categoría Real',
+            'scope' => 'Categoría Real confirmada',
             'total' => (int) $realCompanions()->count(),
             'adults' => (int) $realCompanions()->where('type', 'Adulto')->count(),
             'adolescents' => (int) $realCompanions()->where('type', 'Adolescente')->count(),

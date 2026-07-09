@@ -416,7 +416,7 @@
 
         <div class="card">
             <div class="section-kicker">Demografía</div>
-            <h3 class="section-title">Composición de invitados registrados reales</h3>
+            <h3 class="section-title">Composición de invitados registrados confirmados reales</h3>
             <div style="margin: 14px 0;">
                 <div class="small">Base: <strong>{{ $companionsSummary['scope'] }}</strong> · Total: <strong>{{ number_format($companionsSummary['total']) }}</strong> invitados individuales</div>
             </div>
