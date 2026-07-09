@@ -5,6 +5,9 @@
 @section('subheading', 'Panorama de cada familia con acciones rápidas para enviar, re-copiar y dar seguimiento')
 
 @section('content')
+    @php
+        $validationClosureTemplate = $templates->firstWhere('name', 'Cierre por validación no recibida');
+    @endphp
     <style>
         .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; }
         .stat-card { padding: 16px; }
@@ -106,6 +109,9 @@
                         <button type="button" class="wa-seg-btn" data-wa-mode="app">App</button>
                     </div>
                 </div>
+                @if ($validationClosureTemplate)
+                    <a href="{{ route('message-sends.create', ['template_id' => $validationClosureTemplate->id, 'validation_state' => 'pending']) }}" class="btn" style="background: #fff3d8; color: #5d3c09;">Cierre validación</a>
+                @endif
                 <a href="{{ route('message-sends.create') }}" class="btn" style="background: white; color: var(--primary-dark);">+ Envío masivo</a>
                 <a href="{{ route('message-sends.history') }}" class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);">Historial</a>
             </div>

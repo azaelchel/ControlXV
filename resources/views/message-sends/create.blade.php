@@ -30,7 +30,7 @@
 
         .filter-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr 1fr 1fr auto;
+            grid-template-columns: 1.6fr 1fr 1fr 1fr 1.2fr auto;
             gap: 12px;
             align-items: end;
             margin-bottom: 14px;
@@ -133,6 +133,17 @@
                         @endforeach
                     </select>
                 </div>
+                <div>
+                    <label>Validación final</label>
+                    <select id="filter-validation">
+                        <option value="">Todas</option>
+                        <option value="pending" @selected($validationStateFilter === 'pending')>Sin responder</option>
+                        <option value="sent" @selected($validationStateFilter === 'sent')>Vigente sin responder</option>
+                        <option value="expired" @selected($validationStateFilter === 'expired')>Vencida sin respuesta</option>
+                        <option value="responded" @selected($validationStateFilter === 'responded')>Respondida</option>
+                        <option value="none" @selected($validationStateFilter === 'none')>Sin enviar</option>
+                    </select>
+                </div>
                 <label class="phone-toggle">
                     <input type="checkbox" id="filter-with-phone" checked>
                     <span class="small">Con teléfono</span>
@@ -171,6 +182,8 @@
                             @php
                                 $hasPhone = ! empty($guest->phone);
                                 $currentLink = $guest->currentPublicLink;
+                                $validationState = $guest->validationState();
+                                $validationLabel = $guest->validationStateLabel() ?: 'No aplica';
                                 $linkLabel = 'Sin link';
                                 $linkClass = 'status-default';
                                 if ($currentLink) {
@@ -188,6 +201,7 @@
                                 data-status="{{ $guest->status }}"
                                 data-category="{{ $guest->category }}"
                                 data-group="{{ $guest->group_name }}"
+                                data-validation="{{ $validationState }}"
                                 data-phone="{{ preg_replace('/[^0-9]/', '', $guest->phone ?? '') }}"
                                 data-lastsend="{{ $lastSend?->sent_at?->timestamp ?? 0 }}"
                                 data-with-phone="{{ $hasPhone ? '1' : '0' }}">
@@ -211,6 +225,7 @@
                                     @else
                                         <span class="small">—</span>
                                     @endif
+                                    <div class="small" style="margin-top: 3px;">Validación: {{ $validationLabel }}</div>
                                 </td>
                             </tr>
                         @endforeach
@@ -241,6 +256,7 @@
             const fStatus = document.getElementById('filter-status');
             const fCategory = document.getElementById('filter-category');
             const fGroup = document.getElementById('filter-group');
+            const fValidation = document.getElementById('filter-validation');
             const fPhone = document.getElementById('filter-with-phone');
             const selectAll = document.getElementById('select-all');
             const deselectAll = document.getElementById('deselect-all');
@@ -256,6 +272,7 @@
                 const status = fStatus.value;
                 const cat = fCategory.value;
                 const group = fGroup.value;
+                const validation = fValidation.value;
                 const onlyP = fPhone.checked;
                 let visible = 0;
                 rows.forEach(row => {
@@ -263,6 +280,7 @@
                                && (!status || row.dataset.status === status)
                                && (!cat || row.dataset.category === cat)
                                && (!group || row.dataset.group === group)
+                               && (!validation || row.dataset.validation === validation || (validation === 'pending' && ['sent', 'expired'].includes(row.dataset.validation)))
                                && (!onlyP || row.dataset.withPhone === '1');
                     row.style.display = match ? '' : 'none';
                     if (match) visible++;
@@ -279,7 +297,7 @@
                 submitBtn.disabled = n === 0;
             }
             [fName].forEach(el => el.addEventListener('input', applyFilters));
-            [fStatus, fCategory, fGroup, fPhone].forEach(el => el.addEventListener('change', applyFilters));
+            [fStatus, fCategory, fGroup, fValidation, fPhone].forEach(el => el.addEventListener('change', applyFilters));
             selectAll.addEventListener('click', () => { visibleChecks().forEach(c => c.checked = true); updateCount(); });
             deselectAll.addEventListener('click', () => { checks.forEach(c => c.checked = false); updateCount(); });
             checks.forEach(c => c.addEventListener('change', updateCount));

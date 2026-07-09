@@ -100,9 +100,14 @@ class MessageSendController extends Controller
     public function create(Request $request): View
     {
         $defaultTemplateId = (int) $request->integer('template_id');
+        $validationStateFilter = $request->string('validation_state')->toString();
 
         $guests = Guest::query()
-            ->with('currentPublicLink', 'messageSends.template')
+            ->with([
+                'currentPublicLink',
+                'messageSends.template',
+                'publicLinks' => fn ($q) => $q->where('mode', 'validation')->latest('generated_at'),
+            ])
             ->orderBy('name')
             ->get();
 
@@ -113,6 +118,7 @@ class MessageSendController extends Controller
             'groups'            => CatalogOptions::values('guest_groups'),
             'templates'         => MessageTemplate::orderBy('position')->get(),
             'defaultTemplateId' => $defaultTemplateId,
+            'validationStateFilter' => $validationStateFilter,
         ]);
     }
 
