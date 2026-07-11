@@ -47,7 +47,7 @@
 
             <form method="post" action="{{ route('guests.store') }}" data-preserve-table="guests-table">
                 @csrf
-                <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
+                <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}">
                 @include('guests._fields', ['guest' => new \App\Models\Guest()])
                 <div class="inline" style="margin-top: 18px;">
                     <button class="btn" type="submit">Guardar familia o grupo</button>
@@ -65,17 +65,17 @@
                         <div class="section-kicker">Edición en modal</div>
                         <h3 class="section-title">Editar familia o grupo</h3>
                     </div>
-                    <a class="btn ghost" href="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">Cerrar</a>
+                    <a class="btn ghost" href="{{ route('guests.index', request()->except('edit')) }}">Cerrar</a>
                 </div>
 
                 <form method="post" action="{{ route('guests.update', $editingGuest) }}" data-preserve-table="guests-table">
                     @csrf
                     @method('put')
-                    <input type="hidden" name="return_to" value="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">
+                    <input type="hidden" name="return_to" value="{{ route('guests.index', request()->except('edit')) }}">
                     @include('guests._fields', ['guest' => $editingGuest])
                     <div class="inline" style="margin-top: 18px;">
                         <button class="btn" type="submit">Guardar cambios</button>
-                        <a class="btn secondary" href="{{ route('guests.index', request()->except('edit')) }}#guests-table-section">Cancelar</a>
+                        <a class="btn secondary" href="{{ route('guests.index', request()->except('edit')) }}">Cancelar</a>
                     </div>
                 </form>
             </div>
@@ -327,7 +327,7 @@
                                     @method('patch')
                                 </form>
                                 <div class="inline">
-                                    <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}#guests-table-section" data-preserve-table="guests-table" title="Editar familia o grupo" aria-label="Editar familia o grupo">
+                                    <a class="btn secondary icon-btn" href="{{ route('guests.index', $rowEditQuery) }}" data-preserve-table="guests-table" title="Editar familia o grupo" aria-label="Editar familia o grupo">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9"/>
                                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
@@ -341,7 +341,7 @@
                                         data-confirm-icon="warning">
                                         @csrf
                                         @method('delete')
-                                        <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}#guests-table-section">
+                                        <input type="hidden" name="return_to" value="{{ route('guests.index', request()->query()) }}">
                                         <button class="btn danger icon-btn" type="submit" title="Desactivar familia o grupo" aria-label="Desactivar familia o grupo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M3 6h18"/>

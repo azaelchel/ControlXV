@@ -58,7 +58,7 @@
 
             <form method="post" action="{{ route('companions.store') }}" data-preserve-table="companions-table">
                 @csrf
-                <input type="hidden" name="return_to" value="{{ route('companions.index', request()->query()) }}#companions-table-section">
+                <input type="hidden" name="return_to" value="{{ route('companions.index', request()->query()) }}">
                 @include('companions._batch_fields')
                 <div class="inline" style="margin-top: 18px;">
                     <button class="btn" type="submit">Guardar invitados</button>
@@ -76,17 +76,17 @@
                         <div class="section-kicker">Edición en modal</div>
                         <h3 class="section-title">Editar invitado</h3>
                     </div>
-                    <a class="btn ghost" href="{{ route('companions.index', request()->except('edit')) }}#companions-table-section">Cerrar</a>
+                    <a class="btn ghost" href="{{ route('companions.index', request()->except('edit')) }}">Cerrar</a>
                 </div>
 
                 <form method="post" action="{{ route('companions.update', $editingCompanion) }}" data-preserve-table="companions-table">
                     @csrf
                     @method('put')
-                    <input type="hidden" name="return_to" value="{{ route('companions.index', request()->except('edit')) }}#companions-table-section">
+                    <input type="hidden" name="return_to" value="{{ route('companions.index', request()->except('edit')) }}">
                     @include('companions._fields', ['companion' => $editingCompanion])
                     <div class="inline" style="margin-top: 18px;">
                         <button class="btn" type="submit">Guardar cambios</button>
-                        <a class="btn secondary" href="{{ route('companions.index', request()->except('edit')) }}#companions-table-section">Cancelar</a>
+                        <a class="btn secondary" href="{{ route('companions.index', request()->except('edit')) }}">Cancelar</a>
                     </div>
                 </form>
             </div>
@@ -286,7 +286,7 @@
                             <td>{{ $companion->notes ?: '—' }}</td>
                             <td>
                                 <div class="inline">
-                                    <a class="btn secondary icon-btn" href="{{ route('companions.index', $rowEditQuery) }}#companions-table-section" data-preserve-table="companions-table" title="Editar invitado" aria-label="Editar invitado">
+                                    <a class="btn secondary icon-btn" href="{{ route('companions.index', $rowEditQuery) }}" data-preserve-table="companions-table" title="Editar invitado" aria-label="Editar invitado">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9"/>
                                             <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
@@ -300,7 +300,7 @@
                                         data-confirm-icon="warning">
                                         @csrf
                                         @method('delete')
-                                        <input type="hidden" name="return_to" value="{{ route('companions.index', request()->query()) }}#companions-table-section">
+                                        <input type="hidden" name="return_to" value="{{ route('companions.index', request()->query()) }}">
                                         <button class="btn danger icon-btn" type="submit" title="Desactivar invitado" aria-label="Desactivar invitado">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M3 6h18"/>
