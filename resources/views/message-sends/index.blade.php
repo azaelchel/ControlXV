@@ -39,7 +39,7 @@
         .la-cell { white-space: nowrap; }
         .la-cell .n { font-weight: 700; color: var(--primary-dark); }
 
-        .filter-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+        .filter-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
         .filter-row > div { min-width: 0; }
         .filter-row label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
         .filter-row input, .filter-row select { width: 100%; box-sizing: border-box; height: 42px; }
@@ -64,6 +64,11 @@
         .modal-box { background: white; border-radius: 16px; max-width: 720px; width: 100%; max-height: 92vh; overflow: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     </style>
 
+    @php
+        $validationTemplate = $templates->firstWhere('name', 'Validación final de datos');
+        $closureTemplate = $templates->firstWhere('name', 'Cierre por validación no recibida');
+    @endphp
+
     {{-- Panel de progreso --}}
     @php $pct = $totalGuests ? (int) round($confirmedCount / $totalGuests * 100) : 0; @endphp
     <div class="card" style="margin-bottom: 18px;">
@@ -87,6 +92,43 @@
         <div class="status-chips">
             @foreach ($statusCounts as $status => $count)
                 <span class="status-chip"><span class="dot"></span>{{ $status }} <strong>{{ number_format($count) }}</strong></span>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- Control de validación final --}}
+    <div class="card" style="margin-bottom: 18px; border-color:#e4d6f2; background:#fff;">
+        <div class="inline" style="justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 14px; margin-bottom: 12px;">
+            <div>
+                <div class="section-kicker">Validación final</div>
+                <h3 class="section-title" style="margin: 2px 0;">Control de confirmados</h3>
+                <div class="small">Solo familias con estatus <strong>Confirmado</strong>. Úsalo para detectar a quién falta enviar validación y quién no respondió.</div>
+            </div>
+            <div class="inline" style="gap: 8px; flex-wrap: wrap;">
+                @if ($validationTemplate)
+                    <a class="btn secondary" href="{{ route('message-sends.create', ['template_id' => $validationTemplate->id, 'validation_state' => 'none']) }}">Enviar validación faltante</a>
+                @endif
+                @if ($closureTemplate)
+                    <a class="btn secondary" href="{{ route('message-sends.create', ['template_id' => $closureTemplate->id, 'validation_state' => 'pending']) }}">Preparar cierre sin respuesta</a>
+                @endif
+            </div>
+        </div>
+        <div class="state-tabs" style="margin-bottom:0;">
+            @php
+                $validationBase = array_filter(['q' => $nameQuery, 'group' => $groupFilter], fn ($v) => $v !== '' && $v !== null);
+                $validationTabs = [
+                    ['label' => 'Confirmados', 'count' => $validationCounts['all'], 'params' => $validationBase + ['status' => 'Confirmado'], 'active' => $statusFilter === 'Confirmado' && ! $validationStateFilter],
+                    ['label' => 'Sin validación', 'count' => $validationCounts['none'], 'params' => $validationBase + ['validation_state' => 'none'], 'active' => $validationStateFilter === 'none'],
+                    ['label' => 'Enviada sin respuesta', 'count' => $validationCounts['pending'], 'params' => $validationBase + ['validation_state' => 'pending'], 'active' => $validationStateFilter === 'pending'],
+                    ['label' => 'Vigente', 'count' => $validationCounts['sent'], 'params' => $validationBase + ['validation_state' => 'sent'], 'active' => $validationStateFilter === 'sent'],
+                    ['label' => 'Vencida', 'count' => $validationCounts['expired'], 'params' => $validationBase + ['validation_state' => 'expired'], 'active' => $validationStateFilter === 'expired'],
+                    ['label' => 'Respondida', 'count' => $validationCounts['responded'], 'params' => $validationBase + ['validation_state' => 'responded'], 'active' => $validationStateFilter === 'responded'],
+                ];
+            @endphp
+            @foreach ($validationTabs as $tab)
+                <a href="{{ route('message-sends.index', $tab['params']) }}" class="state-tab {{ $tab['active'] ? 'active' : '' }}">
+                    {{ $tab['label'] }} <span class="badge">{{ number_format($tab['count']) }}</span>
+                </a>
             @endforeach
         </div>
     </div>
@@ -146,9 +188,18 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label>Validación final</label>
+                <select name="validation_state">
+                    <option value="">Todas</option>
+                    @foreach ($validationStates as $key => $label)
+                        <option value="{{ $key }}" @selected($validationStateFilter === $key)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="inline" style="gap: 6px;">
                 <button class="btn secondary" type="submit">Filtrar</button>
-                @if ($statusFilter || $linkStateFilter || $groupFilter || $nameQuery)
+                @if ($statusFilter || $linkStateFilter || $validationStateFilter || $groupFilter || $nameQuery)
                     <a href="{{ route('message-sends.index') }}" class="btn secondary">Limpiar</a>
                 @endif
             </div>
@@ -205,6 +256,7 @@
                         <th>Familia / Grupo</th>
                         <th>Estatus</th>
                         <th>Estado del link</th>
+                        <th>Validación final</th>
                         <th>Links · Envíos</th>
                         <th>Vence</th>
                         <th>Último mensaje</th>
@@ -219,6 +271,8 @@
                             $state = $row['state'];
                             $lastSend = $row['last_send'];
                             $phoneIntl = $row['phone_intl'];
+                            $validation = $row['validation_state'];
+                            $validationLink = $row['validation_link'];
                         @endphp
                         <tr>
                             <td>
@@ -237,6 +291,17 @@
                                 <span class="pill {{ $state['class'] }}">{{ $state['label'] }}</span>
                                 @if ($link)
                                     <a href="{{ route('guest-review.show', ['guest' => $guest, 'token' => $link->token]) }}" target="_blank" class="small" style="display:block; margin-top: 4px;">Abrir link →</a>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="pill {{ $validation['class'] }}">{{ $validation['label'] }}</span>
+                                @if ($validationLink)
+                                    <div class="small" style="margin-top: 4px;">
+                                        {{ $validationLink->generated_at?->format('d/m/Y H:i') }}
+                                        @if (! $validationLink->responded_at && $validationLink->expires_at)
+                                            · vence {{ $validationLink->expires_at->format('d/m/Y') }}
+                                        @endif
+                                    </div>
                                 @endif
                             </td>
                             <td class="small la-cell">
@@ -295,12 +360,25 @@
                                             data-message="{{ $lastSend?->rendered_message ?? '' }}"
                                             title="{{ $lastSend ? 'Abrir WhatsApp con el último mensaje precargado' : 'Abrir WhatsApp con este número' }}">💬</button>
                                     @endif
+
+                                    @if ($guest->status === 'Confirmado' && in_array($validation['key'], ['sent', 'expired'], true))
+                                        <form method="post" action="{{ route('guests.status', $guest) }}"
+                                            data-confirm-title="¿Marcar a {{ $guest->name }} como No asistirá?"
+                                            data-confirm-text="Úsalo cuando ya se envió la validación final y no hubo respuesta."
+                                            data-confirm-button="Sí, marcar No asistirá"
+                                            data-confirm-color="#d8527f"
+                                            data-confirm-icon="warning">
+                                            @csrf @method('patch')
+                                            <input type="hidden" name="status" value="No asistirá">
+                                            <button type="submit" class="btn danger icon-btn" title="Marcar No asistirá">✕</button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="empty">No hay familias con esos filtros.</td>
+                            <td colspan="8" class="empty">No hay familias con esos filtros.</td>
                         </tr>
                     @endforelse
                 </tbody>

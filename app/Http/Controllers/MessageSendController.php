@@ -24,6 +24,7 @@ class MessageSendController extends Controller
     {
         $statusFilter    = $request->string('status')->toString();
         $linkStateFilter = $request->string('link_state')->toString();
+        $validationStateFilter = $request->string('validation_state')->toString();
         $groupFilter     = $request->string('group')->toString();
         $nameQuery       = $request->string('q')->toString();
         $perPage         = (int) ($request->integer('per_page') ?: 25);
@@ -33,7 +34,11 @@ class MessageSendController extends Controller
         // panel de progreso muestran el total real sin importar la pestaña activa.
         $guests = Guest::query()
             ->withCount('publicLinks')
-            ->with(['currentPublicLink', 'messageSends' => fn ($q) => $q->latest()->with('template')])
+            ->with([
+                'currentPublicLink',
+                'messageSends' => fn ($q) => $q->latest()->with('template'),
+                'publicLinks' => fn ($q) => $q->where('mode', 'validation')->latest('generated_at'),
+            ])
             ->when($groupFilter, fn ($q) => $q->where('group_name', $groupFilter))
             ->when($nameQuery, fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($nameQuery) . '%']))
             ->orderBy('name')
@@ -48,6 +53,16 @@ class MessageSendController extends Controller
             ->all();
 
         $allRows = $guests->map(fn (Guest $g) => $this->buildRow($g, $companionCounts));
+
+        $confirmedRows = $allRows->filter(fn ($r) => $r['guest']->status === 'Confirmado');
+        $validationCounts = [
+            'all' => $confirmedRows->count(),
+            'none' => $confirmedRows->where('validation_state.key', 'none')->count(),
+            'sent' => $confirmedRows->where('validation_state.key', 'sent')->count(),
+            'expired' => $confirmedRows->where('validation_state.key', 'expired')->count(),
+            'pending' => $confirmedRows->filter(fn ($r) => in_array($r['validation_state']['key'], ['sent', 'expired'], true))->count(),
+            'responded' => $confirmedRows->where('validation_state.key', 'responded')->count(),
+        ];
 
         // Conteos para las pestañas de estado (sobre el universo base)
         $tabCounts = [
@@ -69,6 +84,9 @@ class MessageSendController extends Controller
         $rows = $allRows
             ->when($statusFilter, fn ($c) => $c->filter(fn ($r) => $r['guest']->status === $statusFilter))
             ->when($linkStateFilter, fn ($c) => $c->filter(fn ($r) => $r['state']['key'] === $linkStateFilter))
+            ->when($validationStateFilter, fn ($c) => $c->filter(fn ($r) => $r['guest']->status === 'Confirmado'
+                && ($r['validation_state']['key'] === $validationStateFilter
+                    || ($validationStateFilter === 'pending' && in_array($r['validation_state']['key'], ['sent', 'expired'], true)))))
             ->values();
 
         $paginator = new LengthAwarePaginator(
@@ -91,9 +109,12 @@ class MessageSendController extends Controller
             'templates'       => MessageTemplate::orderBy('position')->get(),
             'statusFilter'    => $statusFilter,
             'linkStateFilter' => $linkStateFilter,
+            'validationStateFilter' => $validationStateFilter,
+            'validationCounts' => $validationCounts,
             'groupFilter'     => $groupFilter,
             'nameQuery'       => $nameQuery,
             'linkStates'      => $this->linkStateLabels(),
+            'validationStates' => $this->validationStateLabels(),
         ]);
     }
 
@@ -561,8 +582,34 @@ class MessageSendController extends Controller
             'last_send'       => $lastSend,
             'sends_count'     => $guest->messageSends->count(),
             'links_count'     => (int) ($guest->public_links_count ?? 0),
+            'validation_link'  => $guest->latestValidationLink(),
+            'validation_state' => $this->describeValidationState($guest),
             'phone_intl'      => $this->phoneIntl($guest),
             'companion_count' => $companionCounts[$guest->name] ?? 0,
+        ];
+    }
+
+    private function describeValidationState(Guest $guest): array
+    {
+        $state = $guest->validationState();
+
+        return match ($state) {
+            'none' => ['key' => 'none', 'label' => 'Sin validación', 'class' => 'status-default'],
+            'sent' => ['key' => 'sent', 'label' => 'Enviada sin respuesta', 'class' => 'status-pendiente'],
+            'expired' => ['key' => 'expired', 'label' => 'Vencida sin respuesta', 'class' => 'status-no-asistira'],
+            'responded' => ['key' => 'responded', 'label' => 'Respondida', 'class' => 'status-confirmado'],
+            default => ['key' => 'n/a', 'label' => 'No aplica', 'class' => 'status-default'],
+        };
+    }
+
+    private function validationStateLabels(): array
+    {
+        return [
+            'none' => 'Sin validación enviada',
+            'pending' => 'Enviada sin respuesta',
+            'sent' => 'Vigente sin respuesta',
+            'expired' => 'Vencida sin respuesta',
+            'responded' => 'Respondida',
         ];
     }
 
