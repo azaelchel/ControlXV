@@ -313,6 +313,89 @@ class CompanionController extends Controller
         )->deleteFileAfterSend(true);
     }
 
+    public function exportConfirmed(): BinaryFileResponse
+    {
+        $confirmedGuests = Guest::query()
+            ->where('status', 'Confirmado')
+            ->orderBy('name')
+            ->get(['name', 'group_name', 'category', 'phone', 'sponsor'])
+            ->keyBy('name');
+
+        $companions = Companion::query()
+            ->whereIn('invited_group', $confirmedGuests->keys())
+            ->orderBy('invited_group')
+            ->orderByRaw("CASE type WHEN 'Adulto' THEN 1 WHEN 'Adolescente' THEN 2 WHEN 'Niño' THEN 3 ELSE 9 END")
+            ->orderBy('name')
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Confirmados');
+
+        $sheet->mergeCells('A1:H1');
+        $sheet->setCellValue('A1', 'Reporte de Invitados Confirmados - XV');
+        $sheet->mergeCells('A2:H2');
+        $sheet->setCellValue('A2', 'Solo invitados individuales registrados dentro de familias o grupos con estatus Confirmado');
+
+        $headers = ['Familia o grupo', 'Nombre del invitado', 'Tipo', 'Género', 'Categoría', 'Teléfono', 'Padrino', 'Observaciones'];
+        foreach ($headers as $index => $header) {
+            $column = chr(65 + $index);
+            $sheet->setCellValue("{$column}4", $header);
+        }
+
+        $row = 5;
+        foreach ($companions as $companion) {
+            $guest = $confirmedGuests->get($companion->invited_group);
+
+            $sheet->setCellValue("A{$row}", $companion->invited_group);
+            $sheet->setCellValue("B{$row}", $companion->name);
+            $sheet->setCellValue("C{$row}", $companion->type);
+            $sheet->setCellValue("D{$row}", $companion->sex);
+            $sheet->setCellValue("E{$row}", $guest?->category);
+            $sheet->setCellValue("F{$row}", $guest?->phone);
+            $sheet->setCellValue("G{$row}", $guest?->sponsor);
+            $sheet->setCellValue("H{$row}", $companion->notes);
+            $row++;
+        }
+
+        $lastDataRow = max(5, $row - 1);
+
+        $sheet->getStyle('A1:H1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8F55BE']],
+        ]);
+        $sheet->getStyle('A2:H2')->applyFromArray([
+            'font' => ['italic' => true, 'size' => 11, 'color' => ['rgb' => '5F4C70']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getStyle("A4:H4")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => '4A2F60']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EEDCFB']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D8C5EA']]],
+        ]);
+        $sheet->getStyle("A4:H{$lastDataRow}")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E8DCF2']]],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->freezePane('A5');
+        $sheet->setAutoFilter("A4:H{$lastDataRow}");
+
+        foreach (range('A', 'H') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $tempPath = storage_path('app/reporte_invitados_confirmados_xv.xlsx');
+        (new Xlsx($spreadsheet))->save($tempPath);
+
+        return response()->download(
+            $tempPath,
+            'reporte_invitados_confirmados_xv.xlsx',
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+        )->deleteFileAfterSend(true);
+    }
+
     private function buildConfirmedGuestProfiles()
     {
         $confirmedGuests = Guest::query()

@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/companions/{companion}/edit', [CompanionController::class, 'edit'])->name('companions.edit');
         Route::put('/companions/{companion}', [CompanionController::class, 'update'])->name('companions.update');
         Route::delete('/companions/{companion}', [CompanionController::class, 'destroy'])->name('companions.destroy');
+        Route::get('/companions/export-confirmed', [CompanionController::class, 'exportConfirmed'])->name('companions.export-confirmed');
         Route::get('/companions/export', [CompanionController::class, 'export'])->name('companions.export');
     });
 

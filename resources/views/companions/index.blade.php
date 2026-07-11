@@ -40,6 +40,7 @@
             </div>
             <div class="inline" style="gap: 10px;">
                 <button class="btn" style="background: white; color: var(--primary-dark);" type="button" @click="showCompanionModal = true">+ Dar de alta invitado</button>
+                <a class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);" href="{{ route('companions.export-confirmed') }}">✅ Exportar confirmados</a>
                 <a class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);" href="{{ route('companions.export', request()->query()) }}">📥 Exportar reporte</a>
             </div>
         </div>
