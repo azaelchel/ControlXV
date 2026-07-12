@@ -141,6 +141,7 @@
                             ->filter(fn ($a) => $a->companion)
                             ->sortBy(fn ($a) => $a->companion->invited_group)
                             ->map(fn ($a) => [
+                                'id'    => $a->companion_id,
                                 'name'  => $a->companion->name,
                                 'group' => $a->companion->invited_group,
                                 'type'  => $a->companion->type ?: '—',
@@ -151,6 +152,7 @@
                         data-name="{{ $table->name }}"
                         data-cap="{{ $cap }}"
                         data-occ="{{ $occ }}"
+                        data-unassign-url="{{ route('tables.unassign', $table) }}"
                         data-occupants='@json($occupants, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)'
                         title="{{ $table->name }} — {{ $occ }}/{{ $cap }}">
                         <span class="num">{{ $tableNum($table->name) }}</span>
@@ -187,6 +189,10 @@
             const occEl = document.getElementById('tm-occ');
             const listEl = document.getElementById('tm-list');
             const typeColor = { 'Adulto':'#6d28b8', 'Adolescente':'#1f9e6a', 'Niño':'#d6453f' };
+            const csrf = @json(csrf_token());
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[char]));
 
             document.querySelectorAll('.tbl').forEach(el => {
                 el.addEventListener('click', () => {
@@ -198,15 +204,32 @@
                     if (!occupants.length) {
                         listEl.innerHTML = '<p class="small" style="margin:0;">Mesa vacía, aún sin invitados sentados.</p>';
                     } else {
-                        listEl.innerHTML = occupants.map((c, i) => `
-                            <div class="inline" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0e9fa;">
-                                <span><strong>${i + 1}.</strong> ${c.name} <span class="small" style="color:#9b8ab0;">· ${c.group}</span></span>
-                                <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${c.type}</span>
-                            </div>`).join('');
+                        const unassignUrl = el.dataset.unassignUrl;
+listEl.innerHTML = occupants.map((c, i) => `
+    <div class="inline" style="justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0e9fa;">
+        <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
+        <span class="inline" style="gap:6px; flex-shrink:0;">
+            <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
+            <form method="post" action="${unassignUrl}" data-unassign-form data-name="${escapeHtml(c.name)}" style="margin:0;">
+                <input type="hidden" name="_token" value="${csrf}">
+                <input type="hidden" name="companion_id" value="${c.id}">
+                <button type="submit" class="btn small danger" title="Quitar de esta mesa">Quitar</button>
+            </form>
+        </span>
+    </div>`).join('');
                     }
                     modal.style.display = 'flex';
                 });
             });
+            listEl.addEventListener('submit', (event) => {
+                const form = event.target.closest('[data-unassign-form]');
+                if (!form) return;
+
+                if (!confirm(`¿Quitar a ${form.dataset.name || 'este invitado'} de esta mesa?`)) {
+                    event.preventDefault();
+                }
+            });
+
             const close = () => { modal.style.display = 'none'; };
             document.getElementById('tm-close').addEventListener('click', close);
             modal.addEventListener('click', e => { if (e.target === modal) close(); });
