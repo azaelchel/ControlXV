@@ -59,29 +59,35 @@
     <div class="card" style="margin-bottom: 18px;">
         <div class="inline" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <h3 style="margin: 0;">Invitados sin mesa ({{ $summary['unassigned'] }})</h3>
-            <form method="get" class="inline" style="gap: 6px;">
-                <input name="q" value="{{ $q }}" placeholder="Filtrar por nombre o grupo…" style="min-width: 240px;">
-                <button class="btn small" type="submit">Filtrar</button>
-                @if ($q !== '')
-                    <a class="btn small secondary" href="{{ route('tables.manage') }}">Limpiar</a>
-                @endif
-            </form>
+<form method="get" class="inline" style="gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+    <select name="group" style="min-width: 190px;">
+        <option value="">Todos los grupos</option>
+        @foreach ($groupOptions as $option)
+            <option value="{{ $option }}" @selected($group === $option)>{{ $option }}</option>
+        @endforeach
+    </select>
+    <input name="q" value="{{ $q }}" placeholder="Filtrar por nombre o familia…" style="min-width: 240px;">
+    <button class="btn small" type="submit">Filtrar</button>
+    @if ($q !== '' || $group !== '')
+        <a class="btn small secondary" href="{{ route('tables.manage') }}">Limpiar</a>
+    @endif
+</form>
         </div>
 
         @if ($tables->isEmpty())
             <p class="small" style="margin: 12px 0 0;">Primero crea al menos una mesa para poder acomodar a los invitados.</p>
         @elseif ($unassigned->isEmpty())
-            <p class="small" style="margin: 12px 0 0;">{{ $q !== '' ? 'Ningún invitado sin mesa coincide con el filtro.' : '🎉 Todos los invitados confirmados ya tienen mesa.' }}</p>
+            <p class="small" style="margin: 12px 0 0;">{{ ($q !== '' || $group !== '') ? 'Ningún invitado sin mesa coincide con el filtro.' : '🎉 Todos los invitados confirmados ya tienen mesa.' }}</p>
         @else
             <div class="grid cols-2" style="gap: 12px; margin-top: 12px;">
-                @foreach ($unassigned as $group => $people)
+                @foreach ($unassigned as $family => $people)
                     <div style="border: 1px solid #efe5f7; border-radius: 12px; padding: 12px;">
                         <div class="inline" style="justify-content: space-between; align-items: start; gap: 8px;">
-                            <strong>{{ $group }} <span class="small">({{ $people->count() }})</span></strong>
+                            <strong>{{ $family }} <span class="small">({{ $people->count() }})</span></strong>
                             <form method="post" action="#" class="inline" style="gap: 6px;"
                                 onsubmit="this.action='{{ url('confirmed-tables') }}/'+this.table_id.value+'/assign-group';">
                                 @csrf
-                                <input type="hidden" name="group" value="{{ $group }}">
+                                <input type="hidden" name="group" value="{{ $family }}">
                                 <select name="table_id" required style="font-size: 12px; padding: 4px 8px;">
                                     <option value="" disabled selected hidden>Elegir mesa…</option>
                                     @foreach ($tables as $t)

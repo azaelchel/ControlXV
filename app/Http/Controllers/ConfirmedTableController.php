@@ -72,7 +72,8 @@ class ConfirmedTableController extends Controller
     public function manage(Request $request): View
     {
         $q = $request->string('q')->toString();
-        $data = $this->buildPlannerData($q);
+        $group = $request->string('group')->toString();
+        $data = $this->buildPlannerData($q, $group);
 
         return view('tables.manage', [
             'tables' => $data['tables'],
@@ -82,6 +83,8 @@ class ConfirmedTableController extends Controller
             'types' => $this->tableTypes(),
             'shapes' => $this->tableShapes(),
             'q' => $q,
+            'group' => $group,
+            'groupOptions' => $data['groupOptions'],
         ]);
     }
 
@@ -283,7 +286,7 @@ class ConfirmedTableController extends Controller
      * mesa (solo companions activos de guests Confirmados activos, opcionalmente
      * filtrados), grupos divididos, resumen y progreso.
      */
-    private function buildPlannerData(string $unassignedFilter = ''): array
+    private function buildPlannerData(string $unassignedFilter = '', string $groupFilter = ''): array
     {
         $tables = EventTable::query()
             ->with(['assignments.companion'])
@@ -294,10 +297,17 @@ class ConfirmedTableController extends Controller
         // Companions elegibles: activos, de guests activos con status Confirmado.
         $confirmedGuests = Guest::query()
             ->where('status', 'Confirmado')
-            ->get(['name', 'category']);
+            ->get(['name', 'category', 'group_name']);
 
         $confirmedNames = $confirmedGuests->pluck('name');
         $guestCategories = $confirmedGuests->pluck('category', 'name');
+        $guestGroups = $confirmedGuests->pluck('group_name', 'name');
+        $groupOptions = $confirmedGuests
+            ->pluck('group_name')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
 
         $eligible = Companion::query()
             ->whereIn('invited_group', $confirmedNames)
@@ -317,14 +327,21 @@ class ConfirmedTableController extends Controller
             }
         }
 
-        // Invitados sin mesa (con filtro opcional por nombre o grupo), agrupados.
+        // Invitados sin mesa (con filtro opcional por nombre, familia o grupo), agrupados.
         $unassignedList = $eligible->whereNotIn('id', $assignedIds);
+
+        if ($groupFilter !== '') {
+            $unassignedList = $unassignedList->filter(
+                fn (Companion $c) => (string) ($guestGroups[$c->invited_group] ?? '') === $groupFilter
+            );
+        }
 
         if ($unassignedFilter !== '') {
             $needle = mb_strtolower(trim($unassignedFilter));
             $unassignedList = $unassignedList->filter(
                 fn (Companion $c) => str_contains(mb_strtolower($c->name), $needle)
                     || str_contains(mb_strtolower($c->invited_group), $needle)
+                    || str_contains(mb_strtolower((string) ($guestGroups[$c->invited_group] ?? '')), $needle)
             );
         }
 
@@ -360,6 +377,8 @@ class ConfirmedTableController extends Controller
             'eligible' => $eligible,
             'companionTable' => $companionTable,
             'unassigned' => $unassigned,
+            'guestGroups' => $guestGroups,
+            'groupOptions' => $groupOptions,
             'dividedGroups' => $dividedGroups,
             'progress' => [
                 'eligible' => $totalEligible,
