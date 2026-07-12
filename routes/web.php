@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/confirmed-tables/{eventTable}/assign', [ConfirmedTableController::class, 'assign'])->name('tables.assign');
         Route::post('/confirmed-tables/{eventTable}/assign-group', [ConfirmedTableController::class, 'assignGroup'])->name('tables.assign-group');
         Route::post('/confirmed-tables/{eventTable}/unassign', [ConfirmedTableController::class, 'unassign'])->name('tables.unassign');
+        Route::post('/confirmed-tables/{eventTable}/bulk', [ConfirmedTableController::class, 'bulkAction'])->name('tables.bulk');
     });
 
     Route::middleware('module:finances')->group(function () {

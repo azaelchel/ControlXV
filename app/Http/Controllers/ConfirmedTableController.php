@@ -59,8 +59,9 @@ class ConfirmedTableController extends Controller
         $data = $this->buildPlannerData();
 
         return view('tables.map', [
-            'tables'   => $data['tables'],
-            'summary'  => $data['summary'],
+            'tables' => $data['tables'],
+            'tableOptions' => $data['tableOptions'],
+            'summary' => $data['summary'],
             'progress' => $data['progress'],
         ]);
     }
@@ -212,6 +213,55 @@ class ConfirmedTableController extends Controller
         return back()->with('status', 'Invitado retirado de la mesa.');
     }
 
+    public function bulkAction(Request $request, EventTable $eventTable): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'in:move,unassign'],
+            'companion_ids' => ['required', 'array', 'min:1'],
+            'companion_ids.*' => ['integer'],
+            'target_table_id' => ['nullable', 'integer'],
+        ]);
+
+        $companionIds = collect($validated['companion_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $activeIds = TableAssignment::where('event_table_id', $eventTable->id)
+            ->whereIn('companion_id', $companionIds)
+            ->pluck('companion_id');
+
+        if ($activeIds->isEmpty()) {
+            return back()->with('status', 'Selecciona al menos un invitado sentado en esta mesa.');
+        }
+
+        if ($validated['action'] === 'unassign') {
+            TableAssignment::where('event_table_id', $eventTable->id)
+                ->whereIn('companion_id', $activeIds)
+                ->update(['active' => false]);
+
+            return back()->with('status', $activeIds->count().' invitado(s) retirado(s) de la mesa.');
+        }
+
+        $targetTable = EventTable::find($request->integer('target_table_id'));
+
+        if (! $targetTable || $targetTable->id === $eventTable->id) {
+            return back()->with('status', 'Elige una mesa destino diferente.');
+        }
+
+        if ($targetTable->availableSeats() < $activeIds->count()) {
+            return back()->with('status', "La mesa \"{$targetTable->name}\" no tiene suficientes lugares libres.");
+        }
+
+        $companions = Companion::whereIn('id', $activeIds)->get();
+
+        foreach ($companions as $companion) {
+            $this->seatCompanion($targetTable, $companion);
+        }
+
+        return back()->with('status', $companions->count()." invitado(s) movido(s) a \"{$targetTable->name}\".");
+    }
+
     /**
      * Sienta a un companion en una mesa garantizando una sola asignación activa.
      * (Mover = sentar en la nueva mesa; la anterior se libera automáticamente.)
@@ -245,8 +295,8 @@ class ConfirmedTableController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'capacity' => ['required', 'integer', 'min:1', 'max:12'],
-            'table_type' => ['nullable', 'string', 'in:' . implode(',', $this->tableTypes())],
-            'shape' => ['nullable', 'string', 'in:' . implode(',', $this->tableShapes())],
+            'table_type' => ['nullable', 'string', 'in:'.implode(',', $this->tableTypes())],
+            'shape' => ['nullable', 'string', 'in:'.implode(',', $this->tableShapes())],
             'is_principal' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
@@ -397,36 +447,48 @@ class ConfirmedTableController extends Controller
         ];
     }
 
-private function tableOptions($tables)
-{
-    return $tables
-        ->sortBy(fn (EventTable $table) => $this->tableOptionSortKey($table))
-        ->values();
-}
-
-private function tableOptionSortKey(EventTable $table): string
-{
-    if (preg_match('/\d+/', $table->name, $matches)) {
-        return '0|' . str_pad($matches[0], 4, '0', STR_PAD_LEFT) . '|' . mb_strtolower($table->name);
+    private function tableOptions($tables)
+    {
+        return $tables
+            ->sort(fn (EventTable $a, EventTable $b) => $this->compareTableOptions($a, $b))
+            ->values();
     }
 
-    if ($table->is_principal) {
-        return '1|0000|' . mb_strtolower($table->name);
+    private function compareTableOptions(EventTable $a, EventTable $b): int
+    {
+        $aNumber = $this->tableNumber($a);
+        $bNumber = $this->tableNumber($b);
+
+        if ($aNumber !== null && $bNumber !== null && $aNumber !== $bNumber) {
+            return $aNumber <=> $bNumber;
+        }
+
+        if ($aNumber !== null && $bNumber === null) {
+            return -1;
+        }
+
+        if ($aNumber === null && $bNumber !== null) {
+            return 1;
+        }
+
+        return strnatcasecmp($a->name, $b->name);
     }
 
-    return '2|9999|' . mb_strtolower($table->name);
-}
+    private function tableNumber(EventTable $table): ?int
+    {
+        return preg_match('/\d+/', $table->name, $matches) ? (int) $matches[0] : null;
+    }
 
     private function tableSortKey(EventTable $table): string
     {
         if ($table->is_principal) {
-            return '0|0000|' . mb_strtolower($table->name);
+            return '0|0000|'.mb_strtolower($table->name);
         }
 
         if (preg_match('/\d+/', $table->name, $matches)) {
-            return '1|' . str_pad($matches[0], 4, '0', STR_PAD_LEFT) . '|' . mb_strtolower($table->name);
+            return '1|'.str_pad($matches[0], 4, '0', STR_PAD_LEFT).'|'.mb_strtolower($table->name);
         }
 
-        return '2|9999|' . mb_strtolower($table->name);
+        return '2|9999|'.mb_strtolower($table->name);
     }
 }

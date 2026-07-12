@@ -152,7 +152,7 @@
                         data-name="{{ $table->name }}"
                         data-cap="{{ $cap }}"
                         data-occ="{{ $occ }}"
-                        data-unassign-url="{{ route('tables.unassign', $table) }}"
+                        data-bulk-url="{{ route('tables.bulk', $table) }}"
                         data-occupants='@json($occupants, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)'
                         title="{{ $table->name }} — {{ $occ }}/{{ $cap }}">
                         <span class="num">{{ $tableNum($table->name) }}</span>
@@ -189,7 +189,12 @@
             const occEl = document.getElementById('tm-occ');
             const listEl = document.getElementById('tm-list');
             const typeColor = { 'Adulto':'#6d28b8', 'Adolescente':'#1f9e6a', 'Niño':'#d6453f' };
-            const csrf = @json(csrf_token());
+const csrf = @json(csrf_token());
+const tableOptions = @json($tableOptions->map(fn ($table) => [
+    'id' => $table->id,
+    'name' => $table->name,
+    'available' => $table->availableSeats(),
+])->values(), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
             const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
             }[char]));
@@ -201,33 +206,108 @@
                     try { occupants = JSON.parse(el.dataset.occupants || '[]'); } catch (e) {}
                     nameEl.textContent = el.dataset.name;
                     occEl.textContent = occ + ' de ' + cap + ' lugares ocupados' + (cap - occ > 0 ? ' · ' + (cap - occ) + ' libres' : ' · capacidad llena');
-                    if (!occupants.length) {
-                        listEl.innerHTML = '<p class="small" style="margin:0;">Mesa vacía, aún sin invitados sentados.</p>';
-                    } else {
-                        const unassignUrl = el.dataset.unassignUrl;
-                        listEl.innerHTML = occupants.map((c, i) => `
-                            <div class="inline" style="justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0e9fa;">
-                                <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
-                                <span class="inline" style="gap:6px; flex-shrink:0;">
-                                    <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
-                                    <form method="post" action="${unassignUrl}"
-                                        data-confirm-title="¿Quitar a ${escapeHtml(c.name)} de esta mesa?"
-                                        data-confirm-text="Solo se libera su lugar en esta mesa. El invitado no se elimina del sistema."
-                                        data-confirm-button="Sí, quitar de mesa"
-                                        data-confirm-color="#d8527f"
-                                        data-confirm-icon="warning"
-                                        style="margin:0;">
-                                        <input type="hidden" name="_token" value="${csrf}">
-                                        <input type="hidden" name="companion_id" value="${c.id}">
-                                        <button type="submit" class="btn small danger" title="Quitar de esta mesa">Quitar</button>
-                                    </form>
-                                </span>
-                            </div>`).join('');
-                    }
+if (!occupants.length) {
+    listEl.innerHTML = '<p class="small" style="margin:0;">Mesa vacía, aún sin invitados sentados.</p>';
+} else {
+    const bulkUrl = el.dataset.bulkUrl;
+    const currentTableName = el.dataset.name;
+    const targetOptions = tableOptions
+        .filter((table) => table.name !== currentTableName)
+        .map((table) => `<option value="${table.id}" ${table.available < 1 ? 'disabled' : ''}>${escapeHtml(table.name)} (${table.available} libres)</option>`)
+        .join('');
+
+    listEl.innerHTML = `
+        <form method="post" action="${bulkUrl}" id="tm-bulk-form" style="margin:0;"
+            data-confirm-title="¿Aplicar cambios a la mesa ${escapeHtml(currentTableName)}?"
+            data-confirm-text="Mover o quitará solo los invitados seleccionados. No se elimina ninguna persona del sistema."
+            data-confirm-button="Sí, aplicar"
+            data-confirm-color="#8f55be"
+            data-confirm-icon="warning">
+            <input type="hidden" name="_token" value="${csrf}">
+            <div class="inline" style="justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+                <button type="button" class="btn small secondary" data-select-all>Seleccionar todos</button>
+                <span class="small" data-selected-count>0 seleccionados</span>
+                <span class="small" data-bulk-error style="display:none; color:#d8527f; font-weight:700;"></span>
+            </div>
+            <div style="border:1px solid #f0e9fa; border-radius:12px; overflow:hidden;">
+                ${occupants.map((c, i) => `
+                    <label class="inline" style="justify-content:space-between; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #f0e9fa; cursor:pointer;">
+                        <span class="inline" style="gap:8px; min-width:0;">
+                            <input type="checkbox" name="companion_ids[]" value="${c.id}" data-companion-check>
+                            <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
+                        </span>
+                        <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
+                    </label>`).join('')}
+            </div>
+            <div class="inline" style="justify-content:space-between; gap:8px; margin-top:12px; flex-wrap:wrap;">
+                <select name="target_table_id" style="min-width:190px; flex:1;">
+                    <option value="">Mover a mesa...</option>
+                    ${targetOptions}
+                </select>
+                <button type="submit" name="action" value="move" class="btn small">Mover seleccionados</button>
+                <button type="submit" name="action" value="unassign" class="btn small danger"
+                    data-confirm-title="¿Quitar seleccionados de ${escapeHtml(currentTableName)}?"
+                    data-confirm-color="#d8527f">Quitar seleccionados</button>
+            </div>
+        </form>`;
+}
                     modal.style.display = 'flex';
                 });
             });
-            const close = () => { modal.style.display = 'none'; };
+listEl.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-select-all]');
+    if (!button) return;
+
+    const checks = [...listEl.querySelectorAll('[data-companion-check]')];
+    const shouldCheck = checks.some((check) => !check.checked);
+    checks.forEach((check) => check.checked = shouldCheck);
+    listEl.dispatchEvent(new Event('change', { bubbles: true }));
+});
+
+listEl.addEventListener('change', () => {
+    const selected = listEl.querySelectorAll('[data-companion-check]:checked').length;
+    const label = listEl.querySelector('[data-selected-count]');
+    const error = listEl.querySelector('[data-bulk-error]');
+    if (label) label.textContent = selected + ' seleccionados';
+    if (error) {
+        error.style.display = 'none';
+        error.textContent = '';
+    }
+});
+
+listEl.addEventListener('submit', (event) => {
+    const form = event.target.closest('#tm-bulk-form');
+    if (!form) return;
+
+    const submitter = event.submitter;
+    const selected = form.querySelectorAll('[data-companion-check]:checked').length;
+    const error = form.querySelector('[data-bulk-error]');
+    if (error) {
+        error.style.display = 'none';
+        error.textContent = '';
+    }
+
+    if (selected < 1) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (error) {
+            error.textContent = 'Selecciona al menos un invitado.';
+            error.style.display = '';
+        }
+        return;
+    }
+
+    if (submitter?.value === 'move' && !form.target_table_id.value) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (error) {
+            error.textContent = 'Elige una mesa destino.';
+            error.style.display = '';
+        }
+    }
+});
+
+const close = () => { modal.style.display = 'none'; };
             document.getElementById('tm-close').addEventListener('click', close);
             modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
