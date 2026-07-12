@@ -78,6 +78,14 @@
     };
 @endphp
 
+@php
+    $tableOptionsPayload = $tableOptions->map(fn ($table) => [
+        'id' => $table->id,
+        'name' => $table->name,
+        'available' => $table->availableSeats(),
+    ])->values();
+@endphp
+
     {{-- Resumen --}}
     <div class="card" style="margin-bottom: 16px;">
         <div class="inline" style="justify-content: space-between; flex-wrap: wrap; gap: 14px;">
@@ -190,11 +198,7 @@
             const listEl = document.getElementById('tm-list');
             const typeColor = { 'Adulto':'#6d28b8', 'Adolescente':'#1f9e6a', 'Niño':'#d6453f' };
 const csrf = @json(csrf_token());
-const tableOptions = @json($tableOptions->map(fn ($table) => [
-    'id' => $table->id,
-    'name' => $table->name,
-    'available' => $table->availableSeats(),
-])->values(), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
+const tableOptions = @json($tableOptionsPayload, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
             const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
             }[char]));
