@@ -415,7 +415,7 @@ class MessageSendController extends Controller
                 $attributes
             );
         } else {
-            $send = MessageSend::withoutGlobalScope('active')->firstOrCreate(
+            $send = MessageSend::withoutGlobalScope('active')->updateOrCreate(
                 [
                     'guest_id' => $guest->id,
                     'message_template_id' => $data['message_template_id'],
@@ -424,10 +424,6 @@ class MessageSendController extends Controller
                 ],
                 $attributes
             );
-
-            if (! $send->active) {
-                $send->update($attributes);
-            }
         }
 
         if ($request->wantsJson()) {
@@ -545,7 +541,7 @@ class MessageSendController extends Controller
                 ]
             );
         } elseif (! $template->hasLinkPlaceholder()) {
-            MessageSend::withoutGlobalScope('active')->firstOrCreate(
+            MessageSend::withoutGlobalScope('active')->updateOrCreate(
                 [
                     'guest_id' => $guest->id,
                     'message_template_id' => $template->id,
