@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCompanionRequest;
 use App\Models\Companion;
 use App\Models\Guest;
+use App\Models\TableAssignment;
 use App\Support\GuestCompanionSynchronizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -215,6 +216,7 @@ class CompanionController extends Controller
     public function destroy(Request $request, Companion $companion): RedirectResponse
     {
         $guestName = $companion->invited_group;
+        TableAssignment::where('companion_id', $companion->id)->update(['active' => false]);
         $companion->update(['active' => false]);
 
         if ($guest = Guest::query()->where('name', $guestName)->first()) {

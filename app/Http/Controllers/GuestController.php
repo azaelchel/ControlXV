@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGuestRequest;
 use App\Models\Guest;
+use App\Models\Companion;
+use App\Models\TableAssignment;
 use App\Models\PublicGuestLink;
 use App\Services\PublicGuestLinkService;
 use App\Support\CatalogOptions;
@@ -232,8 +234,14 @@ class GuestController extends Controller
 
     public function destroy(Request $request, Guest $guest): RedirectResponse
     {
-        \App\Models\Companion::query()
+        $companionIds = Companion::query()
             ->where('invited_group', $guest->name)
+            ->pluck('id');
+
+        TableAssignment::whereIn('companion_id', $companionIds)->update(['active' => false]);
+
+        Companion::query()
+            ->whereIn('id', $companionIds)
             ->update(['active' => false]);
         $guest->update(['active' => false]);
 
