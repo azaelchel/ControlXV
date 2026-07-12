@@ -85,6 +85,7 @@ TXT,
             ],
             [
                 'name'               => 'Validación final de datos',
+                'link_mode'          => 'validation',
                 'description'        => 'Para confirmados: reconfirmación de datos (2 días) + aviso de pases QR por WhatsApp.',
                 'kicker'             => 'Validación final',
                 'includes_link'      => true,
