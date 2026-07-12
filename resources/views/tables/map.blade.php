@@ -57,6 +57,8 @@
     .toggle-ui::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; left:2px; top:1px; box-shadow:0 1px 4px rgba(55,35,80,.28); transition:left .15s, background .15s; }
     .empty-toggle input:checked + .toggle-ui { background:#2d1b43; border-color:#c9b9df; }
     .empty-toggle input:checked + .toggle-ui::after { left:20px; background:#fff; }
+    .tm-check { width: 14px; height: 14px; min-width: 14px; accent-color: #8f55be; margin: 0; }
+    .tm-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #f0e9fa; cursor: pointer; }
 </style>
 
 @php
@@ -228,6 +230,7 @@ if (!occupants.length) {
             data-confirm-color="#8f55be"
             data-confirm-icon="warning">
             <input type="hidden" name="_token" value="${csrf}">
+                                <input type="hidden" name="action" value="" data-bulk-action-input>
             <div class="inline" style="justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
                 <button type="button" class="btn small secondary" data-select-all>Seleccionar todos</button>
                 <span class="small" data-selected-count>0 seleccionados</span>
@@ -235,9 +238,9 @@ if (!occupants.length) {
             </div>
             <div style="border:1px solid #f0e9fa; border-radius:12px; overflow:hidden;">
                 ${occupants.map((c, i) => `
-                    <label class="inline" style="justify-content:space-between; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #f0e9fa; cursor:pointer;">
+                    <label class="tm-row">
                         <span class="inline" style="gap:8px; min-width:0;">
-                            <input type="checkbox" name="companion_ids[]" value="${c.id}" data-companion-check>
+                            <input class="tm-check" type="checkbox" name="companion_ids[]" value="${c.id}" data-companion-check>
                             <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
                         </span>
                         <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
@@ -248,8 +251,8 @@ if (!occupants.length) {
                     <option value="">Mover a mesa...</option>
                     ${targetOptions}
                 </select>
-                <button type="submit" name="action" value="move" class="btn small">Mover seleccionados</button>
-                <button type="submit" name="action" value="unassign" class="btn small danger"
+                <button type="submit" data-bulk-action="move" class="btn small">Mover seleccionados</button>
+                <button type="submit" data-bulk-action="unassign" class="btn small danger"
                     data-confirm-title="¿Quitar seleccionados de ${escapeHtml(currentTableName)}?"
                     data-confirm-color="#d8527f">Quitar seleccionados</button>
             </div>
@@ -284,6 +287,11 @@ listEl.addEventListener('submit', (event) => {
     if (!form) return;
 
     const submitter = event.submitter;
+    const actionInput = form.querySelector('[data-bulk-action-input]');
+    if (submitter?.dataset.bulkAction && actionInput) {
+        actionInput.value = submitter.dataset.bulkAction;
+    }
+    const action = actionInput?.value || '';
     const selected = form.querySelectorAll('[data-companion-check]:checked').length;
     const error = form.querySelector('[data-bulk-error]');
     if (error) {
@@ -301,13 +309,26 @@ listEl.addEventListener('submit', (event) => {
         return;
     }
 
-    if (submitter?.value === 'move' && !form.target_table_id.value) {
+    if (action === 'move' && !form.target_table_id.value) {
         event.preventDefault();
         event.stopPropagation();
         if (error) {
             error.textContent = 'Elige una mesa destino.';
             error.style.display = '';
         }
+        return;
+    }
+
+    if (action === 'unassign') {
+        form.dataset.confirmTitle = '¿Quitar seleccionados de esta mesa?';
+        form.dataset.confirmText = 'Los invitados seleccionados quedarán sin mesa. No se elimina ninguna persona del sistema.';
+        form.dataset.confirmButton = 'Sí, quitar de mesa';
+        form.dataset.confirmColor = '#d8527f';
+    } else {
+        form.dataset.confirmTitle = '¿Mover seleccionados a otra mesa?';
+        form.dataset.confirmText = 'Los invitados seleccionados se moverán a la mesa destino.';
+        form.dataset.confirmButton = 'Sí, mover';
+        form.dataset.confirmColor = '#8f55be';
     }
 });
 
