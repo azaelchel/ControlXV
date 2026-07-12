@@ -332,12 +332,12 @@ class CompanionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Confirmados');
 
-        $sheet->mergeCells('A1:H1');
+        $sheet->mergeCells('A1:I1');
         $sheet->setCellValue('A1', 'Reporte de Invitados Confirmados - XV');
-        $sheet->mergeCells('A2:H2');
+        $sheet->mergeCells('A2:I2');
         $sheet->setCellValue('A2', 'Solo invitados individuales registrados dentro de familias o grupos con estatus Confirmado');
 
-        $headers = ['Familia o grupo', 'Nombre del invitado', 'Tipo', 'Género', 'Categoría', 'Teléfono', 'Padrino', 'Observaciones'];
+        $headers = ['Familia o grupo', 'Grupo', 'Nombre del invitado', 'Tipo', 'Género', 'Categoría', 'Teléfono', 'Padrino', 'Observaciones'];
         foreach ($headers as $index => $header) {
             $column = chr(65 + $index);
             $sheet->setCellValue("{$column}4", $header);
@@ -348,41 +348,42 @@ class CompanionController extends Controller
             $guest = $confirmedGuests->get($companion->invited_group);
 
             $sheet->setCellValue("A{$row}", $companion->invited_group);
-            $sheet->setCellValue("B{$row}", $companion->name);
-            $sheet->setCellValue("C{$row}", $companion->type);
-            $sheet->setCellValue("D{$row}", $companion->sex);
-            $sheet->setCellValue("E{$row}", $guest?->category);
-            $sheet->setCellValue("F{$row}", $guest?->phone);
-            $sheet->setCellValue("G{$row}", $guest?->sponsor);
-            $sheet->setCellValue("H{$row}", $companion->notes);
+            $sheet->setCellValue("B{$row}", $guest?->group_name);
+            $sheet->setCellValue("C{$row}", $companion->name);
+            $sheet->setCellValue("D{$row}", $companion->type);
+            $sheet->setCellValue("E{$row}", $companion->sex);
+            $sheet->setCellValue("F{$row}", $guest?->category);
+            $sheet->setCellValue("G{$row}", $guest?->phone);
+            $sheet->setCellValue("H{$row}", $guest?->sponsor);
+            $sheet->setCellValue("I{$row}", $companion->notes);
             $row++;
         }
 
         $lastDataRow = max(5, $row - 1);
 
-        $sheet->getStyle('A1:H1')->applyFromArray([
+        $sheet->getStyle('A1:I1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '8F55BE']],
         ]);
-        $sheet->getStyle('A2:H2')->applyFromArray([
+        $sheet->getStyle('A2:I2')->applyFromArray([
             'font' => ['italic' => true, 'size' => 11, 'color' => ['rgb' => '5F4C70']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
-        $sheet->getStyle("A4:H4")->applyFromArray([
+        $sheet->getStyle("A4:I4")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => '4A2F60']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EEDCFB']],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D8C5EA']]],
         ]);
-        $sheet->getStyle("A4:H{$lastDataRow}")->applyFromArray([
+        $sheet->getStyle("A4:I{$lastDataRow}")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E8DCF2']]],
             'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
         $sheet->freezePane('A5');
-        $sheet->setAutoFilter("A4:H{$lastDataRow}");
+        $sheet->setAutoFilter("A4:I{$lastDataRow}");
 
-        foreach (range('A', 'H') as $column) {
+        foreach (range('A', 'I') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
