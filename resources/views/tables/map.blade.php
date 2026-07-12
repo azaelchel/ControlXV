@@ -205,31 +205,28 @@
                         listEl.innerHTML = '<p class="small" style="margin:0;">Mesa vacía, aún sin invitados sentados.</p>';
                     } else {
                         const unassignUrl = el.dataset.unassignUrl;
-listEl.innerHTML = occupants.map((c, i) => `
-    <div class="inline" style="justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0e9fa;">
-        <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
-        <span class="inline" style="gap:6px; flex-shrink:0;">
-            <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
-            <form method="post" action="${unassignUrl}" data-unassign-form data-name="${escapeHtml(c.name)}" style="margin:0;">
-                <input type="hidden" name="_token" value="${csrf}">
-                <input type="hidden" name="companion_id" value="${c.id}">
-                <button type="submit" class="btn small danger" title="Quitar de esta mesa">Quitar</button>
-            </form>
-        </span>
-    </div>`).join('');
+                        listEl.innerHTML = occupants.map((c, i) => `
+                            <div class="inline" style="justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0e9fa;">
+                                <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
+                                <span class="inline" style="gap:6px; flex-shrink:0;">
+                                    <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
+                                    <form method="post" action="${unassignUrl}"
+                                        data-confirm-title="¿Quitar a ${escapeHtml(c.name)} de esta mesa?"
+                                        data-confirm-text="Solo se libera su lugar en esta mesa. El invitado no se elimina del sistema."
+                                        data-confirm-button="Sí, quitar de mesa"
+                                        data-confirm-color="#d8527f"
+                                        data-confirm-icon="warning"
+                                        style="margin:0;">
+                                        <input type="hidden" name="_token" value="${csrf}">
+                                        <input type="hidden" name="companion_id" value="${c.id}">
+                                        <button type="submit" class="btn small danger" title="Quitar de esta mesa">Quitar</button>
+                                    </form>
+                                </span>
+                            </div>`).join('');
                     }
                     modal.style.display = 'flex';
                 });
             });
-            listEl.addEventListener('submit', (event) => {
-                const form = event.target.closest('[data-unassign-form]');
-                if (!form) return;
-
-                if (!confirm(`¿Quitar a ${form.dataset.name || 'este invitado'} de esta mesa?`)) {
-                    event.preventDefault();
-                }
-            });
-
             const close = () => { modal.style.display = 'none'; };
             document.getElementById('tm-close').addEventListener('click', close);
             modal.addEventListener('click', e => { if (e.target === modal) close(); });

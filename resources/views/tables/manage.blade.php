@@ -59,19 +59,19 @@
     <div class="card" style="margin-bottom: 18px;">
         <div class="inline" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <h3 style="margin: 0;">Invitados sin mesa ({{ $summary['unassigned'] }})</h3>
-<form method="get" class="inline" style="gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
-    <select name="group" style="min-width: 190px;">
-        <option value="">Todos los grupos</option>
-        @foreach ($groupOptions as $option)
-            <option value="{{ $option }}" @selected($group === $option)>{{ $option }}</option>
-        @endforeach
-    </select>
-    <input name="q" value="{{ $q }}" placeholder="Filtrar por nombre o familia…" style="min-width: 240px;">
-    <button class="btn small" type="submit">Filtrar</button>
-    @if ($q !== '' || $group !== '')
-        <a class="btn small secondary" href="{{ route('tables.manage') }}">Limpiar</a>
-    @endif
-</form>
+            <form method="get" class="inline" style="gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+                <select name="group" style="min-width: 190px;">
+                    <option value="">Todos los grupos</option>
+                    @foreach ($groupOptions as $option)
+                        <option value="{{ $option }}" @selected($group === $option)>{{ $option }}</option>
+                    @endforeach
+                </select>
+                <input name="q" value="{{ $q }}" placeholder="Filtrar por nombre o familia…" style="min-width: 240px;">
+                <button class="btn small" type="submit">Filtrar</button>
+                @if ($q !== '' || $group !== '')
+                    <a class="btn small secondary" href="{{ route('tables.manage') }}">Limpiar</a>
+                @endif
+            </form>
         </div>
 
         @if ($tables->isEmpty())
