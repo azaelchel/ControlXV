@@ -77,6 +77,7 @@ class ConfirmedTableController extends Controller
 
         return view('tables.manage', [
             'tables' => $data['tables'],
+            'tableOptions' => $data['tableOptions'],
             'unassigned' => $data['unassigned'],
             'dividedGroups' => $data['dividedGroups'],
             'summary' => $data['summary'],
@@ -374,6 +375,7 @@ class ConfirmedTableController extends Controller
 
         return [
             'tables' => $tables,
+            'tableOptions' => $this->tableOptions($tables),
             'eligible' => $eligible,
             'companionTable' => $companionTable,
             'unassigned' => $unassigned,
@@ -394,6 +396,26 @@ class ConfirmedTableController extends Controller
             ],
         ];
     }
+
+private function tableOptions($tables)
+{
+    return $tables
+        ->sortBy(fn (EventTable $table) => $this->tableOptionSortKey($table))
+        ->values();
+}
+
+private function tableOptionSortKey(EventTable $table): string
+{
+    if (preg_match('/\d+/', $table->name, $matches)) {
+        return '0|' . str_pad($matches[0], 4, '0', STR_PAD_LEFT) . '|' . mb_strtolower($table->name);
+    }
+
+    if ($table->is_principal) {
+        return '1|0000|' . mb_strtolower($table->name);
+    }
+
+    return '2|9999|' . mb_strtolower($table->name);
+}
 
     private function tableSortKey(EventTable $table): string
     {

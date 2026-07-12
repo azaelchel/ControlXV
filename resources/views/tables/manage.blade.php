@@ -90,7 +90,7 @@
                                 <input type="hidden" name="group" value="{{ $family }}">
                                 <select name="table_id" required style="font-size: 12px; padding: 4px 8px;">
                                     <option value="" disabled selected hidden>Elegir mesa…</option>
-                                    @foreach ($tables as $t)
+                                    @foreach ($tableOptions as $t)
                                         @php $available = $t->availableSeats(); @endphp
                                         <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
                                     @endforeach
@@ -108,7 +108,7 @@
                                         <input type="hidden" name="companion_id" value="{{ $person->id }}">
                                         <select name="table_id" required style="font-size: 11px; padding: 3px 6px;">
                                             <option value="" disabled selected hidden>Elegir mesa…</option>
-                                            @foreach ($tables as $t)
+                                            @foreach ($tableOptions as $t)
                                                 @php $available = $t->availableSeats(); @endphp
                                                 <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
                                             @endforeach
@@ -157,7 +157,7 @@
                                             <input type="hidden" name="companion_id" value="{{ $assignment->companion_id }}">
                                             <select name="table_id" required style="font-size: 11px; padding: 2px 5px;">
                                                 <option value="" disabled selected hidden>Mover a…</option>
-                                                @foreach ($tables as $t)
+                                                @foreach ($tableOptions as $t)
                                                     @if ($t->id !== $table->id)
                                                         @php $available = $t->availableSeats(); @endphp
                                                         <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
