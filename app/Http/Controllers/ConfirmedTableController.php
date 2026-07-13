@@ -153,7 +153,9 @@ class ConfirmedTableController extends Controller
             return back()->with('status', "{$companion->name} ya está en esta mesa.");
         }
 
-        if ($eventTable->availableSeats() < 1) {
+        $isMove = TableAssignment::where('companion_id', $companion->id)->exists();
+
+        if (! $isMove && $eventTable->availableSeats() < 1) {
             return back()->with('status', "La mesa \"{$eventTable->name}\" está llena. Aumenta la capacidad o usa otra mesa.");
         }
 
@@ -247,10 +249,6 @@ class ConfirmedTableController extends Controller
 
         if (! $targetTable || $targetTable->id === $eventTable->id) {
             return back()->with('status', 'Elige una mesa destino diferente.');
-        }
-
-        if ($targetTable->availableSeats() < $activeIds->count()) {
-            return back()->with('status', "La mesa \"{$targetTable->name}\" no tiene suficientes lugares libres.");
         }
 
         $companions = Companion::whereIn('id', $activeIds)->get();

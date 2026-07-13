@@ -160,7 +160,7 @@
                                                 @foreach ($tableOptions as $t)
                                                     @if ($t->id !== $table->id)
                                                         @php $available = $t->availableSeats(); @endphp
-                                                        <option value="{{ $t->id }}" @disabled($available < 1)>{{ $t->name }} ({{ $available }} libres)</option>
+                                                        <option value="{{ $t->id }}">{{ $t->name }} ({{ $available }} libres)</option>
                                                     @endif
                                                 @endforeach
                                             </select>

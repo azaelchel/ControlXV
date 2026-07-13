@@ -219,7 +219,7 @@ if (!occupants.length) {
     const currentTableName = el.dataset.name;
     const targetOptions = tableOptions
         .filter((table) => table.name !== currentTableName)
-        .map((table) => `<option value="${table.id}" ${table.available < 1 ? 'disabled' : ''}>${escapeHtml(table.name)} (${table.available} libres)</option>`)
+        .map((table) => `<option value="${table.id}">${escapeHtml(table.name)} (${table.available} libres)</option>`)
         .join('');
 
     listEl.innerHTML = `
