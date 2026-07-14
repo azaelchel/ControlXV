@@ -2,7 +2,10 @@
     $eventName = \App\Models\Setting::get('event_name', 'XV años de Zugeily');
     $eventDate = \App\Models\Setting::get('event_date', '');
     $eventTime = \App\Models\Setting::get('event_time', '');
-    $rows = $tables->chunk(3);
+    $occupiedTables = $tables
+        ->filter(fn ($table) => $table->assignments->contains(fn ($assignment) => $assignment->companion))
+        ->values();
+    $rows = $occupiedTables->chunk(3);
     $initials = function ($name) {
         $parts = preg_split('/\s+/', trim((string) $name));
         $a = mb_substr($parts[0] ?? '', 0, 1);
@@ -88,6 +91,7 @@
 
         .page-break { page-break-before: always; }
         .section-title-pdf { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #a98c54; font-weight: bold; margin-bottom: 8px; text-align: center; }
+        .section-note { text-align: center; color: #8a72a4; font-size: 9px; margin: -4px 0 8px; }
 
         /* Mesas */
         table.layout { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -193,8 +197,9 @@
     {{-- Mesas como tarjetas --}}
     <div class="page-break"></div>
     <div class="section-title-pdf">Detalle por mesa</div>
-    @if ($tables->isEmpty())
-        <p class="empty">Aún no hay mesas configuradas.</p>
+    <div class="section-note">Se muestran solo mesas con invitados sentados; las mesas vacías se omiten.</div>
+    @if ($occupiedTables->isEmpty())
+        <p class="empty">Aún no hay mesas ocupadas.</p>
     @else
         <table class="layout">
             @foreach ($rows as $pair)
