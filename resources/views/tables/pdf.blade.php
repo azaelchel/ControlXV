@@ -13,7 +13,7 @@
         'Adulto' => 'adulto', 'Adolescente' => 'adolescente', 'Niño' => 'nino', default => 'otro',
     };
     $typeHex = fn ($t) => match ($t) {
-        'Adulto' => '#6d28b8', 'Adolescente' => '#1f9e6a', 'Niño' => '#d6453f', default => '#8a8a96',
+        'Adulto' => '#6d28b8', 'Adolescente' => '#1f9e6a', 'Niño' => '#2f7de1', default => '#8a8a96',
     };
     $tableNum = fn ($name) => preg_replace('/\D+/', '', (string) $name) ?: $name;
     $horizontalTables = ['1', '3', '5', '7', '9', '11', '13', '15', '17', '19', '21', '23'];
@@ -110,7 +110,7 @@
         .seat.off { background-color: #fff; border: 1px dashed #d3bfe8; }
         .seat.adulto { background-color: #6d28b8; }
         .seat.adolescente { background-color: #1f9e6a; }
-        .seat.nino { background-color: #d6453f; }
+        .seat.nino { background-color: #2f7de1; }
         .seat.otro { background-color: #8a8a96; }
         table.seatc { width: 20px; height: 20px; border-spacing: 0; border-collapse: collapse; }
         table.seatc td { width: 20px; height: 20px; text-align: center; vertical-align: middle; color: #fff; font-size: 8px; font-weight: bold; line-height: 1; padding: 0; }
@@ -152,7 +152,7 @@
         <div class="legend">
             <span><i style="background:#6d28b8;"></i>Adulto</span>
             <span><i style="background:#1f9e6a;"></i>Adolescente</span>
-            <span><i style="background:#d6453f;"></i>Niño</span>
+            <span><i style="background:#2f7de1;"></i>Niño</span>
         </div>
     </div>
 
