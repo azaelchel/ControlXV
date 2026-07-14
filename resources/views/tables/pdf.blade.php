@@ -1,7 +1,8 @@
 @php
     $eventName = \App\Models\Setting::get('event_name', 'XV años de Zugeily');
     $eventDate = \App\Models\Setting::get('event_date', '');
-    $eventTime = \App\Models\Setting::get('event_time', '');
+    $eventTime = \App\Models\Setting::get("event_time", "");
+    $generatedAt = now()->format("d/m/Y H:i");
     $occupiedTables = $tables
         ->filter(fn ($table) => $table->assignments->contains(fn ($assignment) => $assignment->companion))
         ->values();
@@ -44,7 +45,7 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 12mm 12mm 12mm; }
+        @page { margin: 12mm 12mm 16mm; }
         /* OJO dompdf: NO usar selector universal (*) ni resetear html{} — eso anula
            el @page margin y el contenido se pega al borde. Reset por elemento. */
         body { margin: 0; padding: 0; font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
@@ -122,6 +123,7 @@
         /* Lista de sentados (nombre coloreado por tipo) */
         .guests { padding: 2px 9px 8px; }
         .guests .g { padding: 1px 0; border-bottom: 1px dotted #ece2f6; font-weight: bold; font-size: 9px; }
+        .guests .gnum { display: inline-block; min-width: 13px; color: #8a72a4; font-size: 8px; font-weight: bold; }
         .guests .grp { color: #a594b8; font-size: 9px; font-style: italic; font-weight: normal; }
         .freeline { padding: 4px 11px 10px; font-size: 9px; font-style: italic; color: #b79bd6; }
         .empty { padding: 8px 11px 12px; color: #b3a3c4; font-style: italic; }
@@ -135,10 +137,12 @@
         .pers { font-size: 9.5px; color: #4a3a5c; padding-left: 6px; }
         .pers .pnum { color: #b79bd6; font-size: 8px; }
 
-        .foot { text-align: center; font-size: 8px; color: #b3a3c4; letter-spacing: 1px; margin-top: 18px; }
+        .page-footer { position: fixed; left: 0; right: 0; bottom: -8mm; text-align: center; font-size: 8px; color: #9b8ab0; letter-spacing: .5px; }
+        .page-footer .page-number:after { content: "Pagina " counter(page) " de " counter(pages); }
     </style>
 </head>
 <body>
+    <div class="page-footer">{{ $eventName }} · Generado el {{ $generatedAt }} · <span class="page-number"></span></div>
     {{-- Portada --}}
     <div class="cover">
         <div class="mono">Distribución de mesas</div>
@@ -234,8 +238,8 @@
                                     <div class="empty">Mesa disponible</div>
                                 @else
                                     <div class="guests">
-                                        @foreach ($seated as $a)
-                                            <div class="g" style="color: {{ $typeHex($a->companion->type) }};">{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
+                                        @foreach ($seated as $index => $a)
+                                            <div class="g" style="color: {{ $typeHex($a->companion->type) }};"><span class="gnum">{{ $index + 1 }}.</span> {{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
                                         @endforeach
                                     </div>
                                     @if ($free > 0)
@@ -272,6 +276,5 @@
         </table>
     @endif
 
-    <div class="foot">{{ $eventName }} · Generado el {{ now()->format('d/m/Y H:i') }}</div>
 </body>
 </html>
