@@ -27,7 +27,7 @@
     .seat.empty { background: #fff; border: 1.5px dashed #d3bfe8; }
     .seat.t-adulto { background: #6d28b8; }
     .seat.t-adolescente { background: #1f9e6a; }
-    .seat.t-nino { background: #d6453f; }
+    .seat.t-nino { background: #2f7de1; }
     .seat.t-otro { background: #8a8a96; }
     .faltan { text-align: center; font-size: 12px; color: #7c6691; font-weight: 700; margin-bottom: 10px; }
     .faltan.lleno { color: #3f9e6b; }
@@ -60,7 +60,7 @@
     $typeHex = fn ($t) => match ($t) {
         'Adulto' => '#6d28b8',
         'Adolescente' => '#1f9e6a',
-        'Niño' => '#d6453f',
+        'Niño' => '#2f7de1',
         default => '#8a8a96',
     };
 @endphp
@@ -144,7 +144,7 @@
                 <strong style="color:#43275b;">Tipo de invitado:</strong>
                 <span><i style="background:#6d28b8;"></i> Adulto</span>
                 <span><i style="background:#1f9e6a;"></i> Adolescente</span>
-                <span><i style="background:#d6453f;"></i> Niño</span>
+                <span><i style="background:#2f7de1;"></i> Niño</span>
                 <span><i style="background:#fff; border:1.5px dashed #d3bfe8;"></i> Lugar libre</span>
             </div>
         </div>
