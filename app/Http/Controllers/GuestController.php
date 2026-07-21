@@ -380,20 +380,33 @@ class GuestController extends Controller
     private function syncCompanionsForGuest(Guest $guest, ?string $originalName = null): void
     {
         $originalName ??= $guest->name;
+        $groupNames = array_values(array_unique([$originalName, $guest->name]));
 
-        if ($guest->status === 'No asistirá') {
-            \App\Models\Companion::query()
-                ->whereIn('invited_group', array_values(array_unique([$originalName, $guest->name])))
-                ->update(['active' => false]);
+        if ($guest->status !== "Confirmado") {
+            $companionIds = Companion::query()
+                ->withoutGlobalScope("active")
+                ->whereIn("invited_group", $groupNames)
+                ->pluck("id");
+
+            TableAssignment::query()
+                ->whereIn("companion_id", $companionIds)
+                ->update(["active" => false]);
+
+            Companion::query()
+                ->withoutGlobalScope("active")
+                ->whereIn("id", $companionIds)
+                ->update(["active" => false]);
 
             return;
         }
 
-        if ($originalName !== $guest->name) {
-            \App\Models\Companion::query()
-                ->where('invited_group', $originalName)
-                ->update(['invited_group' => $guest->name]);
-        }
+        Companion::query()
+            ->withoutGlobalScope("active")
+            ->whereIn("invited_group", $groupNames)
+            ->update([
+                "invited_group" => $guest->name,
+                "active" => true,
+            ]);
     }
 
     private function statusSummary(): array

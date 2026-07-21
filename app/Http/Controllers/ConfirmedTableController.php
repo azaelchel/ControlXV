@@ -170,7 +170,7 @@ class ConfirmedTableController extends Controller
             'group' => ['required', 'string'],
         ]);
 
-        $assignedIds = TableAssignment::pluck('companion_id')->all();
+        $assignedIds = TableAssignment::pluck("companion_id")->all();
 
         $pending = Companion::where('invited_group', $validated['group'])
             ->whereNotIn('id', $assignedIds)
@@ -364,7 +364,25 @@ class ConfirmedTableController extends Controller
             ->orderBy('name')
             ->get();
 
-        $assignedIds = TableAssignment::pluck('companion_id')->all();
+        $eligibleIds = $eligible->pluck("id");
+        $eligibleIdLookup = $eligibleIds->flip();
+
+        $tables = $tables->map(function (EventTable $table) use ($eligibleIdLookup) {
+            $table->setRelation(
+                "assignments",
+                $table->assignments
+                    ->filter(fn (TableAssignment $assignment) => $assignment->companion
+                        && $eligibleIdLookup->has($assignment->companion_id))
+                    ->values()
+            );
+
+            return $table;
+        });
+
+        $assignedIds = TableAssignment::query()
+            ->whereIn("companion_id", $eligibleIds)
+            ->pluck("companion_id")
+            ->all();
 
         // Mapa companion_id => mesa (para "en qué mesa quedó" y grupos divididos).
         $companionTable = [];

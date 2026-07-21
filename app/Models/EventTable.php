@@ -40,9 +40,9 @@ class EventTable extends Model
 
     public function occupiedSeats(): int
     {
-        return $this->relationLoaded('assignments')
-            ? $this->assignments->count()
-            : $this->assignments()->count();
+        return $this->relationLoaded("assignments")
+            ? $this->assignments->filter(fn (TableAssignment $assignment) => $assignment->companion)->count()
+            : $this->assignments()->whereHas("companion")->count();
     }
 
     public function availableSeats(): int
