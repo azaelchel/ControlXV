@@ -78,7 +78,7 @@
         .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1px solid #fff; }
         .map-table .num { display: block; font-size: 13px; font-weight: bold; line-height: 1; padding-top: 5px; }
         .map-table .occ { display: block; font-size: 7.5px; font-weight: bold; margin-top: 2px; }
-        .map-table .sponsor-count { display: block; font-size: 7px; font-weight: bold; color: #ffe6a7; margin-top: 1px; }
+        .map-table .sponsor-count { display: block; font-size: 7px; font-weight: bold; color: #ffe6a7; margin-top: 1px; letter-spacing: .5px; }
         .map-table.horizontal .num { padding-top: 4px; }
         .map-table.principal .num { font-size: 14px; padding-top: 6px; }
         .map-table.libre { background-color: #cbb8e4; color: #4a2f6b; border-color: #d9cbed; }
@@ -140,7 +140,7 @@
         .pers .pnum { color: #b79bd6; font-size: 8px; }
 
         .page-footer { position: fixed; left: 0; right: 0; bottom: -8mm; text-align: center; font-size: 8px; color: #9b8ab0; letter-spacing: .5px; }
-        .page-footer .page-number:after { content: "Pagina " counter(page) " de " counter(pages); }
+        .page-footer .page-number:after { content: "Pagina " counter(page); }
     </style>
 </head>
 <body>
@@ -194,14 +194,17 @@
                 $cls = $table->is_principal ? 'principal' : $mapFill($occ, $cap);
                 $sponsorCount = $table->assignments
                     ->filter(fn ($a) => $a->companion && trim((string) ($sponsorByGuest[$a->companion->invited_group] ?? '')) !== '')
+                    ->map(fn ($a) => $a->companion->invited_group)
+                    ->unique()
                     ->count();
+                $sponsorCrowns = str_repeat('♛', $sponsorCount);
             @endphp
             <div class="map-table {{ $box['cls'] }} {{ $cls }}"
                 style="left: {{ $table->position_x ?? 50 }}%; top: {{ $table->position_y ?? 50 }}%; width: {{ $box['w'] }}px; height: {{ $box['h'] }}px; margin-left: {{ $box['ml'] }}px; margin-top: {{ $box['mt'] }}px;">
                 <span class="num">{{ $tableNum($table->name) }}</span>
                 <span class="occ">{{ $occ }}/{{ $cap }}</span>
                 @if ($sponsorCount > 0)
-                    <span class="sponsor-count">♛ {{ $sponsorCount }}</span>
+                    <span class="sponsor-count">{{ $sponsorCrowns }}</span>
                 @endif
             </div>
         @endforeach

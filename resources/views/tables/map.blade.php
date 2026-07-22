@@ -41,7 +41,7 @@
     .tbl.principal { width: 72px; height: 84px; }
     .tbl .num { font-size: 22px; font-weight: 900; line-height: 1; }
     .tbl .occ { font-size: 12px; font-weight: 700; opacity: .95; margin-top: 3px; }
-    .tbl .sponsor-count { font-size: 11px; font-weight: 900; line-height: 1; margin-top: 3px; color: #ffe6a7; text-shadow: 0 1px 2px rgba(40,20,60,.35); }
+    .tbl .sponsor-count { font-size: 12px; font-weight: 900; line-height: 1; margin-top: 3px; color: #ffe6a7; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(40,20,60,.35); }
     .tbl.libre  { background: #cbb8e4; color:#4a2f6b; border-color:#e6dbf5; }
     .tbl.parcial { background: linear-gradient(135deg,#b07fd8,#8a55be); }
     .tbl.casi    { background: linear-gradient(135deg,#e6b364,#cf8f3f); }
@@ -164,7 +164,12 @@
                                     'is_sponsor' => $sponsor !== '',
                                 ];
                             })->values();
-                        $sponsorCount = $occupants->where('is_sponsor', true)->count();
+                        $sponsorCount = $occupants
+                            ->filter(fn ($person) => $person['is_sponsor'])
+                            ->pluck('group')
+                            ->unique()
+                            ->count();
+                        $sponsorCrowns = str_repeat('👑', $sponsorCount);
                     @endphp
                     <div class="tbl {{ $orientationClass($table) }} {{ $table->is_principal ? 'principal' : $fillClass($occ, $cap) }} {{ $occ === 0 && ! $table->is_principal ? 'is-empty' : '' }}"
                         style="left: {{ $x }}%; top: {{ $y }}%;"
@@ -177,7 +182,7 @@
                         <span class="num">{{ $tableNum($table->name) }}</span>
                         <span class="occ">{{ $occ }}/{{ $cap }}</span>
                         @if ($sponsorCount > 0)
-                            <span class="sponsor-count">👑 {{ $sponsorCount }}</span>
+                            <span class="sponsor-count">{{ $sponsorCrowns }}</span>
                         @endif
                     </div>
                 @endforeach
