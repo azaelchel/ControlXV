@@ -27,17 +27,17 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --bg: #f7f1fb;
-            --ink: #2f2042;
-            --muted: #746482;
-            --primary: #8753b7;
-            --primary-dark: #4b2c69;
-            --rose: #d46f8d;
+            --bg: #fff8fc;
+            --ink: #3f314b;
+            --muted: #817187;
+            --primary: #b982c7;
+            --primary-dark: #6f4b7a;
+            --rose: #e9a7ba;
             --gold: #c9a45e;
-            --gold-soft: #fff6df;
-            --line: #e8daf4;
+            --gold-soft: #fff8e9;
+            --line: #eaddec;
             --panel: #ffffff;
-            --soft: #fbf8fd;
+            --soft: #fffafd;
         }
         * { box-sizing: border-box; }
         html { min-height: 100%; background: var(--bg); }
@@ -47,8 +47,9 @@
             font-family: Figtree, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color: var(--ink);
             background:
-                radial-gradient(circle at top left, rgba(212,111,141,.18), transparent 32rem),
-                linear-gradient(145deg, #fffafd 0%, #f4ecfa 52%, #fff8ed 100%);
+                radial-gradient(circle at top left, rgba(233,167,186,.16), transparent 30rem),
+                radial-gradient(circle at bottom right, rgba(201,164,94,.12), transparent 24rem),
+                linear-gradient(145deg, #fffefe 0%, #fff8fc 52%, #fff9ee 100%);
         }
         a { color: inherit; }
         .page {
@@ -62,17 +63,17 @@
         .pass {
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(139, 91, 179, .18);
+            border: 1px solid rgba(185, 130, 199, .22);
             border-radius: 30px;
             background: rgba(255, 255, 255, .92);
-            box-shadow: 0 24px 70px rgba(70, 42, 95, .16);
+            box-shadow: 0 22px 58px rgba(119, 84, 132, .13);
         }
         .pass::before {
             content: "";
             position: absolute;
             inset: 0 0 auto;
             height: 10px;
-            background: linear-gradient(90deg, var(--gold), var(--rose), var(--primary));
+            background: linear-gradient(90deg, #e3c57c, #f0b9c9, #d5b2de);
         }
         .pass-inner { position: relative; padding: 28px; }
         .topline {
@@ -90,14 +91,15 @@
             border-radius: 20px;
             display: grid;
             place-items: center;
-            color: white;
+            color: #6f4b28;
             font-size: 22px;
             font-weight: 900;
-            background: linear-gradient(145deg, var(--primary), var(--rose));
-            box-shadow: 0 14px 30px rgba(135, 83, 183, .25);
+            background: linear-gradient(145deg, #fff8e9, #f7d8e2);
+            border: 1px solid #ecd8a8;
+            box-shadow: 0 14px 26px rgba(181, 129, 152, .18);
         }
         .kicker {
-            color: var(--primary);
+            color: #684472;
             font-size: 12px;
             letter-spacing: .2em;
             text-transform: uppercase;
@@ -121,7 +123,7 @@
             font-size: clamp(40px, 8vw, 68px);
             line-height: .92;
             letter-spacing: 0;
-            color: var(--primary-dark);
+            color: #5c4066;
         }
         .subtitle {
             display: flex;
@@ -162,7 +164,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            color: var(--primary-dark);
+            color: #6f4b7a;
             font-size: 15px;
             font-weight: 800;
             text-align: center;
@@ -198,10 +200,10 @@
             border-radius: 18px;
             text-decoration: none;
             font-weight: 900;
-            background: var(--primary);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, .2);
-            box-shadow: 0 14px 28px rgba(135, 83, 183, .2);
+            background: linear-gradient(145deg, #fff7fb, #f3d7e5);
+            color: #684472;
+            border: 1px solid #ead0df;
+            box-shadow: 0 12px 24px rgba(160, 111, 145, .14);
         }
         .btn.secondary {
             background: white;
@@ -216,10 +218,10 @@
             display: grid;
             place-items: center;
             border-radius: 13px;
-            background: rgba(255, 255, 255, .18);
+            background: rgba(255, 255, 255, .58);
             font-size: 18px;
         }
-        .secondary .icon { background: #f7f0fb; color: var(--primary); }
+        .secondary .icon { background: #fff8e9; color: #9b6d25; }
         .btn-text { display: grid; gap: 1px; min-width: 0; }
         .btn-title { font-size: 15px; overflow-wrap: anywhere; }
         .btn-sub { font-size: 11px; font-weight: 800; opacity: .78; }
