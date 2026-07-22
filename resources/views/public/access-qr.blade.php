@@ -7,6 +7,9 @@
         $previewTitle = 'Pase digital · ' . $eventName;
         $previewDescription = 'QR personal de acceso para ' . $guest->display_name . '. Presenta este código al llegar al evento.';
         $previewImage = asset('images/og/xv-zugeily-access-qr.jpg');
+        $monogramImage = asset('images/xv/pase-digital/monograma-zugeily.png');
+        $heroImageWebp = asset('images/xv/pase-digital/fondo-ramo-vestido.webp');
+        $heroImagePng = asset('images/xv/pase-digital/fondo-ramo-vestido.png');
     @endphp
     <title>{{ $previewTitle }}</title>
     <meta name="description" content="{{ $previewDescription }}">
@@ -24,301 +27,529 @@
     <meta name="twitter:description" content="{{ $previewDescription }}">
     <meta name="twitter:image" content="{{ $previewImage }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=cormorant-garamond:500,600,700|figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --bg: #fff8fc;
-            --ink: #5e5068;
-            --muted: #928397;
-            --primary: #c99ad4;
-            --primary-dark: #8e6a98;
-            --rose: #e9a7ba;
-            --gold: #c9a45e;
-            --gold-soft: #fff8e9;
-            --line: #eaddec;
-            --panel: #ffffff;
-            --soft: #fffafd;
+            --xv-purple: #75528f;
+            --xv-purple-dark: #5d3d76;
+            --xv-lavender: #cbb7dd;
+            --xv-lavender-light: #f5eff9;
+            --xv-blush: #f9e9f0;
+            --xv-gold: #c9a15b;
+            --xv-gold-light: #ead7a0;
+            --xv-sage: #8fa17a;
+            --xv-ivory: #fffdf9;
+            --xv-white: #ffffff;
+            --xv-text: #5d5163;
+            --xv-muted: #887892;
+            --xv-line: #eadff1;
         }
+
         * { box-sizing: border-box; }
-        html { min-height: 100%; background: var(--bg); }
+        html { min-height: 100%; background: var(--xv-ivory); }
         body {
             margin: 0;
             min-height: 100vh;
+            overflow-x: hidden;
             font-family: Figtree, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: var(--ink);
+            color: var(--xv-text);
             background:
-                radial-gradient(circle at top left, rgba(233,167,186,.16), transparent 30rem),
-                radial-gradient(circle at bottom right, rgba(201,164,94,.12), transparent 24rem),
-                linear-gradient(145deg, #fffefe 0%, #fff8fc 52%, #fff9ee 100%);
+                radial-gradient(circle at 10% 0%, rgba(249, 205, 221, .36), transparent 22rem),
+                radial-gradient(circle at 92% 16%, rgba(232, 209, 156, .30), transparent 20rem),
+                radial-gradient(circle at 50% 100%, rgba(203, 183, 221, .30), transparent 24rem),
+                linear-gradient(180deg, #fffefe 0%, #fff8fc 48%, #fffdf9 100%);
+        }
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            pointer-events: none;
+            z-index: -1;
+            border-radius: 999px;
+        }
+        body::before {
+            width: 42rem;
+            height: 42rem;
+            left: -18rem;
+            top: 8rem;
+            background: radial-gradient(circle, rgba(255, 255, 255, .86), rgba(246, 229, 237, .18) 58%, transparent 70%);
+        }
+        body::after {
+            width: 34rem;
+            height: 34rem;
+            right: -16rem;
+            bottom: -10rem;
+            background: radial-gradient(circle, rgba(255, 255, 255, .74), rgba(201, 161, 91, .14) 56%, transparent 72%);
         }
         a { color: inherit; }
+
         .page {
-            width: min(100%, 680px);
+            width: min(100%, 760px);
             min-height: 100vh;
             margin: 0 auto;
-            padding: max(18px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+            padding: max(18px, env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom));
             display: grid;
             align-items: center;
         }
         .pass {
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(185, 130, 199, .22);
-            border-radius: 30px;
-            background: rgba(255, 255, 255, .92);
-            box-shadow: 0 22px 58px rgba(119, 84, 132, .13);
+            border: 1px solid rgba(201, 161, 91, .32);
+            border-radius: 32px;
+            background: rgba(255, 255, 255, .88);
+            box-shadow: 0 24px 70px rgba(93, 61, 118, .13), 0 2px 0 rgba(255, 255, 255, .9) inset;
         }
         .pass::before {
             content: "";
             position: absolute;
-            inset: 0 0 auto;
-            height: 10px;
-            background: linear-gradient(90deg, #e3c57c, #f0b9c9, #d5b2de);
+            inset: 10px;
+            pointer-events: none;
+            border: 1px solid rgba(201, 161, 91, .22);
+            border-radius: 24px;
+            z-index: 2;
         }
-        .pass-inner { position: relative; padding: 28px; }
-        .topline {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 20px;
+        .hero {
+            position: relative;
+            min-height: 310px;
+            overflow: hidden;
+            isolation: isolate;
+            background: #fff8fc;
         }
-        .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
-        .mark {
-            width: 58px;
-            height: 58px;
-            flex: 0 0 58px;
-            border-radius: 20px;
+        .hero picture,
+        .hero-photo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .hero-photo {
+            object-fit: cover;
+            object-position: 76% 42%;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background:
+                linear-gradient(90deg, rgba(255, 253, 249, .97) 0%, rgba(255, 253, 249, .86) 44%, rgba(255, 253, 249, .36) 68%, rgba(255, 253, 249, .08) 100%),
+                linear-gradient(180deg, rgba(255,255,255,.24) 0%, rgba(255,253,249,.16) 56%, rgba(255,253,249,.94) 100%);
+        }
+        .hero::after {
+            content: "";
+            position: absolute;
+            left: 34px;
+            right: 34px;
+            bottom: 22px;
+            height: 1px;
+            z-index: 2;
+            background: linear-gradient(90deg, transparent, rgba(201, 161, 91, .74), transparent);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            min-height: 310px;
             display: grid;
-            place-items: center;
-            color: #9b7431;
-            font-size: 22px;
-            font-weight: 900;
-            background: linear-gradient(145deg, #fff8e9, #f7d8e2);
-            border: 1px solid #ecd8a8;
-            box-shadow: 0 14px 26px rgba(181, 129, 152, .18);
+            align-content: center;
+            gap: 12px;
+            width: min(56%, 410px);
+            padding: 34px 0 36px 36px;
+        }
+        .monogram {
+            width: 148px;
+            height: 154px;
+            object-fit: contain;
+            filter: drop-shadow(0 12px 24px rgba(93, 61, 118, .10));
         }
         .kicker {
-            color: #9d74a7;
+            color: var(--xv-purple);
             font-size: 12px;
-            letter-spacing: .2em;
+            letter-spacing: .22em;
+            line-height: 1.5;
             text-transform: uppercase;
             font-weight: 900;
-            margin-bottom: 4px;
-        }
-        .guest { color: var(--muted); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
-        .event-date {
-            flex: 0 0 auto;
-            border-radius: 999px;
-            padding: 8px 12px;
-            background: var(--gold-soft);
-            color: #815f1f;
-            border: 1px solid #ead7a4;
-            font-size: 13px;
-            font-weight: 900;
-            white-space: nowrap;
         }
         h1 {
             margin: 0;
-            font-size: clamp(40px, 8vw, 68px);
+            max-width: 10ch;
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: clamp(42px, 8vw, 72px);
+            font-weight: 700;
             line-height: .92;
             letter-spacing: 0;
-            color: #80628b;
+            color: #6d4c83;
+            text-wrap: balance;
         }
-        .subtitle {
-            display: flex;
+        .event-date {
+            display: inline-flex;
             align-items: center;
+            width: fit-content;
             gap: 8px;
-            margin: 12px 0 22px;
-            color: var(--muted);
-            font-size: 17px;
-            font-weight: 700;
+            border-radius: 999px;
+            padding: 8px 13px;
+            background: rgba(255, 255, 255, .72);
+            color: #7f6641;
+            border: 1px solid rgba(201, 161, 91, .42);
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: 0 10px 24px rgba(143, 92, 122, .09);
         }
-        .spark { color: var(--gold); }
+        .pass-body {
+            position: relative;
+            z-index: 3;
+            padding: 0 34px 34px;
+        }
+        .identity-strip {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            margin: -12px 0 18px;
+            padding: 16px 18px;
+            border: 1px solid rgba(234, 223, 241, .95);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, .90);
+            box-shadow: 0 16px 34px rgba(93, 61, 118, .08);
+            backdrop-filter: blur(14px);
+        }
+        .label {
+            margin-bottom: 4px;
+            color: var(--xv-muted);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+        .guest-name {
+            color: var(--xv-purple-dark);
+            font-size: clamp(22px, 6vw, 34px);
+            font-weight: 900;
+            line-height: 1.08;
+            overflow-wrap: anywhere;
+        }
+        .pass-badge {
+            display: grid;
+            place-items: center;
+            min-width: 112px;
+            min-height: 54px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #fffaf0, #f8edf7);
+            border: 1px solid rgba(201, 161, 91, .42);
+            color: #7f6641;
+            font-size: 13px;
+            font-weight: 900;
+            text-align: center;
+        }
         .qr-shell {
-            border: 1px solid var(--line);
-            border-radius: 26px;
-            background: linear-gradient(180deg, #fffcff, var(--soft));
-            padding: 18px;
+            position: relative;
+            border: 1px solid rgba(203, 183, 221, .72);
+            border-radius: 28px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,250,253,.96)),
+                linear-gradient(135deg, rgba(246, 229, 237, .82), rgba(242, 234, 247, .88));
+            padding: 20px;
+            box-shadow: 0 18px 44px rgba(93, 61, 118, .10);
         }
+        .qr-shell::before,
+        .qr-shell::after {
+            content: "";
+            position: absolute;
+            width: 52px;
+            height: 1px;
+            top: 28px;
+            background: linear-gradient(90deg, transparent, rgba(201, 161, 91, .86), transparent);
+        }
+        .qr-shell::before { left: 26px; }
+        .qr-shell::after { right: 26px; }
         .qr-card {
             display: grid;
             gap: 14px;
             justify-items: center;
-            border-radius: 22px;
-            background: white;
-            padding: 18px 18px 16px;
-            border: 1px solid #eadff4;
-            box-shadow: inset 0 0 0 8px #fbf8fd;
+            max-width: 390px;
+            margin: 0 auto;
+            border-radius: 24px;
+            background: #fff;
+            padding: 26px 24px 20px;
+            border: 1px solid #ede4f3;
+            box-shadow: inset 0 0 0 8px #fff, inset 0 0 0 10px rgba(203, 183, 221, .24), 0 16px 26px rgba(93, 61, 118, .08);
+        }
+        .qr-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--xv-purple);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: .18em;
+            text-transform: uppercase;
         }
         .qr-card img {
             display: block;
-            width: min(100%, 350px);
+            width: min(100%, 318px);
             aspect-ratio: 1;
             object-fit: contain;
-            border-radius: 14px;
-            background: white;
+            border-radius: 0;
+            background: #fff;
         }
         .qr-caption {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            color: #8e6a98;
+            color: #7e6d87;
             font-size: 15px;
             font-weight: 800;
             text-align: center;
         }
+        .spark { color: var(--xv-gold); }
         .missing {
             width: 100%;
-            min-height: 220px;
+            min-height: 230px;
             display: grid;
             place-items: center;
             text-align: center;
             padding: 30px 18px;
             border: 1px dashed #cdb8e2;
             border-radius: 18px;
-            background: white;
-            color: var(--muted);
+            background: #fff;
+            color: var(--xv-muted);
             font-size: 16px;
             line-height: 1.5;
-            font-weight: 700;
+            font-weight: 800;
         }
         .actions {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 16px;
+            gap: 12px;
+            margin-top: 18px;
         }
-        .btn {
-            display: flex;
+        .action-card {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr);
             align-items: center;
-            justify-content: flex-start;
-            gap: 10px;
-            min-height: 58px;
-            padding: 12px 14px;
-            border-radius: 18px;
+            gap: 12px;
+            min-height: 74px;
+            padding: 14px;
+            border-radius: 20px;
             text-decoration: none;
-            font-weight: 900;
-            background: linear-gradient(145deg, #fff7fb, #f3d7e5);
-            color: #8a6594;
-            border: 1px solid #ead0df;
-            box-shadow: 0 12px 24px rgba(160, 111, 145, .14);
+            background: rgba(255, 255, 255, .84);
+            color: #6a5473;
+            border: 1px solid rgba(234, 223, 241, .95);
+            box-shadow: 0 12px 28px rgba(93, 61, 118, .07);
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+            -webkit-tap-highlight-color: transparent;
         }
-        .btn.secondary {
-            background: white;
-            color: #8a6594;
-            border-color: var(--line);
-            box-shadow: 0 10px 24px rgba(70, 42, 95, .07);
+        .action-card.primary {
+            background: linear-gradient(145deg, #fff, #fbf2f7);
+            border-color: rgba(203, 183, 221, .88);
         }
+        .action-card:hover,
+        .action-card:focus-visible {
+            transform: translateY(-2px);
+            border-color: rgba(201, 161, 91, .55);
+            box-shadow: 0 16px 32px rgba(93, 61, 118, .11);
+            outline: none;
+        }
+        .action-card:active { transform: translateY(0); }
         .icon {
-            width: 36px;
-            height: 36px;
-            flex: 0 0 36px;
+            width: 44px;
+            height: 44px;
             display: grid;
             place-items: center;
-            border-radius: 13px;
-            background: rgba(255, 255, 255, .58);
-            font-size: 18px;
+            border-radius: 50%;
+            color: #7e5b8c;
+            background: linear-gradient(145deg, #f8f1fb, #fffaf0);
+            border: 1px solid rgba(201, 161, 91, .28);
         }
-        .secondary .icon { background: #fff8e9; color: #9b6d25; }
-        .btn-text { display: grid; gap: 1px; min-width: 0; }
-        .btn-title { font-size: 15px; overflow-wrap: anywhere; }
-        .btn-sub { font-size: 11px; font-weight: 800; opacity: .78; }
+        .icon svg {
+            width: 21px;
+            height: 21px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .btn-text { display: grid; gap: 3px; min-width: 0; }
+        .btn-title { font-size: 15px; font-weight: 900; overflow-wrap: anywhere; }
+        .btn-sub { color: var(--xv-muted); font-size: 12px; font-weight: 800; line-height: 1.25; }
         .note {
             display: flex;
-            gap: 10px;
-            margin-top: 16px;
-            padding: 14px 15px;
-            background: #fffaf0;
-            color: #95713a;
-            border: 1px solid #ead8ad;
-            border-radius: 18px;
+            gap: 12px;
+            margin-top: 18px;
+            padding: 16px 17px;
+            background: linear-gradient(145deg, #fffaf0, #fffdf9);
+            color: #806944;
+            border: 1px solid rgba(201, 161, 91, .42);
+            border-radius: 20px;
             font-size: 14px;
-            line-height: 1.45;
+            line-height: 1.5;
             font-weight: 700;
         }
-        .note-icon { flex: 0 0 auto; color: var(--gold); font-weight: 900; }
-        @media (max-width: 620px) {
-            .page { align-items: start; padding: 10px 10px 18px; }
-            .pass { border-radius: 24px; }
-            .pass-inner { padding: 22px 16px 16px; }
-            .topline { align-items: flex-start; margin-bottom: 16px; }
-            .mark { width: 50px; height: 50px; flex-basis: 50px; border-radius: 17px; font-size: 19px; }
-            .event-date { display: none; }
-            h1 { font-size: clamp(38px, 15vw, 56px); }
-            .subtitle { font-size: 15px; margin-bottom: 16px; }
-            .qr-shell { padding: 12px; border-radius: 22px; }
-            .qr-card { padding: 12px; box-shadow: inset 0 0 0 5px #fbf8fd; }
-            .qr-card img { width: min(100%, 310px); }
-            .actions { grid-template-columns: 1fr; gap: 9px; }
-            .btn { min-height: 56px; border-radius: 16px; }
-            .note { font-size: 13px; }
+        .note-icon {
+            flex: 0 0 28px;
+            width: 28px;
+            height: 28px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(201, 161, 91, .14);
+            color: #9a7331;
+            font-weight: 900;
         }
-        @media (max-width: 380px) {
-            .brand { gap: 10px; }
-            .pass-inner { padding-inline: 12px; }
-            h1 { font-size: 34px; }
-            .qr-card img { width: min(100%, 280px); }
+        .footer-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 18px;
+            color: rgba(126, 109, 135, .78);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .footer-line::before,
+        .footer-line::after {
+            content: "";
+            width: 54px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(201, 161, 91, .65));
+        }
+        .footer-line::after { transform: scaleX(-1); }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+            }
+        }
+        @media (max-width: 720px) {
+            .page { align-items: start; padding: 10px 10px 18px; }
+            .pass { border-radius: 26px; }
+            .pass::before { inset: 7px; border-radius: 20px; }
+            .hero { min-height: 270px; }
+            .hero::before {
+                background:
+                    linear-gradient(90deg, rgba(255, 253, 249, .98) 0%, rgba(255, 253, 249, .86) 52%, rgba(255, 253, 249, .30) 100%),
+                    linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,253,249,.96) 100%);
+            }
+            .hero-photo { object-position: 73% 38%; }
+            .hero-content { min-height: 270px; width: 66%; padding: 26px 0 34px 22px; }
+            .monogram { width: 112px; height: 116px; }
+            h1 { max-width: 9ch; font-size: clamp(38px, 12.5vw, 56px); }
+            .event-date { font-size: 12px; padding: 7px 11px; }
+            .pass-body { padding: 0 16px 20px; }
+            .identity-strip {
+                grid-template-columns: 1fr;
+                margin-top: -8px;
+                padding: 14px;
+                border-radius: 19px;
+            }
+            .pass-badge { justify-self: start; min-width: 0; min-height: 0; padding: 8px 12px; }
+            .qr-shell { padding: 12px; border-radius: 22px; }
+            .qr-shell::before,
+            .qr-shell::after { display: none; }
+            .qr-card { padding: 20px 14px 16px; border-radius: 20px; box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 8px rgba(203, 183, 221, .22), 0 12px 20px rgba(93, 61, 118, .07); }
+            .qr-card img { width: min(100%, 300px); }
+            .actions { grid-template-columns: 1fr; gap: 10px; }
+            .action-card { min-height: 66px; border-radius: 18px; }
+            .note { font-size: 13px; padding: 14px; }
+        }
+        @media (max-width: 420px) {
+            .hero { min-height: 244px; }
+            .hero-content { min-height: 244px; width: 72%; padding-left: 18px; padding-top: 22px; }
+            .monogram { width: 94px; height: 98px; }
+            .kicker { font-size: 11px; letter-spacing: .18em; }
+            h1 { font-size: 36px; }
+            .event-date { max-width: 100%; white-space: normal; line-height: 1.2; }
+            .guest-name { font-size: 24px; }
+            .qr-card img { width: min(100%, 286px); }
+            .footer-line { gap: 8px; }
+            .footer-line::before,
+            .footer-line::after { width: 34px; }
+        }
+        @media (max-width: 360px) {
+            .hero-content { width: 78%; padding-left: 15px; }
+            h1 { font-size: 32px; }
+            .qr-card img { width: min(100%, 260px); }
+            .action-card { grid-template-columns: 40px minmax(0, 1fr); padding: 12px; }
+            .icon { width: 40px; height: 40px; }
         }
     </style>
 </head>
 <body>
     <main class="page">
         <section class="pass" aria-label="Pase de acceso al evento">
-            <div class="pass-inner">
-                <div class="topline">
-                    <div class="brand">
-                        <div class="mark">XV</div>
-                        <div>
-                            <div class="kicker">Pase digital</div>
-                            <div class="guest">{{ $guest->display_name }}</div>
-                        </div>
-                    </div>
+            <header class="hero">
+                <picture aria-hidden="true">
+                    <source srcset="{{ $heroImageWebp }}" type="image/webp">
+                    <img class="hero-photo" src="{{ $heroImagePng }}" width="1600" height="1870" alt="" fetchpriority="high">
+                </picture>
+                <div class="hero-content">
+                    <img class="monogram" src="{{ $monogramImage }}" width="1400" height="1460" alt="Monograma oficial de Zugeily">
+                    <div class="kicker">Pase digital</div>
+                    <h1>{{ $eventName }}</h1>
                     @if ($eventDate)
-                        <div class="event-date">{{ $eventDate }}</div>
+                        <div class="event-date">
+                            <span aria-hidden="true">✦</span>
+                            <span>{{ $eventDate }}</span>
+                        </div>
                     @endif
                 </div>
+            </header>
 
-                <h1>{{ $eventName }}</h1>
-                <div class="subtitle"><span class="spark">✦</span><span>QR personal de acceso</span></div>
+            <div class="pass-body">
+                <div class="identity-strip">
+                    <div>
+                        <div class="label">Pase personal para</div>
+                        <div class="guest-name">{{ $guest->display_name }}</div>
+                    </div>
+                    <div class="pass-badge">QR personal<br>de acceso</div>
+                </div>
 
                 <div class="qr-shell">
                     <div class="qr-card">
                         @if ($link->isExpired())
                             <div class="missing">Este enlace ya venció. Por favor contacta al equipo organizador.</div>
                         @elseif ($qrDataUrl)
+                            <div class="qr-title"><span class="spark" aria-hidden="true">✦</span><span>Código de ingreso</span></div>
                             <img src="{{ $qrDataUrl }}" alt="QR de acceso para {{ $guest->name }}">
-                            <div class="qr-caption"><span class="spark">✦</span><span>Presenta este código al llegar al evento.</span></div>
+                            <div class="qr-caption"><span class="spark" aria-hidden="true">✦</span><span>Presenta este código al llegar al evento.</span></div>
                         @else
                             <div class="missing">Tu QR aún está en preparación. Vuelve a abrir este enlace más tarde.</div>
                         @endif
                     </div>
                 </div>
 
-                <div class="actions">
-                    <a class="btn" href="{{ $links['misa'] }}" target="_blank" rel="noopener">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-                        <span class="btn-text"><span class="btn-title">Ubicación misa</span><span class="btn-sub">Abrir en Maps</span></span>
+                <div class="actions" aria-label="Enlaces importantes del evento">
+                    <a class="action-card primary" href="{{ $links['misa'] }}" target="_blank" rel="noopener">
+                        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                        <span class="btn-text"><span class="btn-title">Ubicación misa</span><span class="btn-sub">Catedral de Toluca</span></span>
                     </a>
-                    <a class="btn" href="{{ $links['recepcion'] }}" target="_blank" rel="noopener">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M9 20v-6h6v6"/></svg></span>
-                        <span class="btn-text"><span class="btn-title">Recepción</span><span class="btn-sub">Hacienda La Cúpula</span></span>
+                    <a class="action-card primary" href="{{ $links['recepcion'] }}" target="_blank" rel="noopener">
+                        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M9 20v-6h6v6"/></svg></span>
+                        <span class="btn-text"><span class="btn-title">Ubicación recepción</span><span class="btn-sub">Hacienda La Cúpula</span></span>
                     </a>
-                    <a class="btn secondary" href="{{ $links['liverpool'] }}" target="_blank" rel="noopener">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H8.5A2.5 2.5 0 1 1 12 4.5V7Z"/><path d="M12 7h3.5A2.5 2.5 0 1 0 12 4.5V7Z"/></svg></span>
+                    <a class="action-card" href="{{ $links['liverpool'] }}" target="_blank" rel="noopener">
+                        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H8.5A2.5 2.5 0 1 1 12 4.5V7Z"/><path d="M12 7h3.5A2.5 2.5 0 1 0 12 4.5V7Z"/></svg></span>
                         <span class="btn-text"><span class="btn-title">Mesa Liverpool</span><span class="btn-sub">Lista de regalos</span></span>
                     </a>
-                    <a class="btn secondary" href="{{ $links['amazon'] }}" target="_blank" rel="noopener">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h15l-2 8H8L6 8Z"/><path d="M6 8 5.2 5H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
+                    <a class="action-card" href="{{ $links['amazon'] }}" target="_blank" rel="noopener">
+                        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 8h15l-2 8H8L6 8Z"/><path d="M6 8 5.2 5H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
                         <span class="btn-text"><span class="btn-title">Mesa Amazon</span><span class="btn-sub">Lista de regalos</span></span>
                     </a>
                 </div>
 
                 <div class="note">
-                    <span class="note-icon">i</span>
+                    <span class="note-icon" aria-hidden="true">i</span>
                     <span>Este enlace es personal para tu familia o grupo. No muestra mesa ni acompañantes; la información de acceso viene integrada en el QR.</span>
                 </div>
+
+                <div class="footer-line" aria-hidden="true">Zugeily</div>
             </div>
         </section>
     </main>
