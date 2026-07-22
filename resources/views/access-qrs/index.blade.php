@@ -6,7 +6,7 @@
 
 @section('content')
     <style>
-        .access-toolbar { display: grid; grid-template-columns: 1.2fr 150px 170px; gap: 12px; align-items: end; margin: 0 0 14px; }
+        .access-toolbar { display: grid; grid-template-columns: 1.2fr 150px 170px auto; gap: 12px; align-items: end; margin: 0 0 14px; }
         .access-toolbar label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
         .access-toolbar input, .access-toolbar select { width: 100%; height: 40px; }
         .access-table { min-width: 1180px; }
@@ -17,6 +17,8 @@
         .mesa-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; background: #eef8f2; color: #256141; font-size: 11px; font-weight: 800; }
         .mesa-chip.warn { background: #fff1d8; color: #8b5b10; }
         .mesa-chip.empty { background: #eceff3; color: #55606f; }
+        .split-detail { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #fff8e8; border: 1px solid #ead8ad; color: #6f5218; font-size: 12px; line-height: 1.45; }
+        .split-detail strong { color: var(--primary-dark); }
         .qr-upload-form { display: flex; align-items: center; gap: 8px; min-width: 300px; }
         .qr-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
         .qr-picker { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--primary-dark); font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; box-shadow: 0 8px 18px rgba(122, 79, 168, .08); }
@@ -86,10 +88,12 @@
     </div>
 
     <div class="card" style="padding: 18px;">
-        <div class="access-toolbar">
+        <form class="access-toolbar" method="get" action="{{ route('access-qrs.index') }}" data-quick-search-form>
+            <input type="hidden" name="group" value="{{ $group }}">
+            <input type="hidden" name="per_page" value="{{ $perPage }}">
             <div>
-                <label>Busqueda rapida en esta pagina</label>
-                <input type="search" placeholder="Filtra por familia, mesa, telefono, padrino..." data-access-search>
+                <label>Busqueda rapida general</label>
+                <input type="search" name="q" value="{{ $search }}" placeholder="Familia, invitado, mesa, telefono, padrino..." data-access-search>
             </div>
             <div>
                 <label>Registros</label>
@@ -101,7 +105,13 @@
                 <label>Pagina</label>
                 <div style="height:40px; display:flex; align-items:center; color:var(--muted); font-size:13px;">{{ $guests->currentPage() }} de {{ $guests->lastPage() }}</div>
             </div>
-        </div>
+            <div class="inline" style="gap:8px; align-items:end; min-height:40px;">
+                <button class="btn small" type="submit">Buscar</button>
+                @if ($search !== '')
+                    <a class="btn secondary small" href="{{ route('access-qrs.index', array_filter(['group' => $group, 'per_page' => $perPage])) }}">Limpiar</a>
+                @endif
+            </div>
+        </form>
 
         <div class="table-wrap">
             <table class="access-table">
@@ -122,6 +132,7 @@
                             $detail = $detailsByGuest[$guest->name] ?? ['people' => collect(), 'tables' => collect(), 'is_divided' => false];
                             $tables = collect($detail['tables'] ?? []);
                             $people = collect($detail['people'] ?? []);
+                            $peopleByTable = collect($detail['people_by_table'] ?? []);
                             $typeCounts = $people->groupBy('type')->map->count();
                             $detailPayload = [
                                 'name' => $guest->name,
@@ -132,6 +143,7 @@
                                 'tables' => $tables->values(),
                                 'is_divided' => (bool) ($detail['is_divided'] ?? false),
                                 'people' => $people->values(),
+                                'people_by_table' => $peopleByTable,
                                 'counts' => [
                                     'total' => $people->count(),
                                     'adultos' => (int) ($typeCounts['Adulto'] ?? 0),
@@ -165,7 +177,12 @@
                                     @endif
                                 </div>
                                 @if ($detail['is_divided'])
-                                    <div class="small" style="margin-top: 4px; color:#8b5b10; font-weight:700;">Grupo dividido</div>
+                                    <div class="split-detail">
+                                        <strong>Grupo dividido:</strong>
+                                        @foreach ($peopleByTable as $tableName => $tablePeople)
+                                            <div>{{ $tableName }}: {{ collect($tablePeople)->pluck('name')->implode(', ') }}</div>
+                                        @endforeach
+                                    </div>
                                 @endif
                             </td>
                             <td>
@@ -217,6 +234,7 @@
                 <button type="button" class="btn ghost" data-detail-close>✕</button>
             </div>
             <div data-detail-alert></div>
+            <div data-detail-split></div>
             <div class="detail-grid">
                 <div class="detail-stat"><div class="label">Personas</div><div class="value" data-detail-total>0</div></div>
                 <div class="detail-stat"><div class="label">Mesa(s)</div><div class="value" data-detail-tables>—</div></div>
@@ -248,12 +266,11 @@
         });
 
         const search = document.querySelector('[data-access-search]');
-        const rows = Array.from(document.querySelectorAll('[data-access-row]'));
+        const quickForm = document.querySelector('[data-quick-search-form]');
+        let searchTimer = null;
         search?.addEventListener('input', () => {
-            const needle = search.value.trim().toLowerCase();
-            rows.forEach((row) => {
-                row.style.display = ! needle || row.dataset.quick.includes(needle) ? '' : 'none';
-            });
+            window.clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => quickForm?.submit(), 450);
         });
 
         const modal = document.querySelector('[data-detail-modal]');
@@ -267,6 +284,7 @@
                 const tables = data.tables || [];
                 const people = data.people || [];
                 const counts = data.counts || {};
+                const peopleByTable = data.people_by_table || {};
 
                 document.querySelector('[data-detail-name]').textContent = data.name || '—';
                 document.querySelector('[data-detail-meta]').textContent = [data.prefix, data.phone, data.group].filter(Boolean).join(' · ');
@@ -274,7 +292,10 @@
                 document.querySelector('[data-detail-tables]').textContent = tables.length ? tables.join(', ') : 'Sin mesa';
                 document.querySelector('[data-detail-sponsor]').textContent = data.sponsor || '—';
                 document.querySelector('[data-detail-alert]').innerHTML = data.is_divided
-                    ? '<div class="card" style="background:#fff8e8; border-color:#ead8ad; margin-bottom:12px; padding:10px 12px; color:#805f21; font-weight:700;">Grupo dividido en varias mesas. Revisa persona por persona abajo.</div>'
+                    ? '<div class="split-detail" style="margin-bottom:12px; font-weight:700;">Grupo dividido en varias mesas. Cada invitado trae su mesa asignada.</div>'
+                    : '';
+                document.querySelector('[data-detail-split]').innerHTML = data.is_divided
+                    ? `<div class="split-detail" style="margin-bottom:12px;">${Object.entries(peopleByTable).map(([table, tablePeople]) => `<div><strong>${escapeHtml(table)}:</strong> ${tablePeople.map((person) => escapeHtml(person.name)).join(', ')}</div>`).join('')}</div>`
                     : '';
                 document.querySelector('[data-detail-people]').innerHTML = people.length
                     ? people.map((person) => `

@@ -28,7 +28,29 @@ class AccessQrController extends Controller
                         ->whereRaw("LOWER(name) LIKE ?", [$needle])
                         ->orWhereRaw("LOWER(prefix) LIKE ?", [$needle])
                         ->orWhereRaw("LOWER(phone) LIKE ?", [$needle])
-                        ->orWhereRaw("LOWER(group_name) LIKE ?", [$needle]);
+                        ->orWhereRaw("LOWER(group_name) LIKE ?", [$needle])
+                        ->orWhereRaw("LOWER(sponsor) LIKE ?", [$needle])
+                        ->orWhereExists(function ($subquery) use ($needle) {
+                            $subquery
+                                ->selectRaw("1")
+                                ->from("companions")
+                                ->whereColumn("companions.invited_group", "guests.name")
+                                ->where("companions.active", true)
+                                ->where(function ($personQuery) use ($needle) {
+                                    $personQuery
+                                        ->whereRaw("LOWER(companions.name) LIKE ?", [$needle])
+                                        ->orWhereExists(function ($tableQuery) use ($needle) {
+                                            $tableQuery
+                                                ->selectRaw("1")
+                                                ->from("table_assignments")
+                                                ->join("event_tables", "event_tables.id", "=", "table_assignments.event_table_id")
+                                                ->whereColumn("table_assignments.companion_id", "companions.id")
+                                                ->where("table_assignments.active", true)
+                                                ->where("event_tables.active", true)
+                                                ->whereRaw("LOWER(event_tables.name) LIKE ?", [$needle]);
+                                        });
+                                });
+                        });
                 });
             })
             ->when($group !== "", fn ($query) => $query->where("group_name", $group))
@@ -82,6 +104,7 @@ class AccessQrController extends Controller
                 return [
                     "people" => $rows,
                     "tables" => $tables,
+                    "people_by_table" => $rows->groupBy(fn ($row) => $row["table"] ?: "Sin mesa")->map->values(),
                     "is_divided" => $tables->count() > 1,
                 ];
             });
