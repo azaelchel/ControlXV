@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Guest;
 use App\Models\PublicGuestLink;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -91,17 +92,19 @@ class PublicGuestLinkService
                     ]);
                 });
 
-            $days = $forceDays
-                ?? ($mode === 'last_chance'
-                    ? Setting::getInt('last_chance_validity_days', 2)
-                    : Setting::getInt('link_validity_days', 7));
+            $expiresAt = $mode === 'access_qr'
+                ? $this->accessQrExpiresAt()
+                : now()->addDays($forceDays
+                    ?? ($mode === 'last_chance'
+                        ? Setting::getInt('last_chance_validity_days', 2)
+                        : Setting::getInt('link_validity_days', 7)));
 
             $link = PublicGuestLink::create([
                 'guest_id'     => $guest->id,
                 'token'        => Str::random(48),
                 'mode'         => $mode,
                 'generated_at' => now(),
-                'expires_at'   => now()->addDays($days),
+                'expires_at'   => $expiresAt,
                 'is_current'   => true,
             ]);
 
@@ -119,6 +122,39 @@ class PublicGuestLinkService
 
             return $link;
         });
+    }
+
+    private function accessQrExpiresAt(): Carbon
+    {
+        $eventDate = trim((string) Setting::get('event_date', ''));
+
+        if (preg_match('/^(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+de\s+(\d{4})$/iu', $eventDate, $matches)) {
+            $months = [
+                'enero' => 1,
+                'febrero' => 2,
+                'marzo' => 3,
+                'abril' => 4,
+                'mayo' => 5,
+                'junio' => 6,
+                'julio' => 7,
+                'agosto' => 8,
+                'septiembre' => 9,
+                'setiembre' => 9,
+                'octubre' => 10,
+                'noviembre' => 11,
+                'diciembre' => 12,
+            ];
+
+            $monthName = mb_strtolower($matches[2], 'UTF-8');
+
+            if (isset($months[$monthName])) {
+                return Carbon::create((int) $matches[3], $months[$monthName], (int) $matches[1])
+                    ->addDays(2)
+                    ->endOfDay();
+            }
+        }
+
+        return now()->addDays(2)->endOfDay();
     }
 
     public function linkUrl(Guest $guest, PublicGuestLink $link): string
