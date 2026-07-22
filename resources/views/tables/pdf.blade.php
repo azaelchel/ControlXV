@@ -23,14 +23,14 @@
     $horizontalTables = ['1', '3', '5', '7', '9', '11', '13', '15', '17', '19', '21', '23'];
     $tableBox = function ($table) use ($tableNum, $horizontalTables) {
         if ($table->is_principal) {
-            return ['w' => 44, 'h' => 48, 'ml' => -22, 'mt' => -24, 'cls' => 'principal'];
+            return ['w' => 46, 'h' => 54, 'ml' => -23, 'mt' => -27, 'cls' => 'principal'];
         }
 
         if (in_array($tableNum($table->name), $horizontalTables, true)) {
-            return ['w' => 50, 'h' => 34, 'ml' => -25, 'mt' => -17, 'cls' => 'horizontal'];
+            return ['w' => 52, 'h' => 38, 'ml' => -26, 'mt' => -19, 'cls' => 'horizontal'];
         }
 
-        return ['w' => 36, 'h' => 54, 'ml' => -18, 'mt' => -27, 'cls' => 'vertical'];
+        return ['w' => 38, 'h' => 60, 'ml' => -19, 'mt' => -30, 'cls' => 'vertical'];
     };
     $mapFill = function ($occ, $cap) {
         if ($cap > 0 && $occ > $cap) return 'sobre';
@@ -77,8 +77,8 @@
         .cocina { position: absolute; font-size: 9px; font-weight: bold; color: #6b5a7e; }
         .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1.5px solid #fff; }
         .map-table .num { display: block; font-size: 22px; font-weight: bold; line-height: 1; padding-top: 6px; }
-        .map-table .occ { display: block; font-size: 10px; font-weight: bold; line-height: 1; margin-top: 4px; color: #fff; }
-        .map-table .sponsor-count { display: block; font-size: 9px; font-weight: bold; color: #ffe6a7; line-height: 1; margin-top: 3px; letter-spacing: .8px; }
+        .map-table .occ { display: inline-block; min-width: 28px; font-size: 10.5px; font-weight: bold; line-height: 1; margin-top: 4px; padding: 2px 4px; border-radius: 7px; background-color: #fff; color: #3a2a4d; }
+        .map-table .sponsor-count { display: block; font-size: 9px; font-weight: bold; color: #e7c978; line-height: 1; margin-top: 3px; letter-spacing: .8px; }
         .map-table.horizontal .num { padding-top: 5px; }
         .map-table.principal .num { font-size: 23px; padding-top: 7px; }
         .map-table.libre { background-color: #cbb8e4; color: #4a2f6b; border-color: #d9cbed; }
