@@ -122,6 +122,7 @@ class MessageSendController extends Controller
     {
         $defaultTemplateId = (int) $request->integer('template_id');
         $validationStateFilter = $request->string('validation_state')->toString();
+        $defaultStatusFilter = $request->string('status')->toString();
 
         $guests = Guest::query()
             ->with([
@@ -140,6 +141,7 @@ class MessageSendController extends Controller
             'templates'         => MessageTemplate::orderBy('position')->get(),
             'defaultTemplateId' => $defaultTemplateId,
             'validationStateFilter' => $validationStateFilter,
+            'defaultStatusFilter' => $defaultStatusFilter,
         ]);
     }
 
@@ -511,6 +513,16 @@ class MessageSendController extends Controller
         $linkModel = null;
 
         if ($template->hasLinkPlaceholder()) {
+            if ($template->link_mode === 'access_qr' && ! $guest->access_qr_data) {
+                return [
+                    'guest' => $guest,
+                    'link' => null,
+                    'link_url' => null,
+                    'message' => $template->render($guest, null),
+                    'eligible' => false,
+                ];
+            }
+
             $link = $this->linkService->ensureLinkFor($guest, $template->link_mode, $template->link_validity_days);
             if ($link) {
                 $linkModel = $link;

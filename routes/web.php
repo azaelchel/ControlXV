@@ -8,6 +8,8 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MessageSendController;
 use App\Http\Controllers\MessageTemplateController;
+use App\Http\Controllers\AccessQrController;
+use App\Http\Controllers\PublicAccessQrController;
 use App\Http\Controllers\PublicGuestReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingController;
@@ -27,6 +29,7 @@ Route::get('/', function () {
 Route::get('/revision-invitados/{guest}/{token}', [PublicGuestReviewController::class, 'show'])->name('guest-review.show');
 Route::put('/revision-invitados/{guest}/{token}', [PublicGuestReviewController::class, 'update'])->name('guest-review.update');
 Route::post('/revision-invitados/{guest}/{token}/decline', [PublicGuestReviewController::class, 'decline'])->name('guest-review.decline');
+Route::get('/acceso-invitados/{guest}/{token}', [PublicAccessQrController::class, 'show'])->name('guest-access.show');
 
 Route::middleware('auth')->group(function () {
     Route::middleware('module:dashboard')->group(function () {
@@ -106,6 +109,9 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('module:message_sends')->group(function () {
+        Route::get('/access-qrs', [AccessQrController::class, 'index'])->name('access-qrs.index');
+        Route::post('/access-qrs/{guest}', [AccessQrController::class, 'store'])->name('access-qrs.store');
+        Route::delete('/access-qrs/{guest}', [AccessQrController::class, 'destroy'])->name('access-qrs.destroy');
         Route::get('/message-sends', [MessageSendController::class, 'index'])->name('message-sends.index');
         Route::get('/message-sends/history', [MessageSendController::class, 'history'])->name('message-sends.history');
         Route::get('/message-sends/new', [MessageSendController::class, 'create'])->name('message-sends.create');

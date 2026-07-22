@@ -10,9 +10,17 @@ use Illuminate\Support\Str;
 
 class PublicGuestLinkService
 {
-    public function activeLinkFor(Guest $guest): ?PublicGuestLink
+    public function activeLinkFor(Guest $guest, ?string $mode = null): ?PublicGuestLink
     {
-        $link = $guest->publicLinks()->where('is_current', true)->first();
+        $query = $guest->publicLinks()->where('is_current', true);
+
+        if ($mode !== null) {
+            $query->where('mode', $mode);
+        } else {
+            $query->where('mode', '!=', 'access_qr');
+        }
+
+        $link = $query->first();
 
         if (! $link) {
             return null;
@@ -31,12 +39,12 @@ class PublicGuestLinkService
             return null;
         }
 
-        $existing = $this->activeLinkFor($guest);
-
-        // Modo deseado: el que fuerza la plantilla (ej. 'last_chance' de última
-        // oportunidad) o, para status 'No contesto', también last_chance.
+        // Modo deseado: el que fuerza la plantilla (ej. 'access_qr') o, para
+        // status 'No contesto', también last_chance.
         $desiredMode = $forceMode
             ?? ($guest->status === 'No contesto' ? 'last_chance' : null);
+
+        $existing = $this->activeLinkFor($guest, $desiredMode);
 
         // Si el link activo es de otro modo (ej. invitación de 7 días previa),
         // lo regeneramos para que abra con el modo y vigencia correctos.
@@ -67,8 +75,11 @@ class PublicGuestLinkService
         }
 
         return DB::transaction(function () use ($guest, $forceMode, $forceDays) {
+            $mode = $forceMode ?? $this->modeForStatus($guest->status);
+
             PublicGuestLink::query()
                 ->where('guest_id', $guest->id)
+                ->where('mode', $mode)
                 ->where('is_current', true)
                 ->get()
                 ->each(function (PublicGuestLink $link) {
@@ -80,7 +91,6 @@ class PublicGuestLinkService
                     ]);
                 });
 
-            $mode = $forceMode ?? $this->modeForStatus($guest->status);
             $days = $forceDays
                 ?? ($mode === 'last_chance'
                     ? Setting::getInt('last_chance_validity_days', 2)
@@ -95,15 +105,17 @@ class PublicGuestLinkService
                 'is_current'   => true,
             ]);
 
-            $guest->update([
-                'public_link_token'         => $link->token,
-                'public_link_mode'          => $link->mode,
-                'public_link_response'      => null,
-                'public_link_generated_at'  => $link->generated_at,
-                'public_link_expires_at'    => $link->expires_at,
-                'public_link_opened_at'     => null,
-                'public_link_responded_at'  => null,
-            ]);
+            if ($mode !== 'access_qr') {
+                $guest->update([
+                    'public_link_token'         => $link->token,
+                    'public_link_mode'          => $link->mode,
+                    'public_link_response'      => null,
+                    'public_link_generated_at'  => $link->generated_at,
+                    'public_link_expires_at'    => $link->expires_at,
+                    'public_link_opened_at'     => null,
+                    'public_link_responded_at'  => null,
+                ]);
+            }
 
             return $link;
         });
@@ -111,6 +123,10 @@ class PublicGuestLinkService
 
     public function linkUrl(Guest $guest, PublicGuestLink $link): string
     {
+        if ($link->mode === 'access_qr') {
+            return route('guest-access.show', ['guest' => $guest, 'token' => $link->token], absolute: true);
+        }
+
         return route('guest-review.show', ['guest' => $guest, 'token' => $link->token], absolute: true);
     }
 }

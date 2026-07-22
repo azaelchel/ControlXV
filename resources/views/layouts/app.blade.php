@@ -661,6 +661,9 @@
                             <a class="nav-item {{ request()->routeIs('message-sends.*') ? 'active' : '' }}" href="{{ route('message-sends.index') }}">
                                 <span class="ico">💬</span><span>Mensajes</span>
                             </a>
+                            <a class="nav-item {{ request()->routeIs('access-qrs.*') ? 'active' : '' }}" href="{{ route('access-qrs.index') }}">
+                                <span class="ico">▣</span><span>QR accesos</span>
+                            </a>
                         @endif
                         @if (Auth::user()->canAccessModule('message_templates'))
                             <a class="nav-item {{ request()->routeIs('message-templates.*') ? 'active' : '' }}" href="{{ route('message-templates.index') }}">

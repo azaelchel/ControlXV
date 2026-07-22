@@ -111,7 +111,7 @@
                     <select id="filter-status">
                         <option value="">Todos</option>
                         @foreach ($statuses as $status)
-                            <option value="{{ $status }}">{{ $status }}</option>
+                            <option value="{{ $status }}" @selected($defaultStatusFilter === $status)>{{ $status }}</option>
                         @endforeach
                     </select>
                 </div>

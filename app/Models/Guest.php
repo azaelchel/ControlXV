@@ -28,6 +28,8 @@ class Guest extends Model
         'whatsapp_1_month',
         'whatsapp_15_days',
         'notes',
+        'access_qr_mime',
+        'access_qr_data',
         'active',
         'public_link_token',
         'public_link_mode',
@@ -77,7 +79,10 @@ class Guest extends Model
 
     public function currentPublicLink(): HasOne
     {
-        return $this->hasOne(PublicGuestLink::class)->where('is_current', true)->latestOfMany('generated_at');
+        return $this->hasOne(PublicGuestLink::class)
+            ->where('is_current', true)
+            ->where('mode', '!=', 'access_qr')
+            ->latestOfMany('generated_at');
     }
 
     /**
@@ -176,6 +181,7 @@ class Guest extends Model
             'invitation' => 'Registro y confirmación',
             'validation' => 'Validación final',
             'last_chance' => 'Última oportunidad',
+            'access_qr' => 'QR de acceso',
             default => 'Sin definir',
         };
     }
