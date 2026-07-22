@@ -3,7 +3,26 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>QR de acceso · {{ $eventName }}</title>
+    @php
+        $previewTitle = 'Pase digital · ' . $eventName;
+        $previewDescription = 'QR personal de acceso para ' . $guest->display_name . '. Presenta este código al llegar al evento.';
+        $previewImage = asset('images/og/xv-zugeily-access-qr.jpg');
+    @endphp
+    <title>{{ $previewTitle }}</title>
+    <meta name="description" content="{{ $previewDescription }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request()->fullUrl() }}">
+    <meta property="og:title" content="{{ $previewTitle }}">
+    <meta property="og:description" content="{{ $previewDescription }}">
+    <meta property="og:image" content="{{ $previewImage }}">
+    <meta property="og:image:secure_url" content="{{ $previewImage }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $previewTitle }}">
+    <meta name="twitter:description" content="{{ $previewDescription }}">
+    <meta name="twitter:image" content="{{ $previewImage }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
     <style>
