@@ -28,10 +28,10 @@
     <style>
         :root {
             --bg: #fff8fc;
-            --ink: #3f314b;
-            --muted: #817187;
-            --primary: #b982c7;
-            --primary-dark: #6f4b7a;
+            --ink: #5e5068;
+            --muted: #928397;
+            --primary: #c99ad4;
+            --primary-dark: #8e6a98;
             --rose: #e9a7ba;
             --gold: #c9a45e;
             --gold-soft: #fff8e9;
@@ -91,7 +91,7 @@
             border-radius: 20px;
             display: grid;
             place-items: center;
-            color: #6f4b28;
+            color: #9b7431;
             font-size: 22px;
             font-weight: 900;
             background: linear-gradient(145deg, #fff8e9, #f7d8e2);
@@ -99,7 +99,7 @@
             box-shadow: 0 14px 26px rgba(181, 129, 152, .18);
         }
         .kicker {
-            color: #684472;
+            color: #9d74a7;
             font-size: 12px;
             letter-spacing: .2em;
             text-transform: uppercase;
@@ -123,7 +123,7 @@
             font-size: clamp(40px, 8vw, 68px);
             line-height: .92;
             letter-spacing: 0;
-            color: #5c4066;
+            color: #80628b;
         }
         .subtitle {
             display: flex;
@@ -164,7 +164,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            color: #6f4b7a;
+            color: #8e6a98;
             font-size: 15px;
             font-weight: 800;
             text-align: center;
@@ -201,13 +201,13 @@
             text-decoration: none;
             font-weight: 900;
             background: linear-gradient(145deg, #fff7fb, #f3d7e5);
-            color: #684472;
+            color: #8a6594;
             border: 1px solid #ead0df;
             box-shadow: 0 12px 24px rgba(160, 111, 145, .14);
         }
         .btn.secondary {
             background: white;
-            color: var(--primary-dark);
+            color: #8a6594;
             border-color: var(--line);
             box-shadow: 0 10px 24px rgba(70, 42, 95, .07);
         }
@@ -231,7 +231,7 @@
             margin-top: 16px;
             padding: 14px 15px;
             background: #fffaf0;
-            color: #76591f;
+            color: #95713a;
             border: 1px solid #ead8ad;
             border-radius: 18px;
             font-size: 14px;
