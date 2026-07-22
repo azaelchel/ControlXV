@@ -78,7 +78,7 @@ class GuestController extends Controller
             'options' => CatalogOptions::all(),
             'categorySummary' => $this->categorySummary(),
             'statusSummary' => $this->statusSummary(),
-            'filters' => $request->only(['group_name', 'category', 'status', 'search']),
+            'filters' => $request->only(['group_name', 'category', 'status', 'search', 'sponsor_filter']),
             'editingGuest' => $editingGuest,
         ]);
     }
@@ -360,6 +360,10 @@ class GuestController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
+        }
+
+        if ($request->string('sponsor_filter')->toString() === 'with') {
+            $query->whereNotNull('sponsor')->where('sponsor', '!=', '');
         }
 
         if ($request->filled('search')) {

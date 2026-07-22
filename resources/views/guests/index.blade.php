@@ -212,6 +212,13 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label for="sponsor_filter">Padrino</label>
+                <select id="sponsor_filter" name="sponsor_filter">
+                    <option value="">Todos</option>
+                    <option value="with" @selected(($filters['sponsor_filter'] ?? '') === 'with')>Solo padrinos</option>
+                </select>
+            </div>
             <div class="inline" style="gap: 6px;">
                 <button class="btn" type="submit">Filtrar</button>
                 <a class="btn secondary" href="{{ route('guests.index') }}">Limpiar</a>
