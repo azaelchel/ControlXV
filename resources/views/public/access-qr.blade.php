@@ -7,7 +7,7 @@
         $previewTitle = 'Pase digital · ' . $eventName;
         $previewDescription = 'QR personal de acceso para ' . $guest->display_name . '. Presenta este código al llegar al evento.';
         $previewImage = asset('images/og/xv-zugeily-access-qr.jpg');
-        $passHolderName = trim(collect([$guest->name, $guest->prefix])->filter()->implode(' '));
+        $passHolderName = trim(collect([$guest->prefix, $guest->name])->filter()->implode(' '));
         $monogramImage = asset('images/xv/pase-digital/monograma-zugeily.png');
         $heroImageWebp = asset('images/xv/pase-digital/fondo-ramo-vestido.webp');
         $heroImagePng = asset('images/xv/pase-digital/fondo-ramo-vestido.png');
