@@ -5,6 +5,21 @@
 @section('subheading', 'Solo familias confirmadas. Carga la imagen QR que recibirá cada familia en su link personalizado.')
 
 @section('content')
+    <style>
+        .qr-upload-form { display: flex; align-items: center; gap: 8px; min-width: 300px; }
+        .qr-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+        .qr-picker {
+            display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            min-height: 36px; padding: 8px 12px; border-radius: 10px;
+            border: 1px solid var(--border); background: #fff; color: var(--primary-dark);
+            font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap;
+            box-shadow: 0 8px 18px rgba(122, 79, 168, .08);
+        }
+        .qr-picker:hover { border-color: var(--primary); background: #faf6ff; }
+        .qr-file-name { max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+        .qr-upload-form.has-file .qr-file-name { color: var(--primary-dark); font-weight: 700; }
+        .qr-upload-form .btn[disabled] { opacity: .45; cursor: not-allowed; }
+    </style>
     @php $accessTemplate = App\Models\MessageTemplate::where('name', 'Envío de QR de acceso')->first(); @endphp
     <div class="grid cols-3" style="margin-bottom: 18px;">
         <div class="card metric"><div class="label">Confirmados</div><div class="value">{{ number_format($summary['confirmed']) }}</div></div>
@@ -84,10 +99,12 @@
                                 @endif
                             </td>
                             <td>
-                                <form method="post" action="{{ route('access-qrs.store', $guest) }}" enctype="multipart/form-data" class="inline" style="gap: 8px; flex-wrap: nowrap; align-items: center;">
+                                <form method="post" action="{{ route('access-qrs.store', $guest) }}" enctype="multipart/form-data" class="qr-upload-form" data-qr-upload-form>
                                     @csrf
-                                    <input type="file" name="qr" accept="image/png,image/jpeg,image/webp" required style="max-width: 190px;">
-                                    <button class="btn small" type="submit">Subir</button>
+                                    <input id="qr-{{ $guest->id }}" class="qr-file" type="file" name="qr" accept="image/png,image/jpeg,image/webp" required data-qr-file>
+                                    <label class="qr-picker" for="qr-{{ $guest->id }}">▣ Elegir imagen</label>
+                                    <span class="qr-file-name" data-qr-file-name>Sin archivo</span>
+                                    <button class="btn small" type="submit" disabled data-qr-submit>Subir</button>
                                 </form>
                             </td>
                         </tr>
@@ -99,4 +116,19 @@
         </div>
         <div style="padding: 14px 18px;">{{ $guests->links() }}</div>
     </div>
+
+    <script>
+        document.querySelectorAll('[data-qr-upload-form]').forEach((form) => {
+            const input = form.querySelector('[data-qr-file]');
+            const name = form.querySelector('[data-qr-file-name]');
+            const submit = form.querySelector('[data-qr-submit]');
+
+            input.addEventListener('change', () => {
+                const file = input.files && input.files[0];
+                form.classList.toggle('has-file', Boolean(file));
+                name.textContent = file ? file.name : 'Sin archivo';
+                submit.disabled = ! file;
+            });
+        });
+    </script>
 @endsection
