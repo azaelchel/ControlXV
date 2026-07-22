@@ -7,6 +7,7 @@
         $previewTitle = 'Pase digital · ' . $eventName;
         $previewDescription = 'QR personal de acceso para ' . $guest->display_name . '. Presenta este código al llegar al evento.';
         $previewImage = asset('images/og/xv-zugeily-access-qr.jpg');
+        $passHolderName = trim(collect([$guest->name, $guest->prefix])->filter()->implode(' '));
         $monogramImage = asset('images/xv/pase-digital/monograma-zugeily.png');
         $heroImageWebp = asset('images/xv/pase-digital/fondo-ramo-vestido.webp');
         $heroImagePng = asset('images/xv/pase-digital/fondo-ramo-vestido.png');
@@ -506,7 +507,7 @@
                 <div class="identity-strip">
                     <div>
                         <div class="label">Pase personal para</div>
-                        <div class="guest-name">{{ $guest->display_name }}</div>
+                        <div class="guest-name">{{ $passHolderName }}</div>
                     </div>
                     <div class="pass-badge">QR personal<br>de acceso</div>
                 </div>
