@@ -78,6 +78,7 @@
         .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1px solid #fff; }
         .map-table .num { display: block; font-size: 13px; font-weight: bold; line-height: 1; padding-top: 5px; }
         .map-table .occ { display: block; font-size: 7.5px; font-weight: bold; margin-top: 2px; }
+        .map-table .sponsor-count { display: block; font-size: 7px; font-weight: bold; color: #ffe6a7; margin-top: 1px; }
         .map-table.horizontal .num { padding-top: 4px; }
         .map-table.principal .num { font-size: 14px; padding-top: 6px; }
         .map-table.libre { background-color: #cbb8e4; color: #4a2f6b; border-color: #d9cbed; }
@@ -124,6 +125,7 @@
         .guests { padding: 2px 9px 8px; }
         .guests .g { padding: 1px 0; border-bottom: 1px dotted #ece2f6; font-weight: bold; font-size: 9px; }
         .guests .gnum { display: inline-block; min-width: 13px; color: #8a72a4; font-size: 8px; font-weight: bold; }
+        .guests .sponsor-mark { color: #9d6b12; font-size: 9px; font-weight: bold; }
         .guests .grp { color: #a594b8; font-size: 9px; font-style: italic; font-weight: normal; }
         .freeline { padding: 4px 11px 10px; font-size: 9px; font-style: italic; color: #b79bd6; }
         .empty { padding: 8px 11px 12px; color: #b3a3c4; font-style: italic; }
@@ -173,6 +175,7 @@
         <span><i style="background:#6dad81;"></i>Completa</span>
         <span><i style="background:#c95550;"></i>Sobrecupo</span>
         <span><i style="background:#5a3a7e;"></i>Principal</span>
+        <span>♛ Padrino</span>
     </div>
     <div class="venue">
         <div class="zone entrance" style="left:0.6%; top:33%; width:3.2%; height:26%;">Entrada</div>
@@ -189,11 +192,17 @@
                 $cap = (int) $table->capacity;
                 $box = $tableBox($table);
                 $cls = $table->is_principal ? 'principal' : $mapFill($occ, $cap);
+                $sponsorCount = $table->assignments
+                    ->filter(fn ($a) => $a->companion && trim((string) ($sponsorByGuest[$a->companion->invited_group] ?? '')) !== '')
+                    ->count();
             @endphp
             <div class="map-table {{ $box['cls'] }} {{ $cls }}"
                 style="left: {{ $table->position_x ?? 50 }}%; top: {{ $table->position_y ?? 50 }}%; width: {{ $box['w'] }}px; height: {{ $box['h'] }}px; margin-left: {{ $box['ml'] }}px; margin-top: {{ $box['mt'] }}px;">
                 <span class="num">{{ $tableNum($table->name) }}</span>
                 <span class="occ">{{ $occ }}/{{ $cap }}</span>
+                @if ($sponsorCount > 0)
+                    <span class="sponsor-count">♛ {{ $sponsorCount }}</span>
+                @endif
             </div>
         @endforeach
     </div>
@@ -239,7 +248,8 @@
                                 @else
                                     <div class="guests">
                                         @foreach ($seated as $index => $a)
-                                            <div class="g" style="color: {{ $typeHex($a->companion->type) }};"><span class="gnum">{{ $index + 1 }}.</span> {{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}</span></div>
+                                            @php $sponsor = trim((string) ($sponsorByGuest[$a->companion->invited_group] ?? '')); @endphp
+                                            <div class="g" style="color: {{ $typeHex($a->companion->type) }};"><span class="gnum">{{ $index + 1 }}.</span> @if ($sponsor !== '')<span class="sponsor-mark">♛</span> @endif{{ $a->companion->name }} <span class="grp">· {{ $a->companion->invited_group }}@if ($sponsor !== '') · Padrino: {{ $sponsor }}@endif</span></div>
                                         @endforeach
                                     </div>
                                     @if ($free > 0)

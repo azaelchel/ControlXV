@@ -47,6 +47,7 @@ class ConfirmedTableController extends Controller
             'dividedGroups' => $data['dividedGroups'],
             'search' => $search,
             'searchResults' => $searchResults,
+            'sponsorByGuest' => $data['sponsorByGuest'],
         ]);
     }
 
@@ -63,6 +64,7 @@ class ConfirmedTableController extends Controller
             'tableOptions' => $data['tableOptions'],
             'summary' => $data['summary'],
             'progress' => $data['progress'],
+            'sponsorByGuest' => $data['sponsorByGuest'],
         ]);
     }
 
@@ -87,6 +89,7 @@ class ConfirmedTableController extends Controller
             'q' => $q,
             'group' => $group,
             'groupOptions' => $data['groupOptions'],
+            'sponsorByGuest' => $data['sponsorByGuest'],
         ]);
     }
 
@@ -98,6 +101,7 @@ class ConfirmedTableController extends Controller
             'tables' => $data['tables'],
             'unassigned' => $data['unassigned'],
             'summary' => $data['summary'],
+            'sponsorByGuest' => $data['sponsorByGuest'],
         ])->setPaper('a4', 'landscape');
 
         // stream = se abre en el navegador (con su botón de descargar); download = baja directo.
@@ -346,11 +350,12 @@ class ConfirmedTableController extends Controller
         // Companions elegibles: activos, de guests activos con status Confirmado.
         $confirmedGuests = Guest::query()
             ->where('status', 'Confirmado')
-            ->get(['name', 'category', 'group_name']);
+            ->get(['name', 'category', 'group_name', 'sponsor']);
 
         $confirmedNames = $confirmedGuests->pluck('name');
         $guestCategories = $confirmedGuests->pluck('category', 'name');
         $guestGroups = $confirmedGuests->pluck('group_name', 'name');
+        $sponsorByGuest = $confirmedGuests->pluck('sponsor', 'name');
         $groupOptions = $confirmedGuests
             ->pluck('group_name')
             ->filter()
@@ -446,6 +451,7 @@ class ConfirmedTableController extends Controller
             'companionTable' => $companionTable,
             'unassigned' => $unassigned,
             'guestGroups' => $guestGroups,
+            'sponsorByGuest' => $sponsorByGuest,
             'groupOptions' => $groupOptions,
             'dividedGroups' => $dividedGroups,
             'progress' => [

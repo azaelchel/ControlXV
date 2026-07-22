@@ -41,6 +41,7 @@
     .tbl.principal { width: 72px; height: 84px; }
     .tbl .num { font-size: 22px; font-weight: 900; line-height: 1; }
     .tbl .occ { font-size: 12px; font-weight: 700; opacity: .95; margin-top: 3px; }
+    .tbl .sponsor-count { font-size: 11px; font-weight: 900; line-height: 1; margin-top: 3px; color: #ffe6a7; text-shadow: 0 1px 2px rgba(40,20,60,.35); }
     .tbl.libre  { background: #cbb8e4; color:#4a2f6b; border-color:#e6dbf5; }
     .tbl.parcial { background: linear-gradient(135deg,#b07fd8,#8a55be); }
     .tbl.casi    { background: linear-gradient(135deg,#e6b364,#cf8f3f); }
@@ -119,6 +120,7 @@
             <span><i style="background:linear-gradient(135deg,#e6b364,#cf8f3f);"></i>Casi llena</span>
             <span><i style="background:linear-gradient(135deg,#7bc59a,#3f9e6b);"></i>Completa</span>
             <span><i style="background:linear-gradient(135deg,#e2726f,#c9403c);"></i>Sobrecupo</span>
+            <span>👑 Padrinos sentados</span>
             <label class="empty-toggle">
                 <input type="checkbox" id="show-empty">
                 <span class="toggle-ui" aria-hidden="true"></span>
@@ -150,12 +152,19 @@
                         $occupants = $table->assignments
                             ->filter(fn ($a) => $a->companion)
                             ->sortBy(fn ($a) => $a->companion->invited_group)
-                            ->map(fn ($a) => [
-                                'id'    => $a->companion_id,
-                                'name'  => $a->companion->name,
-                                'group' => $a->companion->invited_group,
-                                'type'  => $a->companion->type ?: '—',
-                            ])->values();
+                            ->map(function ($a) use ($sponsorByGuest) {
+                                $sponsor = trim((string) ($sponsorByGuest[$a->companion->invited_group] ?? ''));
+
+                                return [
+                                    'id'    => $a->companion_id,
+                                    'name'  => $a->companion->name,
+                                    'group' => $a->companion->invited_group,
+                                    'type'  => $a->companion->type ?: '—',
+                                    'sponsor' => $sponsor,
+                                    'is_sponsor' => $sponsor !== '',
+                                ];
+                            })->values();
+                        $sponsorCount = $occupants->where('is_sponsor', true)->count();
                     @endphp
                     <div class="tbl {{ $orientationClass($table) }} {{ $table->is_principal ? 'principal' : $fillClass($occ, $cap) }} {{ $occ === 0 && ! $table->is_principal ? 'is-empty' : '' }}"
                         style="left: {{ $x }}%; top: {{ $y }}%;"
@@ -167,6 +176,9 @@
                         title="{{ $table->name }} — {{ $occ }}/{{ $cap }}">
                         <span class="num">{{ $tableNum($table->name) }}</span>
                         <span class="occ">{{ $occ }}/{{ $cap }}</span>
+                        @if ($sponsorCount > 0)
+                            <span class="sponsor-count">👑 {{ $sponsorCount }}</span>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -241,7 +253,7 @@ if (!occupants.length) {
                     <label class="tm-row">
                         <span class="inline" style="gap:8px; min-width:0;">
                             <input class="tm-check" type="checkbox" name="companion_ids[]" value="${c.id}" data-companion-check>
-                            <span style="min-width:0;"><strong>${i + 1}.</strong> ${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}</span></span>
+                            <span style="min-width:0;"><strong>${i + 1}.</strong> ${c.is_sponsor ? '👑 ' : ''}${escapeHtml(c.name)} <span class="small" style="color:#9b8ab0;">· ${escapeHtml(c.group)}${c.sponsor ? ' · Padrino: ' + escapeHtml(c.sponsor) : ''}</span></span>
                         </span>
                         <span class="pill" style="background:${(typeColor[c.type]||'#8a8a96')}1a; color:${typeColor[c.type]||'#8a8a96'}; font-size:11px;">${escapeHtml(c.type)}</span>
                     </label>`).join('')}
