@@ -17,8 +17,16 @@
         .mesa-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; background: #eef8f2; color: #256141; font-size: 11px; font-weight: 800; }
         .mesa-chip.warn { background: #fff1d8; color: #8b5b10; }
         .mesa-chip.empty { background: #eceff3; color: #55606f; }
-        .split-detail { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #fff8e8; border: 1px solid #ead8ad; color: #6f5218; font-size: 12px; line-height: 1.45; }
+        .split-badge { display: inline-flex; margin-top: 6px; border-radius: 999px; padding: 3px 8px; background: #fff8e8; border: 1px solid #ead8ad; color: #7a5818; font-size: 11px; font-weight: 800; }
+        .split-detail { margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; background: #fff8e8; border: 1px solid #ead8ad; color: #6f5218; font-size: 12px; line-height: 1.45; }
         .split-detail strong { color: var(--primary-dark); }
+        .detail-modal { width: min(620px, calc(100vw - 28px)); max-height: 86vh; overflow: hidden; display: flex; flex-direction: column; background: #fff; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 24px 70px rgba(39, 24, 55, .28); padding: 18px; }
+        .detail-body { overflow: auto; padding-right: 4px; }
+        .table-breakdown { display: grid; gap: 8px; margin-bottom: 12px; }
+        .table-breakdown-card { border: 1px solid #eee3f7; background: #fcf9ff; border-radius: 12px; padding: 10px 12px; }
+        .table-breakdown-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--primary-dark); font-size: 13px; font-weight: 900; margin-bottom: 6px; }
+        .person-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+        .person-chip { border-radius: 999px; padding: 4px 8px; background: #fff; border: 1px solid #eee3f7; color: #4b3a5f; font-size: 12px; font-weight: 700; }
         .qr-upload-form { display: flex; align-items: center; gap: 8px; min-width: 300px; }
         .qr-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
         .qr-picker { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--primary-dark); font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; box-shadow: 0 8px 18px rgba(122, 79, 168, .08); }
@@ -28,14 +36,13 @@
         .qr-upload-form .btn[disabled] { opacity: .45; cursor: not-allowed; }
         .detail-modal-bg { position: fixed; inset: 0; background: rgba(25, 16, 35, .55); display: none; align-items: center; justify-content: center; z-index: 120; padding: 22px; }
         .detail-modal-bg.open { display: flex; }
-        .detail-modal { width: min(760px, 100%); max-height: 92vh; overflow: auto; background: #fff; border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 24px 70px rgba(39, 24, 55, .28); padding: 22px; }
-        .detail-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 14px; }
-        .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
-        .detail-stat { background: #faf6ff; border: 1px solid #eee3f7; border-radius: 12px; padding: 10px 12px; }
+        .detail-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 12px; }
+        .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+        .detail-stat { background: #faf6ff; border: 1px solid #eee3f7; border-radius: 10px; padding: 9px 10px; }
         .detail-stat .label { color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-        .detail-stat .value { color: var(--primary-dark); font-size: 18px; font-weight: 900; margin-top: 2px; }
-        .people-table { width: 100%; border-collapse: collapse; }
-        .people-table th, .people-table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #f0e9fa; }
+        .detail-stat .value { color: var(--primary-dark); font-size: 16px; font-weight: 900; margin-top: 2px; overflow-wrap: anywhere; }
+        .people-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .people-table th, .people-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #f0e9fa; }
         .people-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
         @media (max-width: 760px) { .access-toolbar { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } }
     </style>
@@ -177,12 +184,7 @@
                                     @endif
                                 </div>
                                 @if ($detail['is_divided'])
-                                    <div class="split-detail">
-                                        <strong>Grupo dividido:</strong>
-                                        @foreach ($peopleByTable as $tableName => $tablePeople)
-                                            <div>{{ $tableName }}: {{ collect($tablePeople)->pluck('name')->implode(', ') }}</div>
-                                        @endforeach
-                                    </div>
+                                    <span class="split-badge">Dividido</span>
                                 @endif
                             </td>
                             <td>
@@ -233,17 +235,19 @@
                 </div>
                 <button type="button" class="btn ghost" data-detail-close>✕</button>
             </div>
-            <div data-detail-alert></div>
-            <div data-detail-split></div>
-            <div class="detail-grid">
-                <div class="detail-stat"><div class="label">Personas</div><div class="value" data-detail-total>0</div></div>
-                <div class="detail-stat"><div class="label">Mesa(s)</div><div class="value" data-detail-tables>—</div></div>
-                <div class="detail-stat"><div class="label">Padrino</div><div class="value" data-detail-sponsor>—</div></div>
+            <div class="detail-body">
+                <div data-detail-alert></div>
+                <div class="detail-grid">
+                    <div class="detail-stat"><div class="label">Personas</div><div class="value" data-detail-total>0</div></div>
+                    <div class="detail-stat"><div class="label">Mesa(s)</div><div class="value" data-detail-tables>—</div></div>
+                    <div class="detail-stat"><div class="label">Padrino</div><div class="value" data-detail-sponsor>—</div></div>
+                </div>
+                <div data-detail-split></div>
+                <table class="people-table">
+                    <thead><tr><th>Persona</th><th>Tipo</th><th>Mesa</th></tr></thead>
+                    <tbody data-detail-people></tbody>
+                </table>
             </div>
-            <table class="people-table">
-                <thead><tr><th>Persona</th><th>Tipo</th><th>Mesa</th></tr></thead>
-                <tbody data-detail-people></tbody>
-            </table>
         </div>
     </div>
 
@@ -294,8 +298,12 @@
                 document.querySelector('[data-detail-alert]').innerHTML = data.is_divided
                     ? '<div class="split-detail" style="margin-bottom:12px; font-weight:700;">Grupo dividido en varias mesas. Cada invitado trae su mesa asignada.</div>'
                     : '';
-                document.querySelector('[data-detail-split]').innerHTML = data.is_divided
-                    ? `<div class="split-detail" style="margin-bottom:12px;">${Object.entries(peopleByTable).map(([table, tablePeople]) => `<div><strong>${escapeHtml(table)}:</strong> ${tablePeople.map((person) => escapeHtml(person.name)).join(', ')}</div>`).join('')}</div>`
+                document.querySelector('[data-detail-split]').innerHTML = Object.entries(peopleByTable).length
+                    ? `<div class="table-breakdown">${Object.entries(peopleByTable).map(([table, tablePeople]) => `
+                        <div class="table-breakdown-card">
+                            <div class="table-breakdown-title"><span>${escapeHtml(table)}</span><span>${tablePeople.length}</span></div>
+                            <div class="person-chips">${tablePeople.map((person) => `<span class="person-chip">${escapeHtml(person.name)}</span>`).join('')}</div>
+                        </div>`).join('')}</div>`
                     : '';
                 document.querySelector('[data-detail-people]').innerHTML = people.length
                     ? people.map((person) => `
