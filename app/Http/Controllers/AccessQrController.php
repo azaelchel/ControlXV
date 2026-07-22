@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Companion;
 use App\Models\Guest;
+use App\Models\TableAssignment;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +15,9 @@ class AccessQrController extends Controller
     {
         $search = trim((string) $request->input("q", ""));
         $group = trim((string) $request->input("group", ""));
+        $perPage = in_array((int) $request->integer("per_page"), [10, 25, 50, 100], true)
+            ? (int) $request->integer("per_page")
+            : 25;
 
         $guests = Guest::query()
             ->where("status", "Confirmado")
@@ -29,7 +34,7 @@ class AccessQrController extends Controller
             ->when($group !== "", fn ($query) => $query->where("group_name", $group))
             ->orderBy("group_name")
             ->orderBy("name")
-            ->paginate(40)
+            ->paginate($perPage)
             ->withQueryString();
 
         $groups = Guest::query()
@@ -39,6 +44,47 @@ class AccessQrController extends Controller
             ->unique()
             ->sort()
             ->values();
+
+        $guestNames = $guests->getCollection()->pluck("name");
+
+        $companions = Companion::query()
+            ->whereIn("invited_group", $guestNames)
+            ->orderBy("invited_group")
+            ->orderBy("name")
+            ->get();
+
+        $assignmentsByCompanion = TableAssignment::query()
+            ->with("table")
+            ->whereIn("companion_id", $companions->pluck("id"))
+            ->get()
+            ->keyBy("companion_id");
+
+        $detailsByGuest = $companions
+            ->groupBy("invited_group")
+            ->map(function ($people) use ($assignmentsByCompanion) {
+                $rows = $people->map(function (Companion $companion) use ($assignmentsByCompanion) {
+                    $assignment = $assignmentsByCompanion->get($companion->id);
+
+                    return [
+                        "name" => $companion->name,
+                        "type" => $companion->type ?: "—",
+                        "sex" => $companion->sex ?: "",
+                        "table" => $assignment?->table?->name,
+                    ];
+                })->values();
+
+                $tables = $rows
+                    ->pluck("table")
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                return [
+                    "people" => $rows,
+                    "tables" => $tables,
+                    "is_divided" => $tables->count() > 1,
+                ];
+            });
 
         $summary = [
             "confirmed" => Guest::where("status", "Confirmado")->count(),
@@ -51,6 +97,8 @@ class AccessQrController extends Controller
             "summary" => $summary,
             "search" => $search,
             "group" => $group,
+            "perPage" => $perPage,
+            "detailsByGuest" => $detailsByGuest,
         ]);
     }
 
