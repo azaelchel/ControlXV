@@ -23,14 +23,14 @@
     $horizontalTables = ['1', '3', '5', '7', '9', '11', '13', '15', '17', '19', '21', '23'];
     $tableBox = function ($table) use ($tableNum, $horizontalTables) {
         if ($table->is_principal) {
-            return ['w' => 30, 'h' => 34, 'ml' => -15, 'mt' => -17, 'cls' => 'principal'];
+            return ['w' => 44, 'h' => 48, 'ml' => -22, 'mt' => -24, 'cls' => 'principal'];
         }
 
         if (in_array($tableNum($table->name), $horizontalTables, true)) {
-            return ['w' => 34, 'h' => 22, 'ml' => -17, 'mt' => -11, 'cls' => 'horizontal'];
+            return ['w' => 50, 'h' => 34, 'ml' => -25, 'mt' => -17, 'cls' => 'horizontal'];
         }
 
-        return ['w' => 24, 'h' => 36, 'ml' => -12, 'mt' => -18, 'cls' => 'vertical'];
+        return ['w' => 36, 'h' => 54, 'ml' => -18, 'mt' => -27, 'cls' => 'vertical'];
     };
     $mapFill = function ($occ, $cap) {
         if ($cap > 0 && $occ > $cap) return 'sobre';
@@ -45,7 +45,7 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 12mm 12mm 16mm; }
+        @page { margin: 8mm 8mm 13mm; }
         /* OJO dompdf: NO usar selector universal (*) ni resetear html{} — eso anula
            el @page margin y el contenido se pega al borde. Reset por elemento. */
         body { margin: 0; padding: 0; font-family: 'DejaVu Sans', sans-serif; color: #3a2a4d; font-size: 11px; }
@@ -54,40 +54,40 @@
         .display { font-family: 'DejaVu Serif', serif; }
 
         /* Portada */
-        .cover { text-align: center; margin-bottom: 6px; }
-        .cover .mono { letter-spacing: 4px; font-size: 8px; text-transform: uppercase; color: #a98c54; margin-bottom: 3px; }
-        .cover h1 { font-size: 20px; font-weight: bold; color: #43275b; }
+        .cover { text-align: center; margin-bottom: 4px; }
+        .cover .mono { letter-spacing: 4px; font-size: 8px; text-transform: uppercase; color: #a98c54; margin-bottom: 2px; }
+        .cover h1 { font-size: 17px; font-weight: bold; color: #43275b; }
         .cover .when { font-size: 10px; color: #6b5a7e; font-style: italic; margin-top: 2px; }
-        .rule { width: 110px; margin: 5px auto 0; border-bottom: 2px solid #c9a86a; }
-        .stats { margin-top: 5px; }
-        .stats span { display: inline-block; padding: 0 13px; }
-        .stats .n { font-family: 'DejaVu Serif', serif; font-size: 16px; font-weight: bold; color: #6b4a86; }
+        .rule { width: 110px; margin: 4px auto 0; border-bottom: 2px solid #c9a86a; }
+        .stats { margin-top: 3px; }
+        .stats span { display: inline-block; padding: 0 12px; }
+        .stats .n { font-family: 'DejaVu Serif', serif; font-size: 14px; font-weight: bold; color: #6b4a86; }
         .stats .l { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #9b8ab0; }
-        .legend { text-align: center; margin-top: 12px; font-size: 9px; color: #6b5a7e; }
+        .legend { text-align: center; margin-top: 8px; font-size: 9px; color: #6b5a7e; }
         .legend span { display: inline-block; padding: 0 8px; }
         .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
 
         /* Mapa */
-        .map-title { margin: 6px 0 4px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #a98c54; font-weight: bold; text-align: center; }
-        .venue { position: relative; width: 100%; height: 108mm; border: 1px solid #d8c9eb; border-radius: 8px; background-color: #fbf8ff; margin-bottom: 5px; }
-        .zone { position: absolute; text-align: center; font-size: 8px; font-weight: bold; letter-spacing: .6px; text-transform: uppercase; color: #6b5a7e; border: 1px dashed #cdbbe6; border-radius: 5px; background-color: #fff; padding-top: 5px; }
-        .zone.pista { background-color: #eadcf6; color: #5b3a86; border: 1px solid #cdbbe6; font-size: 11px; padding-top: 24px; }
+        .map-title { margin: 4px 0 4px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #9d7c3f; font-weight: bold; text-align: center; }
+        .venue { position: relative; width: 100%; height: 128mm; border: 1.4px solid #d8c9eb; border-radius: 8px; background-color: #fbf8ff; margin-bottom: 5px; }
+        .zone { position: absolute; text-align: center; font-size: 9px; font-weight: bold; letter-spacing: .7px; text-transform: uppercase; color: #6b5a7e; border: 1px dashed #cdbbe6; border-radius: 5px; background-color: #fff; padding-top: 6px; }
+        .zone.pista { background-color: #eadcf6; color: #5b3a86; border: 1px solid #cdbbe6; font-size: 14px; padding-top: 30px; letter-spacing: 1.5px; }
         .zone.pasillo { background-color: #f6f2fb; color: #9985b3; }
         .zone.entrance { border-radius: 16px; padding-top: 26px; }
-        .cocina { position: absolute; font-size: 8px; font-weight: bold; color: #6b5a7e; }
-        .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1px solid #fff; }
-        .map-table .num { display: block; font-size: 13px; font-weight: bold; line-height: 1; padding-top: 5px; }
-        .map-table .occ { display: block; font-size: 7.5px; font-weight: bold; margin-top: 2px; }
-        .map-table .sponsor-count { display: block; font-size: 7px; font-weight: bold; color: #ffe6a7; margin-top: 1px; letter-spacing: .5px; }
-        .map-table.horizontal .num { padding-top: 4px; }
-        .map-table.principal .num { font-size: 14px; padding-top: 6px; }
+        .cocina { position: absolute; font-size: 9px; font-weight: bold; color: #6b5a7e; }
+        .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1.5px solid #fff; }
+        .map-table .num { display: block; font-size: 22px; font-weight: bold; line-height: 1; padding-top: 6px; }
+        .map-table .occ { display: block; font-size: 10px; font-weight: bold; line-height: 1; margin-top: 4px; color: #fff; }
+        .map-table .sponsor-count { display: block; font-size: 9px; font-weight: bold; color: #ffe6a7; line-height: 1; margin-top: 3px; letter-spacing: .8px; }
+        .map-table.horizontal .num { padding-top: 5px; }
+        .map-table.principal .num { font-size: 23px; padding-top: 7px; }
         .map-table.libre { background-color: #cbb8e4; color: #4a2f6b; border-color: #d9cbed; }
         .map-table.parcial { background-color: #8f5dc5; }
         .map-table.casi { background-color: #d9a44d; }
         .map-table.llena { background-color: #6dad81; }
         .map-table.sobre { background-color: #c95550; }
         .map-table.principal { background-color: #5a3a7e; border: 1px solid #c9a86a; }
-        .map-legend { text-align: center; font-size: 8px; color: #6b5a7e; margin-bottom: 4px; }
+        .map-legend { text-align: center; font-size: 9px; color: #6b5a7e; margin-bottom: 5px; }
         .map-legend span { display: inline-block; padding: 0 7px; }
         .map-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
 
