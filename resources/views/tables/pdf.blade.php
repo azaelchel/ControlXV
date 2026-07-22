@@ -78,7 +78,7 @@
         .map-table { position: absolute; text-align: center; border-radius: 6px; color: #fff; border: 1.5px solid #fff; }
         .map-table .num { display: block; font-size: 22px; font-weight: bold; line-height: 1; padding-top: 6px; }
         .map-table .occ { display: inline-block; min-width: 28px; font-size: 10.5px; font-weight: bold; line-height: 1; margin-top: 4px; padding: 2px 4px; border-radius: 7px; background-color: #fff; color: #3a2a4d; }
-        .map-table .sponsor-count { display: block; font-size: 9px; font-weight: bold; color: #e7c978; line-height: 1; margin-top: 3px; letter-spacing: .8px; }
+        .map-table .sponsor-count { position: absolute; left: -3px; right: -3px; bottom: -15px; display: block; font-size: 13px; font-weight: bold; color: #7a5516; line-height: 1; padding: 1px 2px 2px; border: .6px solid #d5a64f; border-radius: 8px; background-color: #fff8e7; letter-spacing: .8px; }
         .map-table.horizontal .num { padding-top: 5px; }
         .map-table.principal .num { font-size: 23px; padding-top: 7px; }
         .map-table.libre { background-color: #cbb8e4; color: #4a2f6b; border-color: #d9cbed; }
@@ -175,7 +175,7 @@
         <span><i style="background:#6dad81;"></i>Completa</span>
         <span><i style="background:#c95550;"></i>Sobrecupo</span>
         <span><i style="background:#5a3a7e;"></i>Principal</span>
-        <span>♛ Padrino</span>
+        <span><strong style="color:#7a5516; font-size: 11px;">♛</strong> Padrino</span>
     </div>
     <div class="venue">
         <div class="zone entrance" style="left:0.6%; top:33%; width:3.2%; height:26%;">Entrada</div>
