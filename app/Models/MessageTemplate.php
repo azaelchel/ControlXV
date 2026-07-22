@@ -64,6 +64,10 @@ class MessageTemplate extends Model
     {
         $prefix = trim((string) $guest->prefix);
 
+        if ($prefix === '' && in_array($this->link_mode, ['access_qr', 'access_qr_v2'], true)) {
+            $prefix = 'Fam.';
+        }
+
         $rendered = strtr($this->content, [
             '{prefijo}'       => $prefix,
             '{nombre}'        => $guest->name,

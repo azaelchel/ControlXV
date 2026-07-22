@@ -30,7 +30,7 @@ Le compartimos su enlace personalizado para consultar su código QR de ingreso e
 
 {link}
 
-Nos vemos muy pronto. ✨",
+¡Nos vemos muy pronto! ✨",
                 "includes_link" => true,
                 "link_mode" => "access_qr",
                 "link_validity_days" => 30,
