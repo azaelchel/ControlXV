@@ -259,7 +259,7 @@
                         $stateClass = 'status-default';
                         $stateIcon = '—';
                         if ($link) {
-                            if ($link->mode === 'access_qr') {
+                            if (in_array($link->mode, ['access_qr', 'access_qr_v2'], true)) {
                                 if ($link->closed_reason === 'cancelled') {
                                     $stateLabel = 'QR cancelado';
                                     $stateClass = 'status-no-asistira';
@@ -382,9 +382,9 @@
                             @endif
                             @if ($link && $send->guest)
                                 <a class="btn secondary icon-btn"
-                                    href="{{ $link->mode === 'access_qr' ? route('guest-access.show', ['guest' => $send->guest, 'token' => $link->token]) : route('guest-review.show', ['guest' => $send->guest, 'token' => $link->token]) }}"
+                                    href="{{ $link->mode === 'access_qr_v2' ? route('guest-access-v2.show', ['guest' => $send->guest, 'token' => $link->token]) : ($link->mode === 'access_qr' ? route('guest-access.show', ['guest' => $send->guest, 'token' => $link->token]) : route('guest-review.show', ['guest' => $send->guest, 'token' => $link->token])) }}"
                                     target="_blank"
-                                    title="{{ $link->mode === 'access_qr' ? 'Ver pase QR' : 'Ver link de revisión' }}">🔗</a>
+                                    title="{{ in_array($link->mode, ['access_qr', 'access_qr_v2'], true) ? 'Ver pase QR' : 'Ver link de revisión' }}">🔗</a>
                             @endif
                             <form method="post" action="{{ route('message-sends.destroy', $send) }}" style="display: inline;"
                                 data-confirm-title="¿Eliminar este envío del histórico?"

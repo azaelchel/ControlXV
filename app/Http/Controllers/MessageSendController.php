@@ -174,15 +174,15 @@ class MessageSendController extends Controller
             ->when($respFilter === 'confirmed', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')->whereIn('response', ['confirmed', 'validated'])))
             ->when($respFilter === 'declined', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereNotNull('responded_at')->where('response', 'declined')))
             ->when($respFilter === 'pending', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p
-                ->where('mode', '!=', 'access_qr')
+                ->whereNotIn('mode', ['access_qr', 'access_qr_v2'])
                 ->whereNull('responded_at')
                 ->where(function ($c) {
                     $c->whereNull('closed_reason')->orWhere('closed_reason', '!=', 'cancelled');
                 })
             ))
-            ->when($respFilter === 'opened_qr', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->where('mode', 'access_qr')->whereNotNull('opened_at')))
+            ->when($respFilter === 'opened_qr', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p->whereIn('mode', ['access_qr', 'access_qr_v2'])->whereNotNull('opened_at')))
             ->when($respFilter === 'unopened_qr', fn ($q) => $q->whereHas('publicLink', fn ($p) => $p
-                ->where('mode', 'access_qr')
+                ->whereIn('mode', ['access_qr', 'access_qr_v2'])
                 ->whereNull('opened_at')
                 ->where(function ($c) {
                     $c->whereNull('closed_reason')->orWhere('closed_reason', '!=', 'cancelled');
@@ -210,13 +210,13 @@ class MessageSendController extends Controller
             ->groupBy(fn ($s) => $s->sent_at?->format('Y-m-d') ?? '—')
             ->map(fn ($day) => [
                 'enviados'      => $day->count(),
-                'respondieron'  => $day->filter(fn ($s) => $s->publicLink?->mode !== 'access_qr' && $s->publicLink?->responded_at)->count(),
+                'respondieron'  => $day->filter(fn ($s) => ! in_array($s->publicLink?->mode, ['access_qr', 'access_qr_v2'], true) && $s->publicLink?->responded_at)->count(),
                 // De los que respondieron: confirmaron/validaron (sí asisten) vs rechazaron.
-                'confirmados'   => $day->filter(fn ($s) => $s->publicLink?->mode !== 'access_qr' && $s->publicLink?->responded_at && in_array($s->publicLink?->response, ['confirmed', 'validated'], true))->count(),
-                'no_asistiran'  => $day->filter(fn ($s) => $s->publicLink?->mode !== 'access_qr' && $s->publicLink?->responded_at && $s->publicLink?->response === 'declined')->count(),
-                'sin_responder' => $day->filter(fn ($s) => $s->publicLink && $s->publicLink->mode !== 'access_qr' && ! $s->publicLink->responded_at && $s->publicLink->closed_reason !== 'cancelled')->count(),
-                'qr_abiertos'   => $day->filter(fn ($s) => $s->publicLink?->mode === 'access_qr' && $s->publicLink?->opened_at)->count(),
-                'qr_sin_abrir'  => $day->filter(fn ($s) => $s->publicLink?->mode === 'access_qr' && ! $s->publicLink?->opened_at && $s->publicLink?->closed_reason !== 'cancelled')->count(),
+                'confirmados'   => $day->filter(fn ($s) => ! in_array($s->publicLink?->mode, ['access_qr', 'access_qr_v2'], true) && $s->publicLink?->responded_at && in_array($s->publicLink?->response, ['confirmed', 'validated'], true))->count(),
+                'no_asistiran'  => $day->filter(fn ($s) => ! in_array($s->publicLink?->mode, ['access_qr', 'access_qr_v2'], true) && $s->publicLink?->responded_at && $s->publicLink?->response === 'declined')->count(),
+                'sin_responder' => $day->filter(fn ($s) => $s->publicLink && ! in_array($s->publicLink?->mode, ['access_qr', 'access_qr_v2'], true) && ! $s->publicLink->responded_at && $s->publicLink->closed_reason !== 'cancelled')->count(),
+                'qr_abiertos'   => $day->filter(fn ($s) => in_array($s->publicLink?->mode, ['access_qr', 'access_qr_v2'], true) && $s->publicLink?->opened_at)->count(),
+                'qr_sin_abrir'  => $day->filter(fn ($s) => in_array($s->publicLink?->mode, ['access_qr', 'access_qr_v2'], true) && ! $s->publicLink?->opened_at && $s->publicLink?->closed_reason !== 'cancelled')->count(),
                 'sin_link'      => $day->filter(fn ($s) => ! $s->publicLink)->count(),
             ]);
 
@@ -524,7 +524,7 @@ class MessageSendController extends Controller
         $linkModel = null;
 
         if ($template->hasLinkPlaceholder()) {
-            if ($template->link_mode === 'access_qr' && ! $guest->access_qr_data) {
+            if (in_array($template->link_mode, ['access_qr', 'access_qr_v2'], true) && ! $guest->access_qr_data) {
                 return [
                     'guest' => $guest,
                     'link' => null,
@@ -644,7 +644,7 @@ class MessageSendController extends Controller
         if (! $link) {
             return ['key' => 'none', 'label' => 'Sin link', 'class' => 'status-default'];
         }
-        if ($link->mode === 'access_qr') {
+        if (in_array($link->mode, ['access_qr', 'access_qr_v2'], true)) {
             if ($link->closed_reason === 'cancelled') {
                 return ['key' => 'cancelled', 'label' => 'QR cancelado', 'class' => 'status-no-asistira'];
             }

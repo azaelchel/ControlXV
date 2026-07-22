@@ -12,10 +12,20 @@ class PublicAccessQrController extends Controller
 {
     public function show(Request $request, Guest $guest, string $token): View
     {
+        return $this->renderAccessQr($request, $guest, $token, "access_qr", "public.access-qr");
+    }
+
+    public function showV2(Request $request, Guest $guest, string $token): View
+    {
+        return $this->renderAccessQr($request, $guest, $token, "access_qr_v2", "public.access-qr-v2");
+    }
+
+    private function renderAccessQr(Request $request, Guest $guest, string $token, string $mode, string $view): View
+    {
         $link = PublicGuestLink::query()
             ->where("guest_id", $guest->id)
             ->where("token", $token)
-            ->where("mode", "access_qr")
+            ->where("mode", $mode)
             ->firstOrFail();
 
         $isPreviewBot = $this->isPreviewBot($request->userAgent() ?? "");
@@ -24,7 +34,7 @@ class PublicAccessQrController extends Controller
             $link->forceFill(["opened_at" => now()])->save();
         }
 
-        return view("public.access-qr", [
+        return view($view, [
             "guest" => $guest,
             "link" => $link,
             "eventName" => Setting::get("event_name", "XV años de Zugeily"),

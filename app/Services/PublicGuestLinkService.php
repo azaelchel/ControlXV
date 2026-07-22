@@ -18,7 +18,7 @@ class PublicGuestLinkService
         if ($mode !== null) {
             $query->where('mode', $mode);
         } else {
-            $query->where('mode', '!=', 'access_qr');
+            $query->whereNotIn('mode', ['access_qr', 'access_qr_v2']);
         }
 
         $link = $query->first();
@@ -92,7 +92,7 @@ class PublicGuestLinkService
                     ]);
                 });
 
-            $expiresAt = $mode === 'access_qr'
+            $expiresAt = in_array($mode, ['access_qr', 'access_qr_v2'], true)
                 ? $this->accessQrExpiresAt()
                 : now()->addDays($forceDays
                     ?? ($mode === 'last_chance'
@@ -108,7 +108,7 @@ class PublicGuestLinkService
                 'is_current'   => true,
             ]);
 
-            if ($mode !== 'access_qr') {
+            if (! in_array($mode, ['access_qr', 'access_qr_v2'], true)) {
                 $guest->update([
                     'public_link_token'         => $link->token,
                     'public_link_mode'          => $link->mode,
@@ -159,6 +159,10 @@ class PublicGuestLinkService
 
     public function linkUrl(Guest $guest, PublicGuestLink $link): string
     {
+        if ($link->mode === 'access_qr_v2') {
+            return route('guest-access-v2.show', ['guest' => $guest, 'token' => $link->token], absolute: true);
+        }
+
         if ($link->mode === 'access_qr') {
             return route('guest-access.show', ['guest' => $guest, 'token' => $link->token], absolute: true);
         }

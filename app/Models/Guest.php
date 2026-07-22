@@ -81,7 +81,7 @@ class Guest extends Model
     {
         return $this->hasOne(PublicGuestLink::class)
             ->where('is_current', true)
-            ->where('mode', '!=', 'access_qr')
+            ->whereNotIn('mode', ['access_qr', 'access_qr_v2'])
             ->latestOfMany('generated_at');
     }
 
@@ -182,6 +182,7 @@ class Guest extends Model
             'validation' => 'Validación final',
             'last_chance' => 'Última oportunidad',
             'access_qr' => 'QR de acceso',
+            'access_qr_v2' => 'QR de acceso V2',
             default => 'Sin definir',
         };
     }

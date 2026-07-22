@@ -101,13 +101,14 @@ class PublicGuestLink extends Model
             'validation' => 'Validación final',
             'last_chance' => 'Última oportunidad',
             'access_qr' => 'QR de acceso',
+            'access_qr_v2' => 'QR de acceso V2',
             default => 'Sin definir',
         };
     }
 
     public function statusLabel(): string
     {
-        if ($this->mode === 'access_qr') {
+        if (in_array($this->mode, ['access_qr', 'access_qr_v2'], true)) {
             if ($this->closed_reason === 'cancelled') {
                 return 'QR cancelado';
             }

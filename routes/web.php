@@ -30,6 +30,7 @@ Route::get('/revision-invitados/{guest}/{token}', [PublicGuestReviewController::
 Route::put('/revision-invitados/{guest}/{token}', [PublicGuestReviewController::class, 'update'])->name('guest-review.update');
 Route::post('/revision-invitados/{guest}/{token}/decline', [PublicGuestReviewController::class, 'decline'])->name('guest-review.decline');
 Route::get('/acceso-invitados/{guest}/{token}', [PublicAccessQrController::class, 'show'])->name('guest-access.show');
+Route::get('/acceso-invitados-v2/{guest}/{token}', [PublicAccessQrController::class, 'showV2'])->name('guest-access-v2.show');
 
 Route::middleware('auth')->group(function () {
     Route::middleware('module:dashboard')->group(function () {
