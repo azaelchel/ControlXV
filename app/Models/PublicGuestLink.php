@@ -107,6 +107,18 @@ class PublicGuestLink extends Model
 
     public function statusLabel(): string
     {
+        if ($this->mode === 'access_qr') {
+            if ($this->closed_reason === 'cancelled') {
+                return 'QR cancelado';
+            }
+
+            if ($this->opened_at instanceof Carbon) {
+                return 'Abrió el link el '.$this->opened_at->format('d/m/Y H:i');
+            }
+
+            return 'QR enviado, sin abrir';
+        }
+
         if ($this->response === 'confirmed' && $this->responded_at instanceof Carbon) {
             return 'Confirmó el '.$this->responded_at->format('d/m/Y H:i');
         }

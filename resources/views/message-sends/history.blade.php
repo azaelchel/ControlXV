@@ -216,7 +216,7 @@
                     return strcasecmp($an, $bn);
                 })->values();
             @endphp
-            @php $sum = $daySummaries[$date] ?? ['enviados' => $dailySends->count(), 'respondieron' => 0, 'confirmados' => 0, 'no_asistiran' => 0, 'sin_responder' => 0, 'sin_link' => 0]; @endphp
+            @php $sum = $daySummaries[$date] ?? ['enviados' => $dailySends->count(), 'respondieron' => 0, 'confirmados' => 0, 'no_asistiran' => 0, 'sin_responder' => 0, 'qr_abiertos' => 0, 'qr_sin_abrir' => 0, 'sin_link' => 0]; @endphp
             <div class="day-group">
                 <div class="day-header">
                     <span>{{ $date !== '—' ? \Carbon\Carbon::parse($date)->isoFormat('dddd, D [de] MMMM [de] YYYY') : 'Sin fecha' }}</span>
@@ -244,8 +244,12 @@
                     <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'responded']) }}" class="sum-chip {{ $respFilter === 'responded' ? 'active' : '' }}" title="Ver solo los que respondieron">✓ Respondieron <strong>{{ $sum['respondieron'] }}</strong></a>
                     <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'confirmed']) }}" class="sum-chip ok {{ $respFilter === 'confirmed' ? 'active' : '' }}" title="Ver solo los que confirmaron/validaron su asistencia">💜 Confirmaron <strong>{{ $sum['confirmados'] }}</strong></a>
                     <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'declined']) }}" class="sum-chip no {{ $respFilter === 'declined' ? 'active' : '' }}" title="Ver solo los que dijeron que no asistirán">✕ No asistirán <strong>{{ $sum['no_asistiran'] }}</strong></a>
-                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'pending']) }}" class="sum-chip wait {{ $respFilter === 'pending' ? 'active' : '' }}" title="Ver solo los que aún no responden">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></a>
-                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'no_link']) }}" class="sum-chip info {{ $respFilter === 'no_link' ? 'active' : '' }}" title="Ver mensajes enviados sin link de respuesta">Sin link <strong>{{ $sum['sin_link'] }}</strong></a>
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'pending']) }}" class="sum-chip wait {{ $respFilter === 'pending' ? 'active' : '' }}" title="Ver solo los links que sí esperan respuesta">⏳ Sin responder <strong>{{ $sum['sin_responder'] }}</strong></a>
+                    @if (($sum['qr_abiertos'] ?? 0) + ($sum['qr_sin_abrir'] ?? 0) > 0)
+                        <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'opened_qr']) }}" class="sum-chip ok {{ $respFilter === 'opened_qr' ? 'active' : '' }}" title="Ver pases QR que ya abrieron el link">👁 QR abiertos <strong>{{ $sum['qr_abiertos'] }}</strong></a>
+                        <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'unopened_qr']) }}" class="sum-chip info {{ $respFilter === 'unopened_qr' ? 'active' : '' }}" title="Ver pases QR enviados que no han abierto el link">📤 QR sin abrir <strong>{{ $sum['qr_sin_abrir'] }}</strong></a>
+                    @endif
+                    <a href="{{ route('message-sends.history', $dayBase + ['resp' => 'no_link']) }}" class="sum-chip info {{ $respFilter === 'no_link' ? 'active' : '' }}" title="Ver mensajes enviados sin link">Sin link <strong>{{ $sum['sin_link'] }}</strong></a>
                 </div>
 
                 @foreach ($dailySends as $send)
@@ -255,7 +259,26 @@
                         $stateClass = 'status-default';
                         $stateIcon = '—';
                         if ($link) {
-                            if ($link->responded_at) {
+                            if ($link->mode === 'access_qr') {
+                                if ($link->closed_reason === 'cancelled') {
+                                    $stateLabel = 'QR cancelado';
+                                    $stateClass = 'status-no-asistira';
+                                    $stateIcon = '✕';
+                                } elseif ($link->opened_at) {
+                                    $timing = $link->opened_at->diffForHumans($send->sent_at, true, true) . ' después';
+                                    $stateLabel = 'Abrió el pase QR · ' . $timing;
+                                    $stateClass = 'status-confirmado';
+                                    $stateIcon = '👁';
+                                } elseif ($link->isExpired()) {
+                                    $stateLabel = 'QR sin abrir · vencido';
+                                    $stateClass = 'status-no-asistira';
+                                    $stateIcon = '⏰';
+                                } else {
+                                    $stateLabel = 'QR sin abrir';
+                                    $stateClass = 'status-considerado';
+                                    $stateIcon = '📤';
+                                }
+                            } elseif ($link->responded_at) {
                                 $timing = $link->responded_at->diffForHumans($send->sent_at, true, true) . ' después';
                                 if ($link->response === 'declined') {
                                     $stateLabel = 'Rechazó — no asistirá';
@@ -357,11 +380,11 @@
                                     style="background: #ecf7e9; color: #256141; border-color: #c6e4be;"
                                     title="Ver los invitados que registraron al confirmar">👥</button>
                             @endif
-                            @if ($link)
+                            @if ($link && $send->guest)
                                 <a class="btn secondary icon-btn"
-                                    href="{{ route('guest-review.show', ['guest' => $send->guest, 'token' => $link->token]) }}"
+                                    href="{{ $link->mode === 'access_qr' ? route('guest-access.show', ['guest' => $send->guest, 'token' => $link->token]) : route('guest-review.show', ['guest' => $send->guest, 'token' => $link->token]) }}"
                                     target="_blank"
-                                    title="Ver link de revisión">🔗</a>
+                                    title="{{ $link->mode === 'access_qr' ? 'Ver pase QR' : 'Ver link de revisión' }}">🔗</a>
                             @endif
                             <form method="post" action="{{ route('message-sends.destroy', $send) }}" style="display: inline;"
                                 data-confirm-title="¿Eliminar este envío del histórico?"

@@ -24,7 +24,13 @@ return new class extends Migration
             [
                 "description" => "Para confirmados: envía el link personalizado donde solo podrán ver su QR de acceso, ubicaciones y mesas de regalos.",
                 "kicker" => "QR de acceso",
-                "content" => "Estimada/o {prefijo} {nombre}, esperamos que se encuentre muy bien. 💜\n\nYa tenemos listo su acceso para los {evento}. Por favor abra su enlace personalizado para consultar su código QR de ingreso y la información importante del evento:\n\n{link}\n\nEn ese enlace también encontrará las ubicaciones de la misa y recepción, así como las mesas de regalos. Le pedimos tener su QR disponible el día del evento. ¡Nos vemos muy pronto! ✨",
+                "content" => "Estimada/o {prefijo} {nombre}, esperamos que se encuentre muy bien. 💜
+
+Le compartimos su enlace personalizado para consultar su código QR de ingreso e información importante del evento:
+
+{link}
+
+Nos vemos muy pronto. ✨",
                 "includes_link" => true,
                 "link_mode" => "access_qr",
                 "link_validity_days" => 30,
