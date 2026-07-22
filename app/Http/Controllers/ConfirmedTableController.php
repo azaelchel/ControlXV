@@ -48,6 +48,7 @@ class ConfirmedTableController extends Controller
             'search' => $search,
             'searchResults' => $searchResults,
             'sponsorByGuest' => $data['sponsorByGuest'],
+            'sponsorRows' => $data['sponsorRows'],
         ]);
     }
 
@@ -65,6 +66,7 @@ class ConfirmedTableController extends Controller
             'summary' => $data['summary'],
             'progress' => $data['progress'],
             'sponsorByGuest' => $data['sponsorByGuest'],
+            'sponsorRows' => $data['sponsorRows'],
         ]);
     }
 
@@ -434,6 +436,39 @@ class ConfirmedTableController extends Controller
             ->filter(fn (array $tablesForGroup) => count($tablesForGroup) > 1)
             ->map(fn (array $tablesForGroup) => array_values($tablesForGroup));
 
+        $sponsorRows = $confirmedGuests
+            ->filter(fn (Guest $guest) => trim((string) $guest->sponsor) !== '')
+            ->map(function (Guest $guest) use ($eligible, $companionTable) {
+                $people = $eligible
+                    ->where('invited_group', $guest->name)
+                    ->sortBy('name')
+                    ->values();
+
+                $tablesForGroup = $people
+                    ->map(fn (Companion $companion) => $companionTable[$companion->id]->name ?? null)
+                    ->filter()
+                    ->unique()
+                    ->sortBy(fn (string $name) => $this->tableNameSortKey($name, $name === 'MP'))
+                    ->values();
+
+                return [
+                    'sponsor' => trim((string) $guest->sponsor),
+                    'group' => $guest->name,
+                    'family_group' => $guest->group_name,
+                    'category' => $guest->category,
+                    'total' => $people->count(),
+                    'seated' => $people->filter(fn (Companion $companion) => isset($companionTable[$companion->id]))->count(),
+                    'tables' => $tablesForGroup,
+                    'people' => $people->map(fn (Companion $companion) => [
+                        'name' => $companion->name,
+                        'type' => $companion->type,
+                        'table' => $companionTable[$companion->id]->name ?? null,
+                    ])->values(),
+                ];
+            })
+            ->sortBy(fn (array $row) => mb_strtolower($row['sponsor'].'|'.$row['group']))
+            ->values();
+
         $totalCapacity = (int) $tables->sum('capacity');
         $totalSeated = count($assignedIds);
         $totalEligible = $eligible->count();
@@ -452,6 +487,7 @@ class ConfirmedTableController extends Controller
             'unassigned' => $unassigned,
             'guestGroups' => $guestGroups,
             'sponsorByGuest' => $sponsorByGuest,
+            'sponsorRows' => $sponsorRows,
             'groupOptions' => $groupOptions,
             'dividedGroups' => $dividedGroups,
             'progress' => [
@@ -503,14 +539,19 @@ class ConfirmedTableController extends Controller
 
     private function tableSortKey(EventTable $table): string
     {
-        if ($table->is_principal) {
-            return '0|0000|'.mb_strtolower($table->name);
+        return $this->tableNameSortKey($table->name, $table->is_principal);
+    }
+
+    private function tableNameSortKey(string $name, bool $isPrincipal = false): string
+    {
+        if ($isPrincipal) {
+            return '0|0000|'.mb_strtolower($name);
         }
 
-        if (preg_match('/\d+/', $table->name, $matches)) {
-            return '1|'.str_pad($matches[0], 4, '0', STR_PAD_LEFT).'|'.mb_strtolower($table->name);
+        if (preg_match('/\d+/', $name, $matches)) {
+            return '1|'.str_pad($matches[0], 4, '0', STR_PAD_LEFT).'|'.mb_strtolower($name);
         }
 
-        return '2|9999|'.mb_strtolower($table->name);
+        return '2|9999|'.mb_strtolower($name);
     }
 }

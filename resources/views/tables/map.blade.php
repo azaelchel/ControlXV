@@ -60,6 +60,19 @@
     .empty-toggle input:checked + .toggle-ui::after { left:20px; background:#fff; }
     .tm-check { width: 14px; height: 14px; min-width: 14px; accent-color: #8f55be; margin: 0; }
     .tm-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #f0e9fa; cursor: pointer; }
+    .sponsor-guide { margin-bottom:16px; border:1px solid #ead8a8; background:linear-gradient(135deg,#fffaf0,#fff 60%,#f8f0ff); }
+    .sponsor-guide-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .sponsor-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .sponsor-card { border:1px solid #ead8a8; border-radius:14px; background:#fffdf8; padding:12px; box-shadow:0 8px 18px rgba(116,78,30,.08); }
+    .sponsor-name { font-weight:900; color:#6c4a12; font-size:14px; }
+    .sponsor-family { color:#43275b; font-weight:800; margin-top:2px; }
+    .sponsor-meta { color:#8a72a4; font-size:12px; margin-top:3px; }
+    .sponsor-tables { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+    .table-chip { display:inline-flex; align-items:center; min-height:24px; padding:3px 8px; border-radius:999px; background:#f3e9fb; color:#5b3a86; font-size:12px; font-weight:800; }
+    .table-chip.missing { background:#fff1f1; color:#b54141; }
+    .sponsor-focus-btn { margin-top:10px; width:100%; justify-content:center; }
+    .tbl.sponsor-highlight { outline:4px solid #f2c95b; outline-offset:4px; z-index:20; box-shadow:0 0 0 8px rgba(242,201,91,.22), 0 14px 28px rgba(80,40,120,.34); }
+    .sponsor-callout { border:1px solid #ead8a8; border-radius:12px; background:#fffaf0; padding:10px 12px; color:#6c4a12; font-size:13px; margin-bottom:10px; }
 </style>
 
 @php
@@ -128,6 +141,45 @@
             </label>
         </div>
     </div>
+
+    @if (($sponsorRows ?? collect())->isNotEmpty())
+        <div class="card sponsor-guide">
+            <div class="sponsor-guide-head">
+                <div>
+                    <div class="kicker" style="color:#b18334; font-weight:900; font-size:12px; letter-spacing:.14em;">PADRINOS</div>
+                    <div style="font-size:22px; font-weight:900; color:#43275b;">Guía rápida de ubicación</div>
+                    <p class="small" style="margin:3px 0 0; color:#8a72a4;">Ubica en qué mesa quedó cada padrino o familia de padrino.</p>
+                </div>
+                <span class="pill" style="background:#fff3cf; color:#75510f; font-weight:900;">👑 {{ $sponsorRows->count() }} padrinos</span>
+            </div>
+            <div class="sponsor-grid">
+                @foreach ($sponsorRows as $row)
+                    @php
+                        $tableNames = collect($row['tables']);
+                        $tablePayload = $tableNames->values()->all();
+                    @endphp
+                    <div class="sponsor-card" data-sponsor-card data-sponsor-tables='@json($tablePayload, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)'>
+                        <div class="sponsor-name">👑 {{ $row['sponsor'] }}</div>
+                        <div class="sponsor-family">{{ $row['group'] }}</div>
+                        <div class="sponsor-meta">{{ $row['family_group'] ?: 'Sin grupo' }} · {{ $row['seated'] }}/{{ $row['total'] }} sentados</div>
+                        <div class="sponsor-tables">
+                            @forelse ($tableNames as $tableName)
+                                <span class="table-chip">{{ $tableName }}</span>
+                            @empty
+                                <span class="table-chip missing">Sin mesa</span>
+                            @endforelse
+                            @if ($row['seated'] < $row['total'])
+                                <span class="table-chip missing">{{ $row['total'] - $row['seated'] }} pendiente(s)</span>
+                            @endif
+                        </div>
+                        @if ($tableNames->isNotEmpty())
+                            <button type="button" class="btn small secondary sponsor-focus-btn" data-sponsor-focus>Ver en mapa</button>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Croquis --}}
     <div class="card">
@@ -238,6 +290,12 @@ if (!occupants.length) {
         .filter((table) => table.name !== currentTableName)
         .map((table) => `<option value="${table.id}">${escapeHtml(table.name)} (${table.available} libres)</option>`)
         .join('');
+    const sponsors = [...new Map(occupants
+        .filter((c) => c.sponsor)
+        .map((c) => [c.group, c])).values()];
+    const sponsorSummary = sponsors.length
+        ? `<div class="sponsor-callout"><strong>👑 Padrinos en esta mesa:</strong> ${sponsors.map((c) => `${escapeHtml(c.sponsor)} <span style="color:#8a72a4;">(${escapeHtml(c.group)})</span>`).join(' · ')}</div>`
+        : '';
 
     listEl.innerHTML = `
         <form method="post" action="${bulkUrl}" id="tm-bulk-form" style="margin:0;"
@@ -247,7 +305,8 @@ if (!occupants.length) {
             data-confirm-color="#8f55be"
             data-confirm-icon="warning">
             <input type="hidden" name="_token" value="${csrf}">
-                                <input type="hidden" name="action" value="" data-bulk-action-input>
+            <input type="hidden" name="action" value="" data-bulk-action-input>
+            ${sponsorSummary}
             <div class="inline" style="justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
                 <button type="button" class="btn small secondary" data-select-all>Seleccionar todos</button>
                 <span class="small" data-selected-count>0 seleccionados</span>
@@ -356,6 +415,20 @@ const close = () => { modal.style.display = 'none'; };
             // Mostrar/ocultar mesas vacías (por defecto ocultas; se recuerda en el navegador).
             const venue = document.getElementById('venue');
             const showEmpty = document.getElementById('show-empty');
+            const clearSponsorHighlights = () => document.querySelectorAll('.tbl.sponsor-highlight').forEach((table) => table.classList.remove('sponsor-highlight'));
+            document.querySelectorAll('[data-sponsor-focus]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const card = button.closest('[data-sponsor-card]');
+                    let names = [];
+                    try { names = JSON.parse(card?.dataset.sponsorTables || '[]'); } catch (e) {}
+                    clearSponsorHighlights();
+                    names.forEach((name) => {
+                        const table = [...document.querySelectorAll('.tbl')].find((item) => item.dataset.name === name);
+                        if (table) table.classList.add('sponsor-highlight');
+                    });
+                    venue.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
             const apply = (on) => venue.classList.toggle('hide-empty', !on);
             const saved = localStorage.getItem('tables_show_empty') === '1';
             showEmpty.checked = saved;
