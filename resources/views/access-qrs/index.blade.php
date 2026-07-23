@@ -53,7 +53,7 @@
         @media (max-width: 760px) { .access-toolbar { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } }
     </style>
 
-    @php $accessTemplate = App\Models\MessageTemplate::where('name', 'Envío de QR de acceso')->first(); @endphp
+    @php $accessTemplate = App\Models\MessageTemplate::where('link_mode', 'access_qr_v2')->first(); @endphp
 
     <div class="grid cols-3" style="margin-bottom: 18px;">
         <div class="card metric"><div class="label">Confirmados</div><div class="value">{{ number_format($summary['confirmed']) }}</div></div>

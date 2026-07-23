@@ -100,8 +100,8 @@ class PublicGuestLink extends Model
             'invitation' => 'Registro y confirmación',
             'validation' => 'Validación final',
             'last_chance' => 'Última oportunidad',
-            'access_qr' => 'QR de acceso',
-            'access_qr_v2' => 'QR de acceso V2',
+            'access_qr' => 'QR de acceso anterior',
+            'access_qr_v2' => 'QR de acceso',
             default => 'Sin definir',
         };
     }
