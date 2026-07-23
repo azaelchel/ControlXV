@@ -90,6 +90,9 @@
     </div>
 
     <script>
+        const forceWhatsAppApp = @json(in_array($template->link_mode, ['access_qr', 'access_qr_v2'], true));
+        const appWhatsAppUrl = (phone, message) => 'https://wa.me/' + phone + (message ? '?text=' + encodeURIComponent(message) : '');
+
         async function copyText(text) {
             try {
                 await navigator.clipboard.writeText(text);
@@ -136,7 +139,7 @@
                 statusEl.style.display = 'inline';
 
                 if (phone) {
-                    window.open(window.waUrl(phone, message), '_blank');
+                    window.open(forceWhatsAppApp ? appWhatsAppUrl(phone, message) : window.waUrl(phone, message), '_blank');
                 }
             });
         });
