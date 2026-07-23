@@ -36,6 +36,12 @@
         .qr-upload-form .btn[disabled] { opacity: .45; cursor: not-allowed; }
         .detail-modal-bg { position: fixed; inset: 0; background: rgba(25, 16, 35, .55); display: none; align-items: center; justify-content: center; z-index: 120; padding: 22px; }
         .detail-modal-bg.open { display: flex; }
+        .qr-preview-box { width: min(430px, calc(100vw - 28px)); background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:0 24px 70px rgba(39,24,55,.28); padding:18px; }
+        .qr-preview-frame { margin-top:12px; border:1px solid #eee3f7; border-radius:16px; background:#faf6ff; padding:14px; display:grid; place-items:center; min-height:260px; }
+        .qr-preview-frame img { display:block; width:min(100%, 330px); max-height:62vh; object-fit:contain; background:#fff; border-radius:10px; box-shadow:0 10px 28px rgba(40,25,60,.12); }
+        .qr-preview-loading { color:var(--muted); font-size:13px; font-weight:700; }
+        .access-search-count { color: var(--muted); font-size: 12px; margin: -4px 0 10px; display: none; }
+        .access-search-count.show { display: block; }
         .detail-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 12px; }
         .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
         .detail-stat { background: #faf6ff; border: 1px solid #eee3f7; border-radius: 10px; padding: 9px 10px; }
@@ -121,7 +127,8 @@
         </form>
 
         <div class="table-wrap">
-            <table class="access-table">
+            <div class="access-search-count" data-access-filter-count></div>
+            <table class="access-table" data-access-table>
                 <thead>
                     <tr>
                         <th>Familia / grupo</th>
@@ -158,7 +165,7 @@
                                     'ninos' => (int) ($typeCounts['Niño'] ?? 0),
                                 ],
                             ];
-                            $quickText = collect([$guest->name, $guest->prefix, $guest->phone, $guest->group_name, $guest->sponsor, $tables->implode(' ')])->filter()->implode(' ');
+                            $quickText = collect([$guest->name, $guest->prefix, $guest->phone, $guest->group_name, $guest->sponsor, $tables->implode(' '), $people->pluck('name')->implode(' '), $people->pluck('type')->implode(' ')])->filter()->implode(' ');
                         @endphp
                         <tr data-access-row data-quick="{{ Str::lower($quickText) }}">
                             <td>
@@ -190,6 +197,7 @@
                             <td>
                                 @if ($guest->access_qr_data)
                                     <span class="pill status-confirmado">QR cargado</span>
+                                    <button type="button" class="btn secondary small" style="margin-left:6px;" data-qr-preview-url="{{ route('access-qrs.preview', $guest) }}" data-qr-preview-name="{{ $guest->name }}">Vista previa</button>
                                     <form method="post" action="{{ route('access-qrs.destroy', $guest) }}" style="display:inline; margin-left: 6px;"
                                         data-confirm-title="¿Eliminar QR de {{ $guest->name }}?"
                                         data-confirm-text="El link público quedará sin imagen QR hasta que cargues una nueva."
@@ -251,6 +259,23 @@
         </div>
     </div>
 
+    <div class="detail-modal-bg" data-qr-preview-modal>
+        <div class="qr-preview-box">
+            <div class="detail-head" style="margin-bottom:0;">
+                <div>
+                    <div class="section-kicker">Vista previa QR</div>
+                    <h3 class="section-title" style="margin:0;" data-qr-preview-title>—</h3>
+                    <div class="small" style="margin-top:4px;">Imagen cargada para el pase digital.</div>
+                </div>
+                <button type="button" class="btn ghost" data-qr-preview-close>✕</button>
+            </div>
+            <div class="qr-preview-frame">
+                <div class="qr-preview-loading" data-qr-preview-loading>Cargando imagen…</div>
+                <img src="" alt="Vista previa del QR" data-qr-preview-img style="display:none;">
+            </div>
+        </div>
+    </div>
+
     <script>
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -271,10 +296,55 @@
 
         const search = document.querySelector('[data-access-search]');
         const quickForm = document.querySelector('[data-quick-search-form]');
-        let searchTimer = null;
-        search?.addEventListener('input', () => {
-            window.clearTimeout(searchTimer);
-            searchTimer = window.setTimeout(() => quickForm?.submit(), 450);
+        const accessRows = [...document.querySelectorAll('[data-access-row]')];
+        const filterCount = document.querySelector('[data-access-filter-count]');
+        const applyAccessFilter = () => {
+            const needle = (search?.value || '').trim().toLowerCase();
+            let visible = 0;
+
+            accessRows.forEach((row) => {
+                const match = needle === '' || (row.dataset.quick || '').includes(needle);
+                row.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+
+            if (filterCount) {
+                filterCount.classList.toggle('show', needle !== '');
+                filterCount.textContent = `Filtro rapido: ${visible} de ${accessRows.length} registros visibles. Enter o Buscar consulta todo el padrón.`;
+            }
+        };
+        search?.addEventListener('input', applyAccessFilter);
+        quickForm?.addEventListener('submit', () => {
+            accessRows.forEach((row) => row.style.display = '');
+        });
+        applyAccessFilter();
+
+        const qrPreviewModal = document.querySelector('[data-qr-preview-modal]');
+        const qrPreviewImg = document.querySelector('[data-qr-preview-img]');
+        const qrPreviewLoading = document.querySelector('[data-qr-preview-loading]');
+        const closeQrPreview = () => {
+            qrPreviewModal?.classList.remove('open');
+            if (qrPreviewImg) {
+                qrPreviewImg.removeAttribute('src');
+                qrPreviewImg.style.display = 'none';
+            }
+        };
+        document.querySelector('[data-qr-preview-close]')?.addEventListener('click', closeQrPreview);
+        qrPreviewModal?.addEventListener('click', (event) => { if (event.target === qrPreviewModal) closeQrPreview(); });
+        document.querySelectorAll('[data-qr-preview-url]').forEach((button) => {
+            button.addEventListener('click', () => {
+                document.querySelector('[data-qr-preview-title]').textContent = button.dataset.qrPreviewName || 'QR cargado';
+                if (qrPreviewLoading) qrPreviewLoading.style.display = '';
+                if (qrPreviewImg) {
+                    qrPreviewImg.style.display = 'none';
+                    qrPreviewImg.onload = () => {
+                        if (qrPreviewLoading) qrPreviewLoading.style.display = 'none';
+                        qrPreviewImg.style.display = '';
+                    };
+                    qrPreviewImg.src = button.dataset.qrPreviewUrl;
+                }
+                qrPreviewModal?.classList.add('open');
+            });
         });
 
         const modal = document.querySelector('[data-detail-modal]');

@@ -514,7 +514,16 @@
                 align-items: end;
             }
 
-            .table-wrap { overflow: auto; }
+            .table-wrap {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x pan-y;
+                overscroll-behavior-x: contain;
+            }
+            .table-wrap > table { min-width: 980px; }
             table {
                 width: 100%;
                 border-collapse: collapse;

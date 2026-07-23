@@ -8,6 +8,7 @@ use App\Models\TableAssignment;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class AccessQrController extends Controller
 {
@@ -123,6 +124,15 @@ class AccessQrController extends Controller
             "perPage" => $perPage,
             "detailsByGuest" => $detailsByGuest,
         ]);
+    }
+
+    public function preview(Guest $guest): Response
+    {
+        abort_unless($guest->status === "Confirmado" && $guest->access_qr_data, 404);
+
+        return response(base64_decode($guest->access_qr_data), 200)
+            ->header("Content-Type", $guest->access_qr_mime ?: "image/png")
+            ->header("Cache-Control", "private, max-age=300");
     }
 
     public function store(Request $request, Guest $guest): RedirectResponse
