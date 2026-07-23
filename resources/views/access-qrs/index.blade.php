@@ -298,6 +298,8 @@
         const quickForm = document.querySelector('[data-quick-search-form]');
         const accessRows = [...document.querySelectorAll('[data-access-row]')];
         const filterCount = document.querySelector('[data-access-filter-count]');
+        let accessSearchTimer = null;
+        const submittedSearch = (search?.defaultValue || '').trim();
         const applyAccessFilter = () => {
             const needle = (search?.value || '').trim().toLowerCase();
             let visible = 0;
@@ -310,11 +312,23 @@
 
             if (filterCount) {
                 filterCount.classList.toggle('show', needle !== '');
-                filterCount.textContent = `Filtro rapido: ${visible} de ${accessRows.length} registros visibles. Enter o Buscar consulta todo el padrón.`;
+                filterCount.textContent = `Buscando en todos los registros... coincidencias visibles: ${visible} de ${accessRows.length}`;
             }
         };
-        search?.addEventListener('input', applyAccessFilter);
+        const submitGlobalAccessSearch = () => {
+            if (!quickForm || !search) return;
+            const current = search.value.trim();
+            if (current === submittedSearch) return;
+            accessRows.forEach((row) => row.style.display = '');
+            quickForm.submit();
+        };
+        search?.addEventListener('input', () => {
+            applyAccessFilter();
+            window.clearTimeout(accessSearchTimer);
+            accessSearchTimer = window.setTimeout(submitGlobalAccessSearch, 420);
+        });
         quickForm?.addEventListener('submit', () => {
+            window.clearTimeout(accessSearchTimer);
             accessRows.forEach((row) => row.style.display = '');
         });
         applyAccessFilter();
