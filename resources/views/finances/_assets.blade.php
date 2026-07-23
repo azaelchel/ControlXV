@@ -19,8 +19,21 @@
     .ftoolbar select { min-width: 150px; }
 
     /* Tabla */
-    .ftable-wrap { background:#fff; border:1px solid #e7dcf3; border-radius:16px; overflow:hidden; }
-    table.ftable { width: 100%; border-collapse: collapse; }
+    .ftable-wrap {
+        background:#fff;
+        border:1px solid #e7dcf3;
+        border-radius:16px;
+        max-width:100%;
+        overflow-x:auto;
+        overflow-y:hidden;
+        -webkit-overflow-scrolling:touch;
+        touch-action:pan-x pan-y;
+        overscroll-behavior-x:contain;
+    }
+    .ftable-wrap::-webkit-scrollbar { height: 9px; }
+    .ftable-wrap::-webkit-scrollbar-track { background: #f5edf9; border-radius: 999px; }
+    .ftable-wrap::-webkit-scrollbar-thumb { background: #c7abd9; border-radius: 999px; }
+    table.ftable { width: 100%; min-width: 980px; border-collapse: collapse; }
     table.ftable th, table.ftable td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f1eaf8; vertical-align: middle; }
     table.ftable thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #8a72a4; background: #faf6ff; user-select: none; }
     table.ftable thead th[data-sort] { cursor: pointer; }
