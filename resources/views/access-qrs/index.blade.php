@@ -71,11 +71,7 @@
                 <a class="btn secondary" href="{{ route('message-sends.create', ['template_id' => $accessTemplate->id, 'status' => 'Confirmado']) }}">Preparar envío de QR</a>
             @endif
         </div>
-        <form method="get" action="{{ route('access-qrs.index') }}" class="filter-row" style="grid-template-columns: 1.4fr 1fr 130px auto;">
-            <div>
-                <label>Buscar</label>
-                <input type="text" name="q" value="{{ $search }}" placeholder="Nombre, prefijo, telefono o familia...">
-            </div>
+        <form method="get" action="{{ route('access-qrs.index') }}" class="filter-row" style="grid-template-columns: 1fr 130px auto;">
             <div>
                 <label>Grupo</label>
                 <select name="group">
