@@ -9,10 +9,19 @@
         .access-toolbar { display: grid; grid-template-columns: 1.2fr 150px 170px auto; gap: 12px; align-items: end; margin: 0 0 14px; }
         .access-toolbar label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
         .access-toolbar input, .access-toolbar select { width: 100%; height: 40px; }
-        .access-table { min-width: 1480px; }
+        .access-table { min-width: 1660px; table-layout: fixed; }
         .access-table thead th { position: sticky; top: 0; z-index: 1; background: #fff; box-shadow: 0 1px 0 #e6dff1; }
         .access-table tbody tr:hover td { background: #faf6ff; }
-        .access-table td { vertical-align: top; }
+        .access-table td { vertical-align: top; overflow-wrap: anywhere; }
+        .access-table .col-family { width: 150px; }
+        .access-table .col-contact { width: 150px; }
+        .access-table .col-group { width: 130px; }
+        .access-table .col-tables { width: 130px; }
+        .access-table .col-qr { width: 210px; }
+        .access-table .col-link { width: 150px; }
+        .access-table .col-send { width: 240px; }
+        .access-table .col-detail { width: 100px; }
+        .access-table .col-upload { width: 330px; }
         .mesa-list { display: flex; gap: 5px; flex-wrap: wrap; }
         .mesa-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; background: #eef8f2; color: #256141; font-size: 11px; font-weight: 800; }
         .mesa-chip.warn { background: #fff1d8; color: #8b5b10; }
@@ -27,7 +36,7 @@
         .table-breakdown-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--primary-dark); font-size: 13px; font-weight: 900; margin-bottom: 6px; }
         .person-chips { display: flex; flex-wrap: wrap; gap: 5px; }
         .person-chip { border-radius: 999px; padding: 4px 8px; background: #fff; border: 1px solid #eee3f7; color: #4b3a5f; font-size: 12px; font-weight: 700; }
-        .qr-upload-form { display: flex; align-items: center; gap: 8px; min-width: 300px; }
+        .qr-upload-form { display: grid; grid-template-columns: 150px minmax(74px, 1fr) 70px; align-items: center; gap: 8px; min-width: 300px; }
         .qr-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
         .qr-picker { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--primary-dark); font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; box-shadow: 0 8px 18px rgba(122, 79, 168, .08); }
         .qr-picker:hover { border-color: var(--primary); background: #faf6ff; }
@@ -50,12 +59,22 @@
         .people-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .people-table th, .people-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #f0e9fa; }
         .people-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
-        .qr-send-actions { display: flex; flex-direction: column; gap: 7px; min-width: 190px; }
+        .qr-current-actions { display: grid; gap: 7px; align-items: start; }
+        .qr-current-actions .btn { width: max-content; max-width: 100%; }
+        .qr-current-actions form { display: block; margin: 0; }
+        .qr-send-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 190px; }
         .qr-send-actions .inline { gap: 7px; flex-wrap: wrap; }
         .qr-send-note { color: var(--muted); font-size: 11px; line-height: 1.35; }
         .qr-send-ok { color: #256141; font-size: 11px; font-weight: 800; display: none; }
         .qr-send-ok.show { display: block; }
-        @media (max-width: 760px) { .access-toolbar { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 760px) {
+            .access-toolbar { grid-template-columns: 1fr; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .access-table { min-width: 1540px; }
+            .qr-upload-form { grid-template-columns: 1fr; min-width: 220px; }
+            .qr-picker, .qr-upload-form .btn { width: 100%; }
+            .qr-file-name { max-width: 100%; }
+        }
     </style>
 
 
@@ -127,15 +146,15 @@
             <table class="access-table" data-access-table>
                 <thead>
                     <tr>
-                        <th>Familia / grupo</th>
-                        <th>Contacto</th>
-                        <th>Grupo</th>
-                        <th>Mesa(s)</th>
-                        <th>QR actual</th>
-                        <th>Link</th>
-                        <th>Envio WhatsApp</th>
-                        <th>Detalle</th>
-                        <th style="width: 330px;">Cargar QR</th>
+                        <th class="col-family">Familia / grupo</th>
+                        <th class="col-contact">Contacto</th>
+                        <th class="col-group">Grupo</th>
+                        <th class="col-tables">Mesa(s)</th>
+                        <th class="col-qr">QR actual</th>
+                        <th class="col-link">Link</th>
+                        <th class="col-send">Envio WhatsApp</th>
+                        <th class="col-detail">Detalle</th>
+                        <th class="col-upload">Cargar QR</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -203,21 +222,23 @@
                                 @endif
                             </td>
                             <td>
-                                @if ($guest->access_qr_data)
-                                    <span class="pill status-confirmado">QR cargado</span>
-                                    <button type="button" class="btn secondary small" style="margin-left:6px;" data-qr-preview-url="{{ route('access-qrs.preview', $guest) }}" data-qr-preview-name="{{ $guest->name }}">Vista previa</button>
-                                    <form method="post" action="{{ route('access-qrs.destroy', $guest) }}" style="display:inline; margin-left: 6px;"
-                                        data-confirm-title="¿Eliminar QR de {{ $guest->name }}?"
-                                        data-confirm-text="El link público quedará sin imagen QR hasta que cargues una nueva."
-                                        data-confirm-button="Sí, eliminar"
-                                        data-confirm-color="#d8527f">
-                                        @csrf
-                                        @method('delete')
-                                        <button class="btn danger small" type="submit">Quitar</button>
-                                    </form>
-                                @else
-                                    <span class="pill status-pendiente">Pendiente</span>
-                                @endif
+                                <div class="qr-current-actions">
+                                    @if ($guest->access_qr_data)
+                                        <span class="pill status-confirmado">QR cargado</span>
+                                        <button type="button" class="btn secondary small" data-qr-preview-url="{{ route('access-qrs.preview', $guest) }}" data-qr-preview-name="{{ $guest->name }}">Vista previa</button>
+                                        <form method="post" action="{{ route('access-qrs.destroy', $guest) }}"
+                                            data-confirm-title="¿Eliminar QR de {{ $guest->name }}?"
+                                            data-confirm-text="El link público quedará sin imagen QR hasta que cargues una nueva."
+                                            data-confirm-button="Sí, eliminar"
+                                            data-confirm-color="#d8527f">
+                                            @csrf
+                                            @method('delete')
+                                            <button class="btn danger small" type="submit">Quitar</button>
+                                        </form>
+                                    @else
+                                        <span class="pill status-pendiente">Pendiente</span>
+                                    @endif
+                                </div>
                             </td>
                             <td data-link-status-cell>
                                 <span class="pill {{ $qrStatusClass }}" data-link-status>{{ $qrStatusLabel }}</span>
