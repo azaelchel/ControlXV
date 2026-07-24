@@ -112,6 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('module:message_sends')->group(function () {
         Route::get('/access-qrs', [AccessQrController::class, 'index'])->name('access-qrs.index');
         Route::get('/access-qrs/{guest}/preview', [AccessQrController::class, 'preview'])->name('access-qrs.preview');
+        Route::post('/access-qrs/{guest}/message', [AccessQrController::class, 'message'])->name('access-qrs.message');
         Route::post('/access-qrs/{guest}', [AccessQrController::class, 'store'])->name('access-qrs.store');
         Route::delete('/access-qrs/{guest}', [AccessQrController::class, 'destroy'])->name('access-qrs.destroy');
         Route::get('/message-sends', [MessageSendController::class, 'index'])->name('message-sends.index');

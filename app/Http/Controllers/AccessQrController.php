@@ -4,14 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Companion;
 use App\Models\Guest;
+use App\Models\MessageSend;
+use App\Models\MessageTemplate;
+use App\Models\PublicGuestLink;
 use App\Models\TableAssignment;
+use App\Services\PublicGuestLinkService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class AccessQrController extends Controller
 {
+    public function __construct(private readonly PublicGuestLinkService $linkService) {}
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->input("q", ""));
@@ -68,6 +75,13 @@ class AccessQrController extends Controller
             ->sort()
             ->values();
 
+        $guests->getCollection()->load([
+            "publicLinks" => fn ($query) => $query
+                ->where("mode", "access_qr_v2")
+                ->where("is_current", true)
+                ->latest("generated_at"),
+        ]);
+
         $guestNames = $guests->getCollection()->pluck("name");
 
         $companions = Companion::query()
@@ -113,6 +127,17 @@ class AccessQrController extends Controller
         $summary = [
             "confirmed" => Guest::where("status", "Confirmado")->count(),
             "with_qr" => Guest::where("status", "Confirmado")->whereNotNull("access_qr_data")->count(),
+            "with_link" => PublicGuestLink::query()
+                ->where("mode", "access_qr_v2")
+                ->where("is_current", true)
+                ->whereHas("guest", fn ($query) => $query->where("status", "Confirmado"))
+                ->count(),
+            "opened" => PublicGuestLink::query()
+                ->where("mode", "access_qr_v2")
+                ->where("is_current", true)
+                ->whereNotNull("opened_at")
+                ->whereHas("guest", fn ($query) => $query->where("status", "Confirmado"))
+                ->count(),
         ];
 
         return view("access-qrs.index", [
@@ -123,6 +148,66 @@ class AccessQrController extends Controller
             "group" => $group,
             "perPage" => $perPage,
             "detailsByGuest" => $detailsByGuest,
+        ]);
+    }
+
+
+    public function message(Request $request, Guest $guest): JsonResponse
+    {
+        abort_unless($guest->status === "Confirmado", 404);
+
+        $template = MessageTemplate::query()
+            ->where("link_mode", "access_qr_v2")
+            ->firstOrFail();
+
+        if (! $guest->access_qr_data) {
+            return response()->json([
+                "ok" => false,
+                "message" => "Primero carga la imagen QR para {$guest->name}.",
+            ], 422);
+        }
+
+        $link = $this->linkService->ensureLinkFor($guest, $template->link_mode, $template->link_validity_days);
+
+        if (! $link) {
+            return response()->json([
+                "ok" => false,
+                "message" => "No se pudo generar el link para {$guest->name}.",
+            ], 422);
+        }
+
+        $linkUrl = $this->linkService->linkUrl($guest, $link);
+        $message = $template->render($guest, $linkUrl);
+
+        $send = MessageSend::withoutGlobalScope("active")->updateOrCreate(
+            ["public_guest_link_id" => $link->id],
+            [
+                "guest_id" => $guest->id,
+                "message_template_id" => $template->id,
+                "user_id" => $request->user()?->id,
+                "rendered_message" => $message,
+                "phone" => $guest->phone,
+                "sent_at" => now(),
+                "active" => true,
+            ]
+        );
+
+        $phoneIntl = $this->phoneIntl($guest);
+
+        return response()->json([
+            "ok" => true,
+            "guest_id" => $guest->id,
+            "message" => $message,
+            "phone_intl" => $phoneIntl,
+            "whatsapp_url" => $phoneIntl ? "https://wa.me/{$phoneIntl}?text=".rawurlencode($message) : null,
+            "public_guest_link_id" => $link->id,
+            "message_send_id" => $send->id,
+            "link_url" => $linkUrl,
+            "status_label" => $link->opened_at ? "Abierto" : "Generado sin abrir",
+            "status_class" => $link->opened_at ? "status-confirmado" : "status-considerado",
+            "status_meta" => $link->opened_at
+                ? "Abrió {$link->opened_at->format('d/m/Y H:i')}"
+                : "Vence {$link->expires_at?->format('d/m/Y H:i')}",
         ]);
     }
 
@@ -161,5 +246,15 @@ class AccessQrController extends Controller
         ]);
 
         return back()->with("status", "QR eliminado para {$guest->name}.");
+    }
+
+    private function phoneIntl(Guest $guest): ?string
+    {
+        $clean = preg_replace('/[^0-9]/', '', $guest->phone ?? '');
+        if (! $clean) {
+            return null;
+        }
+
+        return strlen($clean) === 10 ? '52'.$clean : $clean;
     }
 }

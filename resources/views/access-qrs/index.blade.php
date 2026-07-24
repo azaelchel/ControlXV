@@ -9,7 +9,7 @@
         .access-toolbar { display: grid; grid-template-columns: 1.2fr 150px 170px auto; gap: 12px; align-items: end; margin: 0 0 14px; }
         .access-toolbar label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
         .access-toolbar input, .access-toolbar select { width: 100%; height: 40px; }
-        .access-table { min-width: 1180px; }
+        .access-table { min-width: 1480px; }
         .access-table thead th { position: sticky; top: 0; z-index: 1; background: #fff; box-shadow: 0 1px 0 #e6dff1; }
         .access-table tbody tr:hover td { background: #faf6ff; }
         .access-table td { vertical-align: top; }
@@ -50,26 +50,26 @@
         .people-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .people-table th, .people-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #f0e9fa; }
         .people-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+        .qr-send-actions { display: flex; flex-direction: column; gap: 7px; min-width: 190px; }
+        .qr-send-actions .inline { gap: 7px; flex-wrap: wrap; }
+        .qr-send-note { color: var(--muted); font-size: 11px; line-height: 1.35; }
+        .qr-send-ok { color: #256141; font-size: 11px; font-weight: 800; display: none; }
+        .qr-send-ok.show { display: block; }
         @media (max-width: 760px) { .access-toolbar { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } }
     </style>
 
-    @php $accessTemplate = App\Models\MessageTemplate::where('link_mode', 'access_qr_v2')->first(); @endphp
 
     <div class="grid cols-3" style="margin-bottom: 18px;">
         <div class="card metric"><div class="label">Confirmados</div><div class="value">{{ number_format($summary['confirmed']) }}</div></div>
         <div class="card metric"><div class="label">Con QR cargado</div><div class="value">{{ number_format($summary['with_qr']) }}</div></div>
-        <div class="card metric"><div class="label">Pendientes de QR</div><div class="value">{{ number_format(max(0, $summary['confirmed'] - $summary['with_qr'])) }}</div></div>
+        <div class="card metric"><div class="label">Links generados</div><div class="value">{{ number_format($summary['with_link']) }}</div></div>
+        <div class="card metric"><div class="label">Links abiertos</div><div class="value">{{ number_format($summary['opened']) }}</div></div>
     </div>
 
     <div class="card" style="margin-bottom: 18px;">
-        <div class="inline" style="justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-            <div>
-                <div class="section-kicker">Accesos</div>
-                <h3 class="section-title" style="font-size: 20px;">Carga de QR por familia</h3>
-            </div>
-            @if ($accessTemplate)
-                <a class="btn secondary" href="{{ route('message-sends.create', ['template_id' => $accessTemplate->id, 'status' => 'Confirmado']) }}">Preparar envío de QR</a>
-            @endif
+        <div style="margin-bottom: 12px;">
+            <div class="section-kicker">Accesos</div>
+            <h3 class="section-title" style="font-size: 20px;">Carga y envio de QR por familia</h3>
         </div>
         <form method="get" action="{{ route('access-qrs.index') }}" class="filter-row" style="grid-template-columns: 1fr 130px auto;">
             <div>
@@ -132,6 +132,8 @@
                         <th>Grupo</th>
                         <th>Mesa(s)</th>
                         <th>QR actual</th>
+                        <th>Link</th>
+                        <th>Envio WhatsApp</th>
                         <th>Detalle</th>
                         <th style="width: 330px;">Cargar QR</th>
                     </tr>
@@ -161,7 +163,17 @@
                                     'ninos' => (int) ($typeCounts['Niño'] ?? 0),
                                 ],
                             ];
-                            $quickText = collect([$guest->name, $guest->prefix, $guest->phone, $guest->group_name, $guest->sponsor, $tables->implode(' '), $people->pluck('name')->implode(' '), $people->pluck('type')->implode(' ')])->filter()->implode(' ');
+                            $qrLink = $guest->publicLinks->first();
+                            $qrStatusLabel = ! $guest->access_qr_data
+                                ? 'Sin QR'
+                                : ($qrLink ? ($qrLink->opened_at ? 'Abierto' : 'Generado sin abrir') : 'Sin link');
+                            $qrStatusClass = ! $guest->access_qr_data
+                                ? 'status-pendiente'
+                                : ($qrLink ? ($qrLink->opened_at ? 'status-confirmado' : 'status-considerado') : 'status-default');
+                            $qrStatusMeta = $qrLink
+                                ? ($qrLink->opened_at ? 'Abrió '.$qrLink->opened_at->format('d/m/Y H:i') : 'Vence '.$qrLink->expires_at?->format('d/m/Y H:i'))
+                                : ($guest->access_qr_data ? 'Pendiente de generar envio' : 'Carga imagen QR primero');
+                            $quickText = collect([$guest->name, $guest->prefix, $guest->phone, $guest->group_name, $guest->sponsor, $qrStatusLabel, $tables->implode(' '), $people->pluck('name')->implode(' '), $people->pluck('type')->implode(' ')])->filter()->implode(' ');
                         @endphp
                         <tr data-access-row data-quick="{{ Str::lower($quickText) }}">
                             <td>
@@ -207,6 +219,26 @@
                                     <span class="pill status-pendiente">Pendiente</span>
                                 @endif
                             </td>
+                            <td data-link-status-cell>
+                                <span class="pill {{ $qrStatusClass }}" data-link-status>{{ $qrStatusLabel }}</span>
+                                <div class="small" style="margin-top:5px;" data-link-meta>{{ $qrStatusMeta }}</div>
+                            </td>
+                            <td>
+                                <div class="qr-send-actions" data-qr-send-actions>
+                                    @if (! $guest->access_qr_data)
+                                        <span class="pill status-pendiente">Carga QR primero</span>
+                                        <div class="qr-send-note">El envio se habilita cuando exista imagen QR.</div>
+                                    @else
+                                        <button type="button" class="btn small {{ $qrLink ? 'secondary' : '' }}" data-qr-send-open data-message-url="{{ route('access-qrs.message', $guest) }}" data-csrf="{{ csrf_token() }}">
+                                            {{ $qrLink ? 'Reintentar WhatsApp' : 'Generar y enviar WA' }}
+                                        </button>
+                                        <div class="inline" data-qr-after-actions style="{{ $qrLink ? '' : 'display:none;' }}">
+                                            <button type="button" class="btn secondary small" data-qr-copy data-message-url="{{ route('access-qrs.message', $guest) }}" data-csrf="{{ csrf_token() }}">Copiar mensaje</button>
+                                        </div>
+                                        <div class="qr-send-ok" data-qr-send-ok>Mensaje copiado y envio registrado.</div>
+                                    @endif
+                                </div>
+                            </td>
                             <td>
                                 <button type="button" class="btn secondary small" data-detail='@json($detailPayload, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)'>Ver</button>
                             </td>
@@ -221,7 +253,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="small">No hay familias confirmadas con estos filtros.</td></tr>
+                        <tr><td colspan="9" class="small">No hay familias confirmadas con estos filtros.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -276,6 +308,109 @@
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
         }[char]));
+
+        async function copyQrText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', 'readonly');
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                return true;
+            }
+        }
+
+        async function resolveQrMessage(button) {
+            const response = await fetch(button.dataset.messageUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': button.dataset.csrf,
+                    'Accept': 'application/json',
+                },
+            });
+            const data = await response.json().catch(() => ({}));
+            if (! response.ok || data.ok === false) {
+                throw new Error(data.message || 'No se pudo preparar el mensaje.');
+            }
+            return data;
+        }
+
+        function updateQrRow(button, data) {
+            const row = button.closest('[data-access-row]');
+            row?.querySelector('[data-link-status]')?.classList.remove('status-default', 'status-pendiente', 'status-confirmado', 'status-considerado', 'status-no-asistira');
+            const status = row?.querySelector('[data-link-status]');
+            const meta = row?.querySelector('[data-link-meta]');
+            const ok = row?.querySelector('[data-qr-send-ok]');
+            const after = row?.querySelector('[data-qr-after-actions]');
+            const openButton = row?.querySelector('[data-qr-send-open]');
+
+            if (status) {
+                status.textContent = data.status_label || 'Generado sin abrir';
+                status.classList.add(data.status_class || 'status-considerado');
+            }
+            if (meta) meta.textContent = data.status_meta || '';
+            if (after) after.style.display = '';
+            if (openButton) {
+                openButton.textContent = data.whatsapp_url ? 'Reintentar WhatsApp' : 'Sin telefono: copiar';
+                openButton.classList.add('secondary');
+            }
+            if (ok) {
+                ok.classList.add('show');
+                window.setTimeout(() => ok.classList.remove('show'), 2600);
+            }
+        }
+
+        document.addEventListener('click', async (event) => {
+            const openButton = event.target.closest('[data-qr-send-open]');
+            const copyButton = event.target.closest('[data-qr-copy]');
+            if (! openButton && ! copyButton) return;
+
+            const button = openButton || copyButton;
+            const originalText = button.textContent;
+            const openingWhatsApp = Boolean(openButton);
+            let popup = null;
+
+            if (openingWhatsApp) {
+                popup = window.open('', '_blank');
+            }
+
+            button.disabled = true;
+            button.textContent = openingWhatsApp ? 'Preparando...' : 'Copiando...';
+
+            try {
+                const data = await resolveQrMessage(button);
+                await copyQrText(data.message || '');
+                updateQrRow(button, data);
+
+                if (openingWhatsApp && data.whatsapp_url) {
+                    if (popup) {
+                        popup.location.href = data.whatsapp_url;
+                    } else {
+                        window.location.href = data.whatsapp_url;
+                    }
+                } else if (popup) {
+                    popup.close();
+                }
+
+                button.textContent = openingWhatsApp ? (data.whatsapp_url ? 'Reintentar WhatsApp' : 'Sin telefono: copiar') : 'Copiado';
+                if (! openingWhatsApp) {
+                    window.setTimeout(() => { button.textContent = originalText; }, 1500);
+                }
+            } catch (error) {
+                if (popup) popup.close();
+                alert(error.message);
+                button.textContent = originalText;
+            } finally {
+                button.disabled = false;
+            }
+        });
 
         document.querySelectorAll('[data-qr-upload-form]').forEach((form) => {
             const input = form.querySelector('[data-qr-file]');
