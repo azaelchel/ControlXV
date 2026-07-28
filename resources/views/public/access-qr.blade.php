@@ -376,6 +376,7 @@
         .btn-text { display: grid; gap: 3px; min-width: 0; }
         .btn-title { font-size: 15px; font-weight: 900; overflow-wrap: anywhere; }
         .btn-sub { color: var(--xv-muted); font-size: 12px; font-weight: 800; line-height: 1.25; }
+        .btn-time { color: #9a7331; font-size: 11px; font-weight: 900; line-height: 1.25; letter-spacing: .03em; }
         .note {
             display: flex;
             gap: 12px;
@@ -530,11 +531,11 @@
                 <div class="actions" aria-label="Enlaces importantes del evento">
                     <a class="action-card primary" href="{{ $links['misa'] }}" target="_blank" rel="noopener">
                         <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-                        <span class="btn-text"><span class="btn-title">Ubicación misa</span><span class="btn-sub">Catedral de Toluca</span></span>
+                        <span class="btn-text"><span class="btn-title">Ubicación misa</span><span class="btn-sub">Catedral de Toluca</span><span class="btn-time">Misa 13:00 hrs</span></span>
                     </a>
                     <a class="action-card primary" href="{{ $links['recepcion'] }}" target="_blank" rel="noopener">
                         <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M9 20v-6h6v6"/></svg></span>
-                        <span class="btn-text"><span class="btn-title">Ubicación recepción</span><span class="btn-sub">Hacienda La Cúpula</span></span>
+                        <span class="btn-text"><span class="btn-title">Ubicación recepción</span><span class="btn-sub">Hacienda La Cúpula</span><span class="btn-time">Recepción 3:30 PM</span></span>
                     </a>
                     <a class="action-card" href="{{ $links['liverpool'] }}" target="_blank" rel="noopener">
                         <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H8.5A2.5 2.5 0 1 1 12 4.5V7Z"/><path d="M12 7h3.5A2.5 2.5 0 1 0 12 4.5V7Z"/></svg></span>
