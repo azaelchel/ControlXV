@@ -23,6 +23,7 @@ class AccessQrController extends Controller
     {
         $search = trim((string) $request->input("q", ""));
         $group = trim((string) $request->input("group", ""));
+        $messageState = trim((string) $request->input("message_state", ""));
         $perPage = in_array((int) $request->integer("per_page"), [10, 25, 50, 100], true)
             ? (int) $request->integer("per_page")
             : 25;
@@ -62,6 +63,24 @@ class AccessQrController extends Controller
                 });
             })
             ->when($group !== "", fn ($query) => $query->where("group_name", $group))
+            ->when($messageState === "opened", fn ($query) => $query->whereHas("publicLinks", fn ($linkQuery) => $linkQuery
+                ->where("mode", "access_qr_v2")
+                ->where("is_current", true)
+                ->whereNotNull("opened_at")
+            ))
+            ->when($messageState === "unopened", fn ($query) => $query->whereHas("publicLinks", fn ($linkQuery) => $linkQuery
+                ->where("mode", "access_qr_v2")
+                ->where("is_current", true)
+                ->whereNull("opened_at")
+            ))
+            ->when($messageState === "not_generated", fn ($query) => $query
+                ->whereNotNull("access_qr_data")
+                ->whereDoesntHave("publicLinks", fn ($linkQuery) => $linkQuery
+                    ->where("mode", "access_qr_v2")
+                    ->where("is_current", true)
+                )
+            )
+            ->when($messageState === "no_qr", fn ($query) => $query->whereNull("access_qr_data"))
             ->orderBy("group_name")
             ->orderBy("name")
             ->paginate($perPage)
@@ -147,6 +166,7 @@ class AccessQrController extends Controller
             "search" => $search,
             "group" => $group,
             "perPage" => $perPage,
+            "messageState" => $messageState,
             "detailsByGuest" => $detailsByGuest,
         ]);
     }

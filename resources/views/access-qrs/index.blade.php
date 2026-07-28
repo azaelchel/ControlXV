@@ -90,7 +90,7 @@
             <div class="section-kicker">Accesos</div>
             <h3 class="section-title" style="font-size: 20px;">Carga y envio de QR por familia</h3>
         </div>
-        <form method="get" action="{{ route('access-qrs.index') }}" class="filter-row" style="grid-template-columns: 1fr 130px auto;">
+        <form method="get" action="{{ route('access-qrs.index') }}" class="filter-row" style="grid-template-columns: 1fr 190px 130px auto;">
             <div>
                 <label>Grupo</label>
                 <select name="group">
@@ -98,6 +98,16 @@
                     @foreach ($groups as $option)
                         <option value="{{ $option }}" @selected($group === $option)>{{ $option }}</option>
                     @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Mensaje QR</label>
+                <select name="message_state" onchange="this.form.submit()">
+                    <option value="" @selected($messageState === '')>Todos</option>
+                    <option value="opened" @selected($messageState === 'opened')>Abrieron link</option>
+                    <option value="unopened" @selected($messageState === 'unopened')>No han abierto</option>
+                    <option value="not_generated" @selected($messageState === 'not_generated')>Sin link generado</option>
+                    <option value="no_qr" @selected($messageState === 'no_qr')>Sin QR cargado</option>
                 </select>
             </div>
             <div>
@@ -118,6 +128,7 @@
     <div class="card" style="padding: 18px;">
         <form class="access-toolbar" method="get" action="{{ route('access-qrs.index') }}" data-quick-search-form>
             <input type="hidden" name="group" value="{{ $group }}">
+            <input type="hidden" name="message_state" value="{{ $messageState }}">
             <input type="hidden" name="per_page" value="{{ $perPage }}">
             <div>
                 <label>Busqueda rapida general</label>
@@ -136,7 +147,7 @@
             <div class="inline" style="gap:8px; align-items:end; min-height:40px;">
                 <button class="btn small" type="submit">Buscar</button>
                 @if ($search !== '')
-                    <a class="btn secondary small" href="{{ route('access-qrs.index', array_filter(['group' => $group, 'per_page' => $perPage])) }}">Limpiar</a>
+                    <a class="btn secondary small" href="{{ route('access-qrs.index', array_filter(['group' => $group, 'message_state' => $messageState, 'per_page' => $perPage])) }}">Limpiar</a>
                 @endif
             </div>
         </form>
